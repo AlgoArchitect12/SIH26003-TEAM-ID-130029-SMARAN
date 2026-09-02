@@ -5,6 +5,27 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@components/*": [
+        "./components/*"
+      ],
+      "@constants/*": [
+        "./constants/*"
+      ],
+      "@db/*": [
+        "./src/db/*"
+      ],
+      "@services/*": [
+        "./src/services/*"
+      ],
+      "@ai/*": [
+        "./src/ai/*"
+      ],
+      "@types/*": [
+        "./src/types/*"
+      ],
+      "@i18n/*": [
+        "./src/i18n/*"
       ]
     }
   },
