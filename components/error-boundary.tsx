@@ -2,6 +2,10 @@ import { router } from 'expo-router';
 import { Component, type ErrorInfo, type PropsWithChildren } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Colors } from '@constants/colors';
+import { Layout, Radius, Spacing } from '@constants/layout';
+import { Typography } from '@constants/typography';
+
 type State = { hasError: boolean };
 
 export class ErrorBoundary extends Component<PropsWithChildren, State> {
@@ -43,40 +47,37 @@ export class ErrorBoundary extends Component<PropsWithChildren, State> {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    backgroundColor: '#F9F8F5',
+    backgroundColor: Colors.light.background,
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: Spacing.lg,
   },
   title: {
-    color: '#1C2526',
-    fontSize: 28,
-    fontWeight: '700',
+    ...Typography.cardHeading,
+    color: Colors.light.text,
     textAlign: 'center',
   },
   message: {
-    color: '#405052',
-    fontSize: 18,
-    lineHeight: 26,
-    marginTop: 12,
+    ...Typography.body,
+    color: Colors.light.textSecondary,
+    marginTop: Spacing.sm,
     textAlign: 'center',
   },
   button: {
     alignItems: 'center',
-    backgroundColor: '#0B4F56',
-    borderRadius: 28,
+    backgroundColor: Colors.light.actionPrimary,
+    borderRadius: Radius.button,
     justifyContent: 'center',
-    marginTop: 32,
-    minHeight: 56,
+    marginTop: Spacing.xl,
+    minHeight: Layout.minTouchTarget,
     minWidth: 200,
-    paddingHorizontal: 24,
+    paddingHorizontal: Spacing.lg,
   },
   buttonPressed: {
     opacity: 0.85,
   },
   buttonText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '600',
+    ...Typography.action,
+    color: Colors.light.onActionPrimary,
   },
 });

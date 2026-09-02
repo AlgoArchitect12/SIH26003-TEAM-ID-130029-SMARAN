@@ -1,30 +1,26 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+
+import { ThemedText } from '@components/themed-text';
+import { ThemedView } from '@components/themed-view';
+import { Spacing } from '@constants/layout';
 
 export default function IndexScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Smaran AI</Text>
-      <Text style={styles.status}>Setup in progress.</Text>
-    </View>
+    <ThemedView style={styles.container}>
+      <ThemedText type="screenTitle">Smaran AI</ThemedText>
+      <ThemedText style={styles.status}>Setup in progress.</ThemedText>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    backgroundColor: '#F9F8F5',
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
-  },
-  title: {
-    color: '#1C2526',
-    fontSize: 32,
-    fontWeight: '700',
+    padding: Spacing.lg,
   },
   status: {
-    color: '#405052',
-    fontSize: 18,
-    marginTop: 12,
+    marginTop: Spacing.sm,
   },
 });
