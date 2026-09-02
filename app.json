@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "_expo-temp",
-    "slug": "_expo-temp",
+    "name": "Smaran AI",
+    "slug": "smaran-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "expotemp",
+    "scheme": "smaran-ai",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -46,3 +46,5 @@
     }
   }
 }
+
+
