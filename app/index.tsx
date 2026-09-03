@@ -7,13 +7,8 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { Colors } from '@constants/colors';
 import { Spacing } from '@constants/layout';
-import { patientRepository } from '@db/repositories/patient.repository';
-import {
-  deleteSecureValue,
-  getSecureValue,
-  SecureStorageKeys,
-  setSecureValue,
-} from '@services/secure-storage.service';
+import { clearActivePatientFlags, resolveActivePatient } from '@services/active-patient.service';
+import { SecureStorageKeys, setSecureValue } from '@services/secure-storage.service';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
@@ -31,33 +26,18 @@ export default function IndexScreen() {
     setStatus('loading');
 
     const resolveLaunchRoute = async () => {
-      const [completionFlag, activeProfileId] = await Promise.all([
-        getSecureValue(SecureStorageKeys.onboardingCompleted),
-        getSecureValue(SecureStorageKeys.activeProfileId),
-      ]);
+      const resolution = await resolveActivePatient();
 
-      if (activeProfileId) {
-        const [profile, settings] = await Promise.all([
-          patientRepository.getProfileById(activeProfileId),
-          patientRepository.getSettings(activeProfileId),
-        ]);
-
-        if (profile && settings) {
-          if (completionFlag !== 'true') {
-            await setSecureValue(SecureStorageKeys.onboardingCompleted, 'true');
-          }
-          if (active) {
-            router.replace('/onboarding/complete');
-          }
-          return;
+      if (resolution.status === 'ready') {
+        if (!resolution.completionConfirmed) {
+          await setSecureValue(SecureStorageKeys.onboardingCompleted, 'true');
         }
+        if (active) router.replace('/patient/home');
+        return;
+      }
 
-        await Promise.all([
-          deleteSecureValue(SecureStorageKeys.activeProfileId),
-          deleteSecureValue(SecureStorageKeys.onboardingCompleted),
-        ]);
-      } else if (completionFlag === 'true') {
-        await deleteSecureValue(SecureStorageKeys.onboardingCompleted);
+      if (resolution.status === 'inconsistent') {
+        await clearActivePatientFlags();
       }
 
       resetOnboarding();

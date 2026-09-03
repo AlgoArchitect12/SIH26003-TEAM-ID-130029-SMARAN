@@ -148,6 +148,12 @@ export default function CompleteScreen() {
         <SummaryRow label={textSizeSummary} />
         <SummaryRow label={t(settings.language, 'readyOffline')} />
       </SmaranCard>
+      <SmaranButton
+        accessibilityLabel={t(settings.language, 'continue')}
+        label={t(settings.language, 'continue')}
+        onPress={() => router.replace('/patient/home')}
+        size="large"
+      />
     </OnboardingScreen>
   );
 }
