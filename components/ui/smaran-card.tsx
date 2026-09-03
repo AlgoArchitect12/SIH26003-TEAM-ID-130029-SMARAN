@@ -20,6 +20,7 @@ type BaseCardProps = {
   hapticsEnabled?: boolean;
   padding?: number;
   reducedMotionOverride?: ReducedMotionOverride;
+  selected?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -47,6 +48,7 @@ export function SmaranCard({
   onPress,
   padding = Spacing.lg,
   reducedMotionOverride = null,
+  selected = false,
   style,
   testID,
 }: SmaranCardProps) {
@@ -57,7 +59,12 @@ export function SmaranCard({
   const cardStyle = [
     styles.card,
     Elevation.card,
-    { backgroundColor: colors.surface, borderColor: colors.border, padding },
+    {
+      backgroundColor: colors.surface,
+      borderColor: selected ? colors.primary : colors.border,
+      borderWidth: selected ? 2 : 1,
+      padding,
+    },
     style,
   ];
 
@@ -79,7 +86,7 @@ export function SmaranCard({
       accessibilityHint={accessibilityHint}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, selected }}
       disabled={disabled}
       onPress={handlePress}
       testID={testID}

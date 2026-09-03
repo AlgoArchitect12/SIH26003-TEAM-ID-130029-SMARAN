@@ -237,18 +237,20 @@ async function upsertProfileWithSettings(
   settingsInput: UpdatePatientSettingsInput = {}
 ) {
   const database = await getDatabase();
-  let result: { profile: PatientProfile; settings: PatientSettings } | null = null;
+  const saved: { current: { profile: PatientProfile; settings: PatientSettings } | null } = {
+    current: null,
+  };
 
   await database.withExclusiveTransactionAsync(async (transaction) => {
     const profile = await upsertProfileIn(transaction, profileInput);
     const settings = await upsertSettingsIn(transaction, profile.id, settingsInput);
-    result = { profile, settings };
+    saved.current = { profile, settings };
   });
 
-  if (!result) {
+  if (!saved.current) {
     throw new Error('Patient profile and settings could not be saved.');
   }
-  return result;
+  return saved.current;
 }
 
 export const patientRepository = {
