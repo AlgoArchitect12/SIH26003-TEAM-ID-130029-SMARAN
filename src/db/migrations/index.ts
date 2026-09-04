@@ -1,8 +1,9 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { coreBootstrapMigration } from './001_core_bootstrap';
+import { cognitiveAdaptationMigration } from './002_cognitive_adaptation';
 
-const migrations = [coreBootstrapMigration] as const;
+const migrations = [coreBootstrapMigration, cognitiveAdaptationMigration] as const;
 
 type AppliedMigrationRow = { version: number };
 

@@ -3,17 +3,14 @@ import { Animated, StyleSheet, type StyleProp, type ViewStyle } from 'react-nati
 
 import { ThemedText } from '@components/themed-text';
 import { Colors } from '@constants/colors';
-import type {
-  EncouragementMessage,
-  EncouragementTone,
-} from '@constants/encouragement-messages';
+import type { EncouragementTone } from '@constants/encouragement-messages';
 import { Radius, Spacing } from '@constants/layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { type ReducedMotionOverride, useReducedMotion } from '@/hooks/use-reduced-motion';
 
 export type EncouragementBannerProps = {
-  message: EncouragementMessage;
-  onAnnounce?: (message: EncouragementMessage) => void;
+  message: string;
+  onAnnounce?: (message: string) => void;
   reducedMotionOverride?: ReducedMotionOverride;
   style?: StyleProp<ViewStyle>;
   tone: EncouragementTone;

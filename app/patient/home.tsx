@@ -224,13 +224,20 @@ export default function PatientHomeScreen() {
             return (
               <View key={action.titleKey} style={styles.action}>
                 <HomeActionCard
-                  accessibilityHint={t(language, 'homeActionHint')}
+                  accessibilityHint={t(
+                    language,
+                    action.featured ? 'homeTrainHint' : 'homeActionHint'
+                  )}
                   description={descriptions[index]}
                   featured={action.featured}
                   highContrast={settings.highContrast}
                   icon={action.icon}
                   label={action.featured ? t(language, 'homeFocusLabel') : undefined}
-                  onPress={() => setNoticeTitle(title)}
+                  onPress={() =>
+                    action.featured
+                      ? router.push('/patient/games/memory-match')
+                      : setNoticeTitle(title)
+                  }
                   reducedMotion={settings.reducedMotion}
                   textSize={textSize}
                   title={title}

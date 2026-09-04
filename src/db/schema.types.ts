@@ -59,3 +59,45 @@ export type UpdatePatientSettingsInput = Partial<
     'language' | 'region' | 'textSize' | 'highContrast' | 'voiceGuidance' | 'reducedMotion'
   >
 >;
+
+export const DifficultyLevels = [1, 2, 3, 4, 5] as const;
+export type DifficultyLevel = (typeof DifficultyLevels)[number];
+
+export const ActivityFeedbackLabels = ['easy', 'comfortable', 'challenging'] as const;
+export type ActivityFeedbackLabel = (typeof ActivityFeedbackLabels)[number];
+
+export type CognitiveSession = {
+  id: string;
+  patientId: string;
+  gameType: 'memory_match';
+  difficulty: DifficultyLevel;
+  startedAt: string;
+  completedAt: string;
+  totalPairs: number;
+  attempts: number;
+  matches: number;
+  hintsUsed: number;
+  repeatedMistakes: number;
+  averageResponseMs: number;
+  accuracy: number;
+  feedbackLabel: ActivityFeedbackLabel | null;
+  recommendedDifficulty: DifficultyLevel;
+  isDemoSeed: boolean;
+  createdAt: string;
+};
+
+export type CompletedSessionInput = Omit<CognitiveSession, 'createdAt' | 'id' | 'isDemoSeed'>;
+
+export type AdaptiveModelState = {
+  patientId: string;
+  bias: number;
+  weights: {
+    accuracy: number;
+    pace: number;
+    memory: number;
+    hints: number;
+    stability: number;
+  };
+  sampleCount: number;
+  updatedAt: string;
+};
