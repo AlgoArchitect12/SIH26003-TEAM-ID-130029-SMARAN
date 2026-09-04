@@ -60,6 +60,8 @@ export default function PatientHomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
+  const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
+  const setLanguage = useOnboardingStore((state) => state.setLanguage);
   const [attempt, setAttempt] = useState(0);
   const [data, setData] = useState<HomeData | null>(null);
   const [status, setStatus] = useState<HomeStatus>('loading');
@@ -82,6 +84,7 @@ export default function PatientHomeScreen() {
           await setSecureValue(SecureStorageKeys.onboardingCompleted, 'true');
         }
         if (active) {
+          setLanguage(resolution.settings.language);
           setData({ profile: resolution.profile, settings: resolution.settings });
           setStatus('ready');
         }
@@ -94,7 +97,7 @@ export default function PatientHomeScreen() {
     return () => {
       active = false;
     };
-  }, [attempt, resetOnboarding, router]);
+  }, [attempt, resetOnboarding, router, setLanguage]);
 
   const returnToSetup = async () => {
     try {
@@ -114,15 +117,15 @@ export default function PatientHomeScreen() {
         </ThemedText>
         {status === 'failed' ? (
           <View accessibilityRole="alert" style={styles.recovery}>
-            <ThemedText>{t('en', 'homeLoadFailed')}</ThemedText>
+            <ThemedText>{t(loadingLanguage, 'homeLoadFailed')}</ThemedText>
             <SmaranButton
-              accessibilityLabel={t('en', 'retry')}
-              label={t('en', 'retry')}
+              accessibilityLabel={t(loadingLanguage, 'retry')}
+              label={t(loadingLanguage, 'retry')}
               onPress={() => setAttempt((current) => current + 1)}
             />
             <SmaranButton
-              accessibilityLabel={t('en', 'homeReturnSetup')}
-              label={t('en', 'homeReturnSetup')}
+              accessibilityLabel={t(loadingLanguage, 'homeReturnSetup')}
+              label={t(loadingLanguage, 'homeReturnSetup')}
               onPress={() => void returnToSetup()}
               variant="outline"
             />
@@ -130,11 +133,11 @@ export default function PatientHomeScreen() {
         ) : (
           <View style={styles.loading}>
             <ActivityIndicator
-              accessibilityLabel={t('en', 'homeLoading')}
+              accessibilityLabel={t(loadingLanguage, 'homeLoading')}
               color={colors.primary}
               size="large"
             />
-            <ThemedText>{t('en', 'homeLoading')}</ThemedText>
+            <ThemedText>{t(loadingLanguage, 'homeLoading')}</ThemedText>
           </View>
         )}
       </ScreenWrapper>

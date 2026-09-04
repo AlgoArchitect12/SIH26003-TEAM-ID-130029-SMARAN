@@ -8,10 +8,13 @@ import { ThemedView } from '@components/themed-view';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { Spacing } from '@constants/layout';
 import { initializeDatabase } from '@db/client';
+import { t } from '@i18n/index';
+import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 type BootstrapStatus = 'loading' | 'ready' | 'failed';
 
 function DatabaseBootstrap() {
+  const language = useOnboardingStore((state) => state.language) ?? 'en';
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<BootstrapStatus>('loading');
 
@@ -48,13 +51,13 @@ function DatabaseBootstrap() {
       <ThemedText type="screenTitle">Smaran AI</ThemedText>
       <ThemedText style={styles.message}>
         {status === 'failed'
-          ? 'Your information is safe. Please try preparing the app again.'
-          : 'Preparing your secure local space.'}
+          ? t(language, 'setupUnavailable')
+          : t(language, 'loadingSetup')}
       </ThemedText>
       {status === 'failed' ? (
         <SmaranButton
-          accessibilityLabel="Try preparing Smaran AI again"
-          label="Try Again"
+          accessibilityLabel={t(language, 'retry')}
+          label={t(language, 'retry')}
           onPress={() => setAttempt((current) => current + 1)}
           style={styles.button}
         />

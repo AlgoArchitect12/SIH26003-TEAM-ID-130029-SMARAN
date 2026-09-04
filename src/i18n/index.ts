@@ -7,18 +7,22 @@ export function t(
   key: TranslationKey,
   values: Record<string, string> = {}
 ) {
-  const template = strings[language ?? 'en'][key] ?? strings.en[key];
+  const template = strings[language ?? 'en']?.[key] ?? strings.en[key];
   return template.replace(/\{(\w+)\}/gu, (match, name: string) => values[name] ?? match);
 }
 
 export function getRegionName(language: Language | null | undefined, region: Region) {
-  return regionNames[language ?? 'en'][region];
+  return regionNames[language ?? 'en']?.[region] ?? regionNames.en[region];
 }
 
-const languageNameKeys: Record<Language, TranslationKey> = {
-  as: 'languageAssamese',
-  en: 'languageEnglish',
-  hi: 'languageHindi',
+export const languageDisplayNames: Record<Language, string> = {
+  as: 'অসমীয়া',
+  bn: 'বাংলা',
+  en: 'English',
+  hi: 'हिन्दी',
+  kha: 'Khasi',
+  lus: 'Mizo',
+  mni: 'Meitei (Manipuri)',
 };
 
 const textSizeKeys: Record<TextSize, TranslationKey> = {
@@ -28,7 +32,7 @@ const textSizeKeys: Record<TextSize, TranslationKey> = {
 };
 
 export function getLanguageName(language: Language) {
-  return t(language, languageNameKeys[language]);
+  return languageDisplayNames[language];
 }
 
 export function getTextSizeName(language: Language, textSize: TextSize) {

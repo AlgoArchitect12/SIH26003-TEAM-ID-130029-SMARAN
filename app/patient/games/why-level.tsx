@@ -18,6 +18,7 @@ import type { CognitiveSession, PatientSettings } from '@db/schema.types';
 import { t } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 import type { AdaptiveDirection, FeatureExtraction } from '@ai/types';
 
@@ -37,6 +38,8 @@ export default function WhyLevelScreen() {
   const router = useRouter();
   const { sessionId } = useLocalSearchParams<{ sessionId?: string }>();
   const colorScheme = useColorScheme() ?? 'light';
+  const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
+  const setLanguage = useOnboardingStore((state) => state.setLanguage);
   const [data, setData] = useState<WhyData | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -59,6 +62,7 @@ export default function WhyLevelScreen() {
           cognitiveRepository.getAdaptiveModel(session.patientId),
         ]);
         if (!active) return;
+        setLanguage(resolution.settings.language);
         const history = recentSessions.filter(({ id }) => id !== session.id).slice(0, 5);
         const extraction = extractAdaptiveFeatures({
           currentDifficulty: session.difficulty,
@@ -108,15 +112,15 @@ export default function WhyLevelScreen() {
     return () => {
       active = false;
     };
-  }, [router, sessionId]);
+  }, [router, sessionId, setLanguage]);
 
   if (!data) {
     return (
       <ScreenWrapper contentContainerStyle={styles.centered}>
         {failed ? (
-          <SmaranButton accessibilityLabel={t('en', 'backHome')} label={t('en', 'backHome')} onPress={() => router.replace('/patient/home')} />
+          <SmaranButton accessibilityLabel={t(loadingLanguage, 'backHome')} label={t(loadingLanguage, 'backHome')} onPress={() => router.replace('/patient/home')} />
         ) : (
-          <ActivityIndicator accessibilityLabel={t('en', 'gameLoading')} color={Colors[colorScheme].primary} size="large" />
+          <ActivityIndicator accessibilityLabel={t(loadingLanguage, 'gameLoading')} color={Colors[colorScheme].primary} size="large" />
         )}
       </ScreenWrapper>
     );

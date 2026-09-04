@@ -5,15 +5,9 @@ import { OnboardingScreen } from '@components/onboarding/onboarding-screen';
 import { SelectionCard } from '@components/onboarding/selection-card';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { Spacing } from '@constants/layout';
-import type { Language } from '@db/schema.types';
-import { t } from '@i18n/index';
+import { Languages } from '@db/schema.types';
+import { getLanguageName, t } from '@i18n/index';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
-
-const languages: { id: Language; label: string }[] = [
-  { id: 'en', label: 'English' },
-  { id: 'hi', label: 'हिन्दी' },
-  { id: 'as', label: 'অসমীয়া' },
-];
 
 export default function LanguageScreen() {
   const router = useRouter();
@@ -28,14 +22,14 @@ export default function LanguageScreen() {
       language={activeLanguage}
       title={t(activeLanguage, 'languageTitle')}>
       <View style={styles.choices}>
-        {languages.map((option) => (
+        {Languages.map((option) => (
           <SelectionCard
             icon="language"
-            key={option.id}
-            onPress={() => setLanguage(option.id)}
-            selected={language === option.id}
+            key={option}
+            onPress={() => setLanguage(option)}
+            selected={language === option}
             selectedLabel={t(activeLanguage, 'selected')}
-            title={option.label}
+            title={getLanguageName(option)}
           />
         ))}
       </View>

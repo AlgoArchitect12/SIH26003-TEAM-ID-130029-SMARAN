@@ -13,51 +13,52 @@ import { useOnboardingStore } from '@/src/stores/onboarding.store';
 export default function RoleScreen() {
   const router = useRouter();
   const role = useOnboardingStore((state) => state.role);
+  const language = useOnboardingStore((state) => state.language) ?? 'en';
   const setRole = useOnboardingStore((state) => state.setRole);
 
   return (
     <OnboardingScreen
-      description={t('en', 'roleDescription')}
-      language="en"
-      title={t('en', 'roleTitle')}>
+      description={t(language, 'roleDescription')}
+      language={language}
+      title={t(language, 'roleTitle')}>
       <View style={styles.choices}>
         <SelectionCard
-          description={t('en', 'selfDescription')}
+          description={t(language, 'selfDescription')}
           icon="person-outline"
           onPress={() => setRole('patient')}
           selected={role === 'patient'}
-          selectedLabel={t('en', 'selected')}
-          title={t('en', 'selfLabel')}
+          selectedLabel={t(language, 'selected')}
+          title={t(language, 'selfLabel')}
         />
         <SelectionCard
-          description={t('en', 'caregiverDescription')}
+          description={t(language, 'caregiverDescription')}
           icon="favorite-outline"
           onPress={() => setRole('caregiver')}
           selected={role === 'caregiver'}
-          selectedLabel={t('en', 'selected')}
-          title={t('en', 'caregiverLabel')}
+          selectedLabel={t(language, 'selected')}
+          title={t(language, 'caregiverLabel')}
         />
       </View>
 
       {role === 'caregiver' ? (
-        <SmaranCard accessibilityLabel={t('en', 'caregiverNoticeTitle')} style={styles.notice}>
-          <ThemedText type="cardHeading">{t('en', 'caregiverNoticeTitle')}</ThemedText>
-          <ThemedText>{t('en', 'caregiverNoticeBody')}</ThemedText>
+        <SmaranCard accessibilityLabel={t(language, 'caregiverNoticeTitle')} style={styles.notice}>
+          <ThemedText type="cardHeading">{t(language, 'caregiverNoticeTitle')}</ThemedText>
+          <ThemedText>{t(language, 'caregiverNoticeBody')}</ThemedText>
         </SmaranCard>
       ) : null}
 
       {role === 'caregiver' ? (
         <SmaranButton
-          accessibilityLabel={t('en', 'changeRole')}
-          label={t('en', 'changeRole')}
+          accessibilityLabel={t(language, 'changeRole')}
+          label={t(language, 'changeRole')}
           onPress={() => setRole(null)}
           variant="outline"
         />
       ) : (
         <SmaranButton
-          accessibilityLabel={t('en', 'continue')}
+          accessibilityLabel={t(language, 'continue')}
           disabled={role !== 'patient'}
-          label={t('en', 'continue')}
+          label={t(language, 'continue')}
           onPress={() => router.push('/onboarding/language')}
           size="large"
         />

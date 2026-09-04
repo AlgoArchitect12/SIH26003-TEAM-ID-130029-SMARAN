@@ -8,7 +8,7 @@ import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { Colors } from '@constants/colors';
 import { Spacing } from '@constants/layout';
-import type { TextSize } from '@db/schema.types';
+import type { Language, TextSize } from '@db/schema.types';
 import { getTextSizeName, t } from '@i18n/index';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
@@ -22,7 +22,7 @@ const previewTextSizes: Record<TextSize, TextSizePreference> = {
 };
 
 type BinaryPreferenceProps = {
-  language: 'en' | 'hi' | 'as';
+  language: Language;
   onChange: (value: boolean) => void;
   reducedMotion: boolean;
   title: string;

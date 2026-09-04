@@ -40,6 +40,8 @@ export default function CompleteScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
+  const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
+  const setLanguage = useOnboardingStore((state) => state.setLanguage);
   const [attempt, setAttempt] = useState(0);
   const [data, setData] = useState<CompleteData | null>(null);
   const [failed, setFailed] = useState(false);
@@ -80,6 +82,8 @@ export default function CompleteScreen() {
       }
 
       if (active) {
+        resetOnboarding();
+        setLanguage(settings.language);
         setData({ profile, settings });
       }
     };
@@ -96,7 +100,7 @@ export default function CompleteScreen() {
     return () => {
       active = false;
     };
-  }, [attempt, resetOnboarding, router]);
+  }, [attempt, resetOnboarding, router, setLanguage]);
 
   if (!data) {
     return (
@@ -106,21 +110,21 @@ export default function CompleteScreen() {
         </ThemedText>
         {failed ? (
           <View accessibilityRole="alert" style={styles.loadingContent}>
-            <ThemedText>{t('en', 'setupUnavailable')}</ThemedText>
+            <ThemedText>{t(loadingLanguage, 'setupUnavailable')}</ThemedText>
             <SmaranButton
-              accessibilityLabel={t('en', 'retry')}
-              label={t('en', 'retry')}
+              accessibilityLabel={t(loadingLanguage, 'retry')}
+              label={t(loadingLanguage, 'retry')}
               onPress={() => setAttempt((current) => current + 1)}
             />
           </View>
         ) : (
           <View style={styles.loadingContent}>
             <ActivityIndicator
-              accessibilityLabel={t('en', 'loadingSetup')}
+              accessibilityLabel={t(loadingLanguage, 'loadingSetup')}
               color={Colors[colorScheme].primary}
               size="large"
             />
-            <ThemedText>{t('en', 'loadingSetup')}</ThemedText>
+            <ThemedText>{t(loadingLanguage, 'loadingSetup')}</ThemedText>
           </View>
         )}
       </ScreenWrapper>

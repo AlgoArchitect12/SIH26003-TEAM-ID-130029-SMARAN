@@ -20,6 +20,7 @@ import { t } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCognitiveSessionStore } from '@/src/stores/cognitive-session.store';
+import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import { getMemorySymbol } from '@/src/games/memory-match/assets';
 import { INITIAL_MEMORY_DIFFICULTY, MemoryDifficulties } from '@/src/games/memory-match/difficulty';
 import {
@@ -64,6 +65,8 @@ export default function MemoryMatchScreen() {
   const colors = Colors[colorScheme];
   const setPending = useCognitiveSessionStore((state) => state.setPending);
   const clearSession = useCognitiveSessionStore((state) => state.clear);
+  const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
+  const setLanguage = useOnboardingStore((state) => state.setLanguage);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');
   const [data, setData] = useState<GameData | null>(null);
@@ -97,6 +100,7 @@ export default function MemoryMatchScreen() {
           cognitiveRepository.getAdaptiveModel(resolution.profile.id),
         ]);
         if (!active) return;
+        setLanguage(resolution.settings.language);
         const nextDifficulty = history[0]?.recommendedDifficulty ?? INITIAL_MEMORY_DIFFICULTY;
         setDifficulty(nextDifficulty);
         setGame(createMemoryGame(nextDifficulty));
@@ -116,7 +120,7 @@ export default function MemoryMatchScreen() {
     return () => {
       active = false;
     };
-  }, [clearSession, loadAttempt, router]);
+  }, [clearSession, loadAttempt, router, setLanguage]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
@@ -132,23 +136,23 @@ export default function MemoryMatchScreen() {
       <ScreenWrapper contentContainerStyle={styles.centered}>
         {loadStatus === 'failed' ? (
           <>
-            <ThemedText accessibilityRole="alert">{t('en', 'gameLoadFailed')}</ThemedText>
+            <ThemedText accessibilityRole="alert">{t(loadingLanguage, 'gameLoadFailed')}</ThemedText>
             <SmaranButton
-              accessibilityLabel={t('en', 'gameRetry')}
-              label={t('en', 'gameRetry')}
+              accessibilityLabel={t(loadingLanguage, 'gameRetry')}
+              label={t(loadingLanguage, 'gameRetry')}
               onPress={() => setLoadAttempt((value) => value + 1)}
             />
             <SmaranButton
-              accessibilityLabel={t('en', 'backHome')}
-              label={t('en', 'backHome')}
+              accessibilityLabel={t(loadingLanguage, 'backHome')}
+              label={t(loadingLanguage, 'backHome')}
               onPress={() => router.replace('/patient/home')}
               variant="outline"
             />
           </>
         ) : (
           <>
-            <ActivityIndicator accessibilityLabel={t('en', 'gameLoading')} color={colors.primary} size="large" />
-            <ThemedText>{t('en', 'gameLoading')}</ThemedText>
+            <ActivityIndicator accessibilityLabel={t(loadingLanguage, 'gameLoading')} color={colors.primary} size="large" />
+            <ThemedText>{t(loadingLanguage, 'gameLoading')}</ThemedText>
           </>
         )}
       </ScreenWrapper>

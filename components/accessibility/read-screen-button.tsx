@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@components/themed-text';
@@ -19,26 +19,62 @@ type ReadScreenButtonProps = {
 export function ReadScreenButton({ language, text }: ReadScreenButtonProps) {
   const colorScheme = useColorScheme() ?? 'light';
   const [isStarting, setIsStarting] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [outcome, setOutcome] = useState<SpeechOutcome | null>(null);
+  const active = useRef(true);
 
   useEffect(() => {
+    active.current = true;
+    setIsSpeaking(false);
     setOutcome(null);
-    return () => void stopSpeech();
+    return () => {
+      active.current = false;
+      void stopSpeech();
+    };
   }, [language, text]);
 
   const handlePress = async () => {
+    if (isSpeaking) {
+      await stopSpeech();
+      if (active.current) setIsSpeaking(false);
+      return;
+    }
+
     setIsStarting(true);
-    setOutcome(await speakScreenText(text, language));
-    setIsStarting(false);
+    const nextOutcome = await speakScreenText(text, language, {
+      onDone: () => {
+        if (active.current) setIsSpeaking(false);
+      },
+      onError: () => {
+        if (active.current) {
+          setIsSpeaking(false);
+          setOutcome('failed');
+        }
+      },
+    });
+    if (active.current) {
+      setOutcome(nextOutcome);
+      setIsSpeaking(nextOutcome === 'started');
+      setIsStarting(false);
+    }
   };
+
+  const label = t(language, isSpeaking ? 'stopReading' : 'readScreen');
 
   return (
     <View style={styles.container}>
       <SmaranButton
-        accessibilityLabel={t(language, 'readScreen')}
+        accessibilityLabel={label}
         disabled={isStarting}
-        icon={<MaterialIcons color={Colors[colorScheme].text} name="volume-up" size={24} />}
-        label={t(language, 'readScreen')}
+        icon={
+          <MaterialIcons
+            accessible={false}
+            color={Colors[colorScheme].text}
+            name={isSpeaking ? 'volume-off' : 'volume-up'}
+            size={24}
+          />
+        }
+        label={label}
         onPress={() => void handlePress()}
         variant="outline"
       />

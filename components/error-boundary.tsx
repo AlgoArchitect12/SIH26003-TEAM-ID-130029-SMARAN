@@ -5,8 +5,29 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@constants/colors';
 import { Layout, Radius, Spacing } from '@constants/layout';
 import { Typography } from '@constants/typography';
+import { t } from '@i18n/index';
+import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 type State = { hasError: boolean };
+
+function ErrorFallback({ onReturn }: { onReturn: () => void }) {
+  const language = useOnboardingStore((state) => state.language) ?? 'en';
+
+  return (
+    <View accessibilityRole="alert" style={styles.container}>
+      <Text style={styles.title}>{t(language, 'errorSafeTitle')}</Text>
+      <Text style={styles.message}>{t(language, 'errorReturnMessage')}</Text>
+      <Pressable
+        accessibilityHint={t(language, 'errorReturnMessage')}
+        accessibilityLabel={t(language, 'returnHome')}
+        accessibilityRole="button"
+        onPress={onReturn}
+        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
+        <Text style={styles.buttonText}>{t(language, 'returnHome')}</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 export class ErrorBoundary extends Component<PropsWithChildren, State> {
   state: State = { hasError: false };
@@ -28,19 +49,7 @@ export class ErrorBoundary extends Component<PropsWithChildren, State> {
       return this.props.children;
     }
 
-    return (
-      <View accessibilityRole="alert" style={styles.container}>
-        <Text style={styles.title}>Everything is safe.</Text>
-        <Text style={styles.message}>Let&apos;s return to your home screen.</Text>
-        <Pressable
-          accessibilityHint="Returns to the Smaran AI start screen"
-          accessibilityRole="button"
-          onPress={this.returnHome}
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
-          <Text style={styles.buttonText}>Return Home</Text>
-        </Pressable>
-      </View>
-    );
+    return <ErrorFallback onReturn={this.returnHome} />;
   }
 }
 

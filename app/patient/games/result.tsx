@@ -18,6 +18,7 @@ import { t, type TranslationKey } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useCognitiveSessionStore } from '@/src/stores/cognitive-session.store';
+import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 type ResultStatus = 'loading' | 'ready' | 'failed';
 
@@ -44,6 +45,8 @@ export default function MemoryMatchResultScreen() {
   const saved = useCognitiveSessionStore((state) => state.saved);
   const setSaved = useCognitiveSessionStore((state) => state.setSaved);
   const clear = useCognitiveSessionStore((state) => state.clear);
+  const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
+  const setLanguage = useOnboardingStore((state) => state.setLanguage);
   const [settings, setSettings] = useState<PatientSettings | null>(null);
   const [status, setStatus] = useState<ResultStatus>('loading');
   const [saving, setSaving] = useState(false);
@@ -69,6 +72,7 @@ export default function MemoryMatchResultScreen() {
           router.replace('/patient/home');
           return;
         }
+        setLanguage(resolution.settings.language);
         setSettings(resolution.settings);
         setStatus('ready');
       })
@@ -79,19 +83,19 @@ export default function MemoryMatchResultScreen() {
     return () => {
       active = false;
     };
-  }, [clear, pending, router, saved]);
+  }, [clear, pending, router, saved, setLanguage]);
 
   if (!settings || status !== 'ready' || (!pending && !saved)) {
     return (
       <ScreenWrapper contentContainerStyle={styles.centered}>
         {status === 'failed' ? (
           <SmaranButton
-            accessibilityLabel={t('en', 'backHome')}
-            label={t('en', 'backHome')}
+            accessibilityLabel={t(loadingLanguage, 'backHome')}
+            label={t(loadingLanguage, 'backHome')}
             onPress={() => router.replace('/patient/home')}
           />
         ) : (
-          <ActivityIndicator accessibilityLabel={t('en', 'gameLoading')} color={Colors[colorScheme].primary} size="large" />
+          <ActivityIndicator accessibilityLabel={t(loadingLanguage, 'gameLoading')} color={Colors[colorScheme].primary} size="large" />
         )}
       </ScreenWrapper>
     );

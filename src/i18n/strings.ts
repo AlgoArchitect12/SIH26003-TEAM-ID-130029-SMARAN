@@ -1,5 +1,7 @@
 import type { Language, Region } from '@db/schema.types';
 
+import { regionalRegionNames, regionalStrings } from './regional-strings';
+
 const english = {
   accessibilityIntro: 'Choose the reading and movement settings that feel comfortable for you.',
   accessibilitySaved: 'Accessibility preferences saved',
@@ -13,6 +15,8 @@ const english = {
   caregiverNoticeTitle: 'A patient profile comes first',
   changeRole: 'Change role',
   checkDetails: 'Please check the details and try again.',
+  appSubtitle: 'Thoughtfully crafted for you and your family',
+  appTagline: 'Mindful Memory & Daily Care',
   completeIntro: 'Smaran is ready to support your day.',
   completeTitle: "You're all set, {name}.",
   continue: 'Continue',
@@ -45,9 +49,6 @@ const english = {
   homeTrainDescription: 'Gentle activities chosen for you.',
   homeTrainTitle: 'Train My Mind',
   invalidPhone: 'Please enter a valid 10-digit Indian mobile number.',
-  languageAssamese: 'অসমীয়া',
-  languageEnglish: 'English',
-  languageHindi: 'हिन्दी',
   languageIntro: 'Choose the language you would like to use during setup.',
   languageLabel: 'Language',
   languageTitle: 'Choose your language',
@@ -64,6 +65,7 @@ const english = {
   profileIntro: 'Share only the details needed for your local Smaran profile.',
   profileTitle: 'A little about you',
   readScreen: 'Read this screen',
+  stopReading: 'Stop reading',
   readyOffline: 'Ready offline',
   reducedMotion: 'Reduced motion',
   regionIntro: 'We use your region to make activities feel more familiar.',
@@ -87,6 +89,9 @@ const english = {
   textSize: 'Text size',
   textSizeSaved: 'Text size: {size}',
   voiceGuidance: 'Voice guidance',
+  errorSafeTitle: 'Everything is safe.',
+  errorReturnMessage: "Let's return to your home screen.",
+  returnHome: 'Return Home',
   backHome: 'Back to Home',
   homeTrainHint: 'Opens Memory Match.',
   gameTitle: 'Memory Match',
@@ -149,7 +154,7 @@ const english = {
 } as const;
 
 export type TranslationKey = keyof typeof english;
-type TranslationCatalog = Record<TranslationKey, string>;
+export type TranslationCatalog = Record<TranslationKey, string>;
 
 const hindiGame = {
   backHome: 'मुख्य पृष्ठ पर वापस जाएँ',
@@ -277,6 +282,8 @@ const hindi = {
   caregiverNoticeTitle: 'पहले रोगी की प्रोफ़ाइल बनाएँ',
   changeRole: 'भूमिका बदलें',
   checkDetails: 'कृपया जानकारी जाँचकर फिर प्रयास करें।',
+  appSubtitle: 'आप और आपके परिवार के लिए सोच-समझकर बनाया गया',
+  appTagline: 'स्मृति और दैनिक देखभाल का साथी',
   completeIntro: 'स्मरण आपके दिन में सहयोग के लिए तैयार है।',
   completeTitle: '{name}, आपकी तैयारी पूरी है।',
   continue: 'आगे बढ़ें',
@@ -309,9 +316,6 @@ const hindi = {
   homeTrainDescription: 'आपके लिए चुनी गई सरल गतिविधियाँ।',
   homeTrainTitle: 'मन का अभ्यास',
   invalidPhone: 'कृपया 10 अंकों का सही भारतीय मोबाइल नंबर लिखें।',
-  languageAssamese: 'অসমীয়া',
-  languageEnglish: 'English',
-  languageHindi: 'हिन्दी',
   languageIntro: 'सेटअप के लिए अपनी पसंद की भाषा चुनें।',
   languageLabel: 'भाषा',
   languageTitle: 'अपनी भाषा चुनें',
@@ -328,6 +332,7 @@ const hindi = {
   profileIntro: 'स्थानीय स्मरण प्रोफ़ाइल के लिए केवल ज़रूरी जानकारी साझा करें।',
   profileTitle: 'आपके बारे में थोड़ा सा',
   readScreen: 'यह स्क्रीन सुनें',
+  stopReading: 'पढ़ना रोकें',
   readyOffline: 'ऑफ़लाइन उपयोग के लिए तैयार',
   reducedMotion: 'कम गति',
   regionIntro: 'हम आपके क्षेत्र का उपयोग गतिविधियों को अधिक परिचित बनाने के लिए करते हैं।',
@@ -351,6 +356,9 @@ const hindi = {
   textSize: 'अक्षरों का आकार',
   textSizeSaved: 'अक्षरों का आकार: {size}',
   voiceGuidance: 'आवाज़ मार्गदर्शन',
+  errorSafeTitle: 'सब कुछ सुरक्षित है।',
+  errorReturnMessage: 'आइए आपके मुख्य पृष्ठ पर वापस चलें।',
+  returnHome: 'मुख्य पृष्ठ पर लौटें',
 } satisfies TranslationCatalog;
 
 const assamese = {
@@ -367,6 +375,8 @@ const assamese = {
   caregiverNoticeTitle: 'প্ৰথমে ৰোগীৰ প্ৰ’ফাইল লাগে',
   changeRole: 'ভূমিকা সলনি কৰক',
   checkDetails: 'অনুগ্ৰহ কৰি তথ্যখিনি চাই পুনৰ চেষ্টা কৰক।',
+  appSubtitle: 'আপোনাৰ আৰু আপোনাৰ পৰিয়ালৰ বাবে যত্নসহকাৰে তৈয়াৰ কৰা',
+  appTagline: 'স্মৃতি আৰু দৈনন্দিন যত্নৰ সহায়ক',
   completeIntro: 'স্মৰণ আপোনাৰ দিনটোত সহায় কৰিবলৈ সাজু।',
   completeTitle: '{name}, আপোনাৰ প্ৰস্তুতি সম্পূৰ্ণ।',
   continue: 'আগবাঢ়ক',
@@ -399,9 +409,6 @@ const assamese = {
   homeTrainDescription: 'আপোনাৰ বাবে বাছি লোৱা সহজ কাৰ্যকলাপ।',
   homeTrainTitle: 'মনৰ অনুশীলন',
   invalidPhone: 'অনুগ্ৰহ কৰি ১০ সংখ্যাৰ শুদ্ধ ভাৰতীয় মোবাইল নম্বৰ লিখক।',
-  languageAssamese: 'অসমীয়া',
-  languageEnglish: 'English',
-  languageHindi: 'हिन्दी',
   languageIntro: 'ছেটআপৰ বাবে আপুনি ব্যৱহাৰ কৰিব বিচৰা ভাষা বাছক।',
   languageLabel: 'ভাষা',
   languageTitle: 'আপোনাৰ ভাষা বাছক',
@@ -418,6 +425,7 @@ const assamese = {
   profileIntro: 'স্থানীয় স্মৰণ প্ৰ’ফাইলৰ বাবে কেৱল প্ৰয়োজনীয় তথ্য দিয়ক।',
   profileTitle: 'আপোনাৰ বিষয়ে অলপ',
   readScreen: 'এই পৰ্দাখন শুনক',
+  stopReading: 'পঢ়া বন্ধ কৰক',
   readyOffline: 'অফলাইন ব্যৱহাৰৰ বাবে সাজু',
   reducedMotion: 'কম চলন',
   regionIntro: 'কাৰ্যকলাপবোৰ অধিক পৰিচিত কৰিবলৈ আমি আপোনাৰ অঞ্চল ব্যৱহাৰ কৰোঁ।',
@@ -441,12 +449,16 @@ const assamese = {
   textSize: 'আখৰৰ আকাৰ',
   textSizeSaved: 'আখৰৰ আকাৰ: {size}',
   voiceGuidance: 'কণ্ঠ নিৰ্দেশনা',
+  errorSafeTitle: 'সকলো সুৰক্ষিত আছে।',
+  errorReturnMessage: 'আহক, আপোনাৰ মুখ্য পৃষ্ঠালৈ উভতি যাওঁ।',
+  returnHome: 'মুখ্য পৃষ্ঠালৈ উভতি যাওক',
 } satisfies TranslationCatalog;
 
 export const strings: Record<Language, TranslationCatalog> = {
   as: assamese,
   en: english,
   hi: hindi,
+  ...regionalStrings,
 };
 
 export const regionNames: Record<Language, Record<Region, string>> = {
@@ -480,4 +492,5 @@ export const regionNames: Record<Language, Record<Region, string>> = {
     sikkim: 'सिक्किम',
     tripura: 'त्रिपुरा',
   },
+  ...regionalRegionNames,
 };

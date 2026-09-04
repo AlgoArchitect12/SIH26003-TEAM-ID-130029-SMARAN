@@ -36,7 +36,6 @@ export default function ProfileScreen() {
   const profile = useOnboardingStore((state) => state.profile);
   const region = useOnboardingStore((state) => state.region);
   const role = useOnboardingStore((state) => state.role);
-  const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
   const setProfileDraft = useOnboardingStore((state) => state.setProfileDraft);
   const [errors, setErrors] = useState<ProfileErrors>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -113,7 +112,6 @@ export default function ProfileScreen() {
       setSavedProfileId(result.profile.id);
       await setSecureValue(SecureStorageKeys.activeProfileId, result.profile.id);
       await setSecureValue(SecureStorageKeys.onboardingCompleted, 'true');
-      resetOnboarding();
       router.replace('/onboarding/complete');
     } catch (error: unknown) {
       if (__DEV__) {

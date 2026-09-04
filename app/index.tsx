@@ -7,6 +7,7 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { Colors } from '@constants/colors';
 import { Spacing } from '@constants/layout';
+import { t } from '@i18n/index';
 import { clearActivePatientFlags, resolveActivePatient } from '@services/active-patient.service';
 import { SecureStorageKeys, setSecureValue } from '@services/secure-storage.service';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -18,6 +19,8 @@ export default function IndexScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
+  const language = useOnboardingStore((state) => state.language) ?? 'en';
+  const setLanguage = useOnboardingStore((state) => state.setLanguage);
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<LaunchStatus>('loading');
 
@@ -29,6 +32,7 @@ export default function IndexScreen() {
       const resolution = await resolveActivePatient();
 
       if (resolution.status === 'ready') {
+        setLanguage(resolution.settings.language);
         if (!resolution.completionConfirmed) {
           await setSecureValue(SecureStorageKeys.onboardingCompleted, 'true');
         }
@@ -58,7 +62,7 @@ export default function IndexScreen() {
     return () => {
       active = false;
     };
-  }, [attempt, resetOnboarding, router]);
+  }, [attempt, resetOnboarding, router, setLanguage]);
 
   return (
     <ScreenWrapper contentContainerStyle={styles.screen}>
@@ -66,23 +70,23 @@ export default function IndexScreen() {
         <ThemedText accessibilityRole="header" style={styles.title} type="screenTitle">
           Smaran AI
         </ThemedText>
-        <ThemedText style={styles.tagline}>Mindful Memory &amp; Daily Care</ThemedText>
+        <ThemedText style={styles.tagline}>{t(language, 'appTagline')}</ThemedText>
         <ThemedText style={styles.subtitle} type="secondary">
-          Thoughtfully crafted for you and your family
+          {t(language, 'appSubtitle')}
         </ThemedText>
       </View>
       {status === 'loading' ? (
         <ActivityIndicator
-          accessibilityLabel="Preparing Smaran AI"
+          accessibilityLabel={t(language, 'loadingSetup')}
           color={Colors[colorScheme].primary}
           size="large"
         />
       ) : (
         <View accessibilityRole="alert" style={styles.recovery}>
-          <ThemedText>Your saved information is safe. Please try preparing Smaran again.</ThemedText>
+          <ThemedText>{t(language, 'setupUnavailable')}</ThemedText>
           <SmaranButton
-            accessibilityLabel="Try preparing Smaran AI again"
-            label="Try Again"
+            accessibilityLabel={t(language, 'retry')}
+            label={t(language, 'retry')}
             onPress={() => setAttempt((current) => current + 1)}
           />
         </View>
