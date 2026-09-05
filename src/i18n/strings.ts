@@ -1,8 +1,10 @@
+import { myDayStrings } from './my-day-strings';
 import type { Language, Region } from '@db/schema.types';
 
 import { regionalRegionNames, regionalStrings } from './regional-strings';
 
 const english = {
+  ...myDayStrings.en,
   accessibilityIntro: 'Choose the reading and movement settings that feel comfortable for you.',
   accessibilitySaved: 'Accessibility preferences saved',
   accessibilityTitle: 'Make Smaran comfortable for you',
@@ -273,6 +275,7 @@ const assameseGame = {
 } as const;
 
 const hindi = {
+  ...myDayStrings.hi,
   ...hindiGame,
   accessibilityIntro: 'पढ़ने और गति की वे सुविधाएँ चुनें जो आपके लिए आरामदायक हों।',
   accessibilitySaved: 'सुलभता की पसंद सहेजी गई',
@@ -367,6 +370,7 @@ const hindi = {
 } satisfies TranslationCatalog;
 
 const assamese = {
+  ...myDayStrings.as,
   ...assameseGame,
   accessibilityIntro: 'পঢ়া আৰু চলনৰ যিবোৰ সুবিধা আপোনাৰ বাবে আৰামদায়ক, সেইবোৰ বাছক।',
   accessibilitySaved: 'সুবিধাৰ পছন্দ সংৰক্ষণ কৰা হৈছে',

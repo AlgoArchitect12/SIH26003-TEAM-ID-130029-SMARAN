@@ -55,4 +55,5 @@ async function main() {
   assert.equal(await speech.speakScreenText('   ', 'en'), 'failed');
   console.log('PASS: seven catalogs, interpolation contracts, speech cancellation and voice fallback');
 }
-main().catch((error) => { console.error(error); process.exitCode = 1; });
+module.exports = { load };
+if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });

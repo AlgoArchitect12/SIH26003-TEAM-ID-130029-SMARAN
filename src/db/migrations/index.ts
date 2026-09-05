@@ -3,11 +3,13 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { coreBootstrapMigration } from './001_core_bootstrap';
 import { cognitiveAdaptationMigration } from './002_cognitive_adaptation';
 import { multilingualExpansionMigration } from './003_multilingual_expansion';
+import { myDayMigration } from './004_my_day';
 
 const migrations = [
   coreBootstrapMigration,
   cognitiveAdaptationMigration,
   multilingualExpansionMigration,
+  myDayMigration,
 ] as const;
 
 type AppliedMigrationRow = { version: number };

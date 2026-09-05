@@ -201,7 +201,7 @@ export default function PatientHomeScreen() {
                 <HomeActionCard
                   accessibilityHint={t(
                     language,
-                    action.featured ? 'homeTrainHint' : 'homeActionHint'
+                    action.featured ? 'homeTrainHint' : action.titleKey === 'homeDayTitle' ? 'dayOpenHint' : 'homeActionHint'
                   )}
                   description={descriptions[index]}
                   featured={action.featured}
@@ -210,7 +210,7 @@ export default function PatientHomeScreen() {
                   onPress={() =>
                     action.featured
                       ? router.push('/patient/games/memory-match')
-                      : setNoticeTitle(title)
+                      : action.titleKey === 'homeDayTitle' ? router.push('/patient/my-day') : setNoticeTitle(title)
                   }
                   reducedMotion={settings.reducedMotion}
                   textSize={textSize}
