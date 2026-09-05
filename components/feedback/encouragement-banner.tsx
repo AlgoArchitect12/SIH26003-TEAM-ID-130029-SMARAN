@@ -2,11 +2,10 @@ import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
 import { ThemedText } from '@components/themed-text';
-import { Colors } from '@constants/colors';
 import type { EncouragementTone } from '@constants/encouragement-messages';
 import { Radius, Spacing } from '@constants/layout';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { type ReducedMotionOverride, useReducedMotion } from '@/hooks/use-reduced-motion';
+import { useThemeColors } from '@/hooks/use-theme-color';
 
 export type EncouragementBannerProps = {
   message: string;
@@ -23,8 +22,7 @@ export function EncouragementBanner({
   style,
   tone,
 }: EncouragementBannerProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const colors = useThemeColors();
   const reduceMotion = useReducedMotion(reducedMotionOverride);
   const opacity = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
   const translateY = useRef(new Animated.Value(reduceMotion ? 0 : 12)).current;

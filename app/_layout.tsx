@@ -1,10 +1,10 @@
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { ErrorBoundary } from '@components/error-boundary';
 import { ThemedText } from '@components/themed-text';
-import { ThemedView } from '@components/themed-view';
+import { useThemeColors } from '@/hooks/use-theme-color';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { Spacing } from '@constants/layout';
 import { initializeDatabase } from '@db/client';
@@ -14,6 +14,7 @@ import { useOnboardingStore } from '@/src/stores/onboarding.store';
 type BootstrapStatus = 'loading' | 'ready' | 'failed';
 
 function DatabaseBootstrap() {
+  const colors = useThemeColors();
   const language = useOnboardingStore((state) => state.language) ?? 'en';
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<BootstrapStatus>('loading');
@@ -47,7 +48,7 @@ function DatabaseBootstrap() {
   }
 
   return (
-    <ThemedView accessibilityRole={status === 'failed' ? 'alert' : undefined} style={styles.container}>
+    <ScrollView accessibilityRole={status === 'failed' ? 'alert' : undefined} style={{ backgroundColor: colors.background }} contentContainerStyle={styles.container}>
       <ThemedText type="screenTitle">Smaran AI</ThemedText>
       <ThemedText style={styles.message}>
         {status === 'failed'
@@ -62,7 +63,7 @@ function DatabaseBootstrap() {
           style={styles.button}
         />
       ) : null}
-    </ThemedView>
+    </ScrollView>
   );
 }
 
@@ -77,7 +78,7 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     padding: Spacing.lg,
   },

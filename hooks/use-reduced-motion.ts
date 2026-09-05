@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
+import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 export type ReducedMotionOverride = boolean | null;
 
 export function useReducedMotion(override: ReducedMotionOverride = null) {
+  const preferred = useOnboardingStore((state) => state.accessibility.reducedMotion);
   const [isEnabledBySystem, setIsEnabledBySystem] = useState(false);
 
   useEffect(() => {
@@ -24,5 +26,5 @@ export function useReducedMotion(override: ReducedMotionOverride = null) {
     };
   }, []);
 
-  return override ?? isEnabledBySystem;
+  return override === true || preferred || isEnabledBySystem;
 }

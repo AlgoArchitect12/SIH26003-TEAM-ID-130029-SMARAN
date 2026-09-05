@@ -21,6 +21,8 @@ export default function RegionScreen() {
     <OnboardingScreen
       description={t(language, 'regionIntro')}
       language={language}
+      onBack={() => router.back()}
+      step={3}
       title={t(language, 'regionTitle')}>
       <View style={styles.choices}>
         {Regions.map((option) => (
@@ -35,12 +37,6 @@ export default function RegionScreen() {
         ))}
       </View>
       <View style={styles.actions}>
-        <SmaranButton
-          accessibilityLabel={t(language, 'back')}
-          label={t(language, 'back')}
-          onPress={() => router.back()}
-          variant="outline"
-        />
         <SmaranButton
           accessibilityLabel={t(language, 'continue')}
           disabled={role !== 'patient' || selectedLanguage === null || region === null}

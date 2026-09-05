@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
   interpolate,
@@ -8,10 +8,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Colors } from '@constants/colors';
 import { Radius } from '@constants/layout';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useHaptics } from '@/hooks/use-haptics';
+import { useThemeColors } from '@/hooks/use-theme-color';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 import type { MemorySymbol } from '@/src/games/memory-match/assets';
 import type { MemoryCardState } from '@/src/games/memory-match/types';
@@ -39,15 +39,16 @@ export function MemoryCard({
   state,
   symbol,
 }: MemoryCardProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const colors = useThemeColors();
+  const [focused, setFocused] = useState(false);
+  const reduceMotion = useReducedMotion(reducedMotion ? true : null);
   const visible = state !== 'hidden' || hinted;
   const progress = useSharedValue(visible ? 1 : 0);
   const triggerHaptic = useHaptics(!disabled);
 
   useEffect(() => {
-    progress.value = reducedMotion ? Number(visible) : withTiming(Number(visible), { duration: 320 });
-  }, [progress, reducedMotion, visible]);
+    progress.value = reduceMotion ? Number(visible) : withTiming(Number(visible), { duration: 220 });
+  }, [progress, reduceMotion, visible]);
 
   const frontStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0.49, 0.5], [1, 0]),
@@ -60,9 +61,11 @@ export function MemoryCard({
 
   return (
     <Pressable
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
-      accessibilityState={{ disabled, selected: state === 'revealed' }}
+      accessibilityState={{ disabled, selected: visible }}
       disabled={disabled}
       onPress={() => {
         void triggerHaptic();
@@ -70,6 +73,7 @@ export function MemoryCard({
       }}
       style={({ pressed }) => [
         styles.pressable,
+        focused && { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: 3, outlineOffset: 3 },
         { height: size, opacity: pressed ? 0.88 : 1, width: size },
       ]}>
       <Animated.View
@@ -83,10 +87,10 @@ export function MemoryCard({
           frontStyle,
         ]}>
         <MaterialIcons
-          accessible={false}
+          accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
           color={colors.onActionPrimary}
           name="help-outline"
-          size={Math.min(40, size * 0.44)}
+          size={Math.min(52, size * 0.44)}
         />
       </Animated.View>
       <Animated.View
@@ -101,14 +105,14 @@ export function MemoryCard({
           backStyle,
         ]}>
         <MaterialIcons
-          accessible={false}
+          accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
           color={colors.primary}
           name={symbol.icon}
-          size={Math.min(44, size * 0.5)}
+          size={Math.min(64, size * 0.5)}
         />
         {state === 'matched' ? (
           <MaterialIcons
-            accessible={false}
+            accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
             color={colors.success}
             name="check-circle"
             size={22}

@@ -6,11 +6,10 @@ import { SelectionCard } from '@components/onboarding/selection-card';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
-import { Colors } from '@constants/colors';
 import { Spacing } from '@constants/layout';
 import type { Language, TextSize } from '@db/schema.types';
 import { getTextSizeName, t } from '@i18n/index';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColors } from '@/hooks/use-theme-color';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import type { TextSizePreference } from '@constants/typography';
 
@@ -37,45 +36,38 @@ function BinaryPreference({
   value,
 }: BinaryPreferenceProps) {
   return (
-    <View style={styles.preference}>
-      <ThemedText type="cardHeading">{title}</ThemedText>
-      <View style={styles.binaryChoices}>
-        <SelectionCard
-          icon="toggle-on"
-          onPress={() => onChange(true)}
-          reducedMotionOverride={reducedMotion || undefined}
-          selected={value}
-          selectedLabel={t(language, 'selected')}
-          title={t(language, 'on')}
-        />
-        <SelectionCard
-          icon="toggle-off"
-          onPress={() => onChange(false)}
-          reducedMotionOverride={reducedMotion || undefined}
-          selected={!value}
-          selectedLabel={t(language, 'selected')}
-          title={t(language, 'off')}
-        />
+    <SmaranCard
+      accessibilityLabel={`${title}. ${t(language, value ? 'on' : 'off')}`}
+      accessibilityRole="switch"
+      checked={value}
+      onPress={() => onChange(!value)}
+      reducedMotionOverride={reducedMotion ? true : null}
+      selected={value}
+      style={styles.toggleCard}>
+      <View style={styles.toggleRow}>
+        <ThemedText style={styles.toggleTitle} type="cardHeading">{title}</ThemedText>
+        <ThemedText type="defaultSemiBold">{t(language, value ? 'on' : 'off')}</ThemedText>
       </View>
-    </View>
+    </SmaranCard>
   );
 }
 
 export default function AccessibilityScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? 'light';
+  const colors = useThemeColors();
   const accessibility = useOnboardingStore((state) => state.accessibility);
   const selectedLanguage = useOnboardingStore((state) => state.language);
   const language = selectedLanguage ?? 'en';
   const region = useOnboardingStore((state) => state.region);
   const role = useOnboardingStore((state) => state.role);
   const setAccessibility = useOnboardingStore((state) => state.setAccessibilityPreferences);
-  const colors = Colors[colorScheme];
 
   return (
     <OnboardingScreen
       description={t(language, 'accessibilityIntro')}
       language={language}
+      onBack={() => router.back()}
+      step={4}
       title={t(language, 'accessibilityTitle')}>
       <View style={styles.preference}>
         <ThemedText type="cardHeading">{t(language, 'textSize')}</ThemedText>
@@ -130,13 +122,6 @@ export default function AccessibilityScreen() {
 
       <View style={styles.actions}>
         <SmaranButton
-          accessibilityLabel={t(language, 'back')}
-          label={t(language, 'back')}
-          onPress={() => router.back()}
-          reducedMotionOverride={accessibility.reducedMotion ? true : null}
-          variant="outline"
-        />
-        <SmaranButton
           accessibilityLabel={t(language, 'continue')}
           disabled={role !== 'patient' || selectedLanguage === null || region === null}
           label={t(language, 'continue')}
@@ -156,9 +141,9 @@ const styles = StyleSheet.create({
   choices: {
     gap: Spacing.md,
   },
-  binaryChoices: {
-    gap: Spacing.md,
-  },
+  toggleCard: { minHeight: 96 },
+  toggleRow: { alignItems: 'flex-start', gap: Spacing.sm },
+  toggleTitle: { flex: 1 },
   preview: {
     gap: Spacing.sm,
   },

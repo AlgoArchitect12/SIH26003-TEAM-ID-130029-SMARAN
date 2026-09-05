@@ -1,15 +1,15 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
-import { Colors } from '@constants/colors';
 import { Spacing } from '@constants/layout';
 import type { Language } from '@db/schema.types';
 import { t } from '@i18n/index';
 import { speakScreenText, stopSpeech, type SpeechOutcome } from '@services/speech.service';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColors } from '@/hooks/use-theme-color';
 
 type ReadScreenButtonProps = {
   language: Language;
@@ -17,44 +17,58 @@ type ReadScreenButtonProps = {
 };
 
 export function ReadScreenButton({ language, text }: ReadScreenButtonProps) {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colors = useThemeColors();
   const [isStarting, setIsStarting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [outcome, setOutcome] = useState<SpeechOutcome | null>(null);
-  const active = useRef(true);
+  const requestId = useRef(0);
 
   useEffect(() => {
-    active.current = true;
+    setIsStarting(false);
     setIsSpeaking(false);
     setOutcome(null);
     return () => {
-      active.current = false;
+      requestId.current += 1;
       void stopSpeech();
     };
   }, [language, text]);
 
+  useFocusEffect(useCallback(() => {
+    setIsStarting(false);
+    setIsSpeaking(false);
+    setOutcome(null);
+    return () => {
+      requestId.current += 1;
+      void stopSpeech();
+    };
+  }, []));
+
   const handlePress = async () => {
-    if (isSpeaking) {
+    const request = ++requestId.current;
+    if (isSpeaking || isStarting) {
+      setIsStarting(false);
+      setIsSpeaking(false);
       await stopSpeech();
-      if (active.current) setIsSpeaking(false);
       return;
     }
 
+    setOutcome(null);
     setIsStarting(true);
+    setIsSpeaking(true);
     const nextOutcome = await speakScreenText(text, language, {
       onDone: () => {
-        if (active.current) setIsSpeaking(false);
+        if (request === requestId.current) setIsSpeaking(false);
       },
       onError: () => {
-        if (active.current) {
+        if (request === requestId.current) {
           setIsSpeaking(false);
           setOutcome('failed');
         }
       },
     });
-    if (active.current) {
+    if (request === requestId.current) {
       setOutcome(nextOutcome);
-      setIsSpeaking(nextOutcome === 'started');
+      if (nextOutcome !== 'started') setIsSpeaking(false);
       setIsStarting(false);
     }
   };
@@ -65,11 +79,11 @@ export function ReadScreenButton({ language, text }: ReadScreenButtonProps) {
     <View style={styles.container}>
       <SmaranButton
         accessibilityLabel={label}
-        disabled={isStarting}
+        loading={isStarting}
         icon={
           <MaterialIcons
-            accessible={false}
-            color={Colors[colorScheme].text}
+            accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+            color={colors.text}
             name={isSpeaking ? 'volume-off' : 'volume-up'}
             size={24}
           />

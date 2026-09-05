@@ -10,11 +10,12 @@ export const TextSizeMultipliers: Record<TextSizePreference, number> = {
 
 export const Typography = {
   screenTitle: { fontSize: 34, fontWeight: '700', lineHeight: 42 },
-  cardHeading: { fontSize: 26, fontWeight: '600', lineHeight: 34 },
-  action: { fontSize: 20, fontWeight: '600', lineHeight: 28 },
-  body: { fontSize: 18, fontWeight: '400', lineHeight: 26 },
-  secondary: { fontSize: 16, fontWeight: '500', lineHeight: 22 },
-  link: { fontSize: 18, fontWeight: '600', lineHeight: 26, textDecorationLine: 'underline' },
+  cardHeading: { fontSize: 28, fontWeight: '600', lineHeight: 36 },
+  action: { fontSize: 22, fontWeight: '600', lineHeight: 30 },
+  body: { fontSize: 20, fontWeight: '400', lineHeight: 30 },
+  secondary: { fontSize: 18, fontWeight: '500', lineHeight: 26 },
+  caption: { fontSize: 17, fontWeight: '500', lineHeight: 24 },
+  link: { fontSize: 20, fontWeight: '600', lineHeight: 30, textDecorationLine: 'underline' },
 } as const satisfies Record<string, TextStyle>;
 
 export type TypographyVariant = keyof typeof Typography;

@@ -19,7 +19,7 @@ type SpeechCallbacks = {
   onError?: () => void;
 };
 
-let stopRequested = false;
+let speechRequest = 0;
 
 function normalizeLocale(locale: string) {
   return locale.replace('_', '-').toLowerCase();
@@ -43,19 +43,20 @@ export async function speakScreenText(
     return 'failed';
   }
 
+  const request = ++speechRequest;
   try {
-    await stopSpeech();
+    await Speech.stop();
     const voice = findVoice(await Speech.getAvailableVoicesAsync(), language);
+    if (request !== speechRequest) return 'failed';
     if (!voice) {
       return 'unavailable';
     }
 
-    stopRequested = false;
     Speech.speak(spokenText, {
       language: voice.language,
       onDone: callbacks.onDone,
       onError: (error) => {
-        if (stopRequested) {
+        if (request !== speechRequest) {
           callbacks.onDone?.();
           return;
         }
@@ -79,7 +80,7 @@ export async function speakScreenText(
 }
 
 export async function stopSpeech() {
-  stopRequested = true;
+  speechRequest += 1;
   try {
     await Speech.stop();
   } catch {

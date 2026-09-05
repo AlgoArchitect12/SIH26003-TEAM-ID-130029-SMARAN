@@ -5,22 +5,22 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
-import { Colors } from '@constants/colors';
 import { Spacing } from '@constants/layout';
 import { t } from '@i18n/index';
 import { clearActivePatientFlags, resolveActivePatient } from '@services/active-patient.service';
 import { SecureStorageKeys, setSecureValue } from '@services/secure-storage.service';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColors } from '@/hooks/use-theme-color';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 type LaunchStatus = 'loading' | 'failed';
 
 export default function IndexScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? 'light';
+  const colors = useThemeColors();
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
   const language = useOnboardingStore((state) => state.language) ?? 'en';
   const setLanguage = useOnboardingStore((state) => state.setLanguage);
+  const setAccessibility = useOnboardingStore((state) => state.setAccessibilityPreferences);
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<LaunchStatus>('loading');
 
@@ -33,6 +33,12 @@ export default function IndexScreen() {
 
       if (resolution.status === 'ready') {
         setLanguage(resolution.settings.language);
+        setAccessibility({
+          highContrast: resolution.settings.highContrast,
+          reducedMotion: resolution.settings.reducedMotion,
+          textSize: resolution.settings.textSize,
+          voiceGuidance: resolution.settings.voiceGuidance,
+        });
         if (!resolution.completionConfirmed) {
           await setSecureValue(SecureStorageKeys.onboardingCompleted, 'true');
         }
@@ -62,10 +68,10 @@ export default function IndexScreen() {
     return () => {
       active = false;
     };
-  }, [attempt, resetOnboarding, router, setLanguage]);
+  }, [attempt, resetOnboarding, router, setAccessibility, setLanguage]);
 
   return (
-    <ScreenWrapper contentContainerStyle={styles.screen}>
+    <ScreenWrapper contentContainerStyle={styles.screen} scroll>
       <View style={styles.brand}>
         <ThemedText accessibilityRole="header" style={styles.title} type="screenTitle">
           Smaran AI
@@ -78,7 +84,7 @@ export default function IndexScreen() {
       {status === 'loading' ? (
         <ActivityIndicator
           accessibilityLabel={t(language, 'loadingSetup')}
-          color={Colors[colorScheme].primary}
+          color={colors.primary}
           size="large"
         />
       ) : (

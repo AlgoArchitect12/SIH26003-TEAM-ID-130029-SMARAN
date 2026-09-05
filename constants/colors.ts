@@ -24,10 +24,13 @@ const light = {
   accent: Palette.accent,
   background: Palette.background,
   surface: Palette.surface,
+  surfaceRaised: '#FFFEFB',
   surfaceMuted: '#F1F3EF',
   text: Palette.text,
+  textPrimary: Palette.text,
   textSecondary: '#405052',
   border: Palette.border,
+  focus: Palette.accent,
   success: Palette.success,
   successSurface: '#E6F3E7',
   warning: Palette.warning,
@@ -54,10 +57,13 @@ const dark = {
   accent: Palette.accentDark,
   background: Palette.backgroundDark,
   surface: Palette.surfaceDark,
+  surfaceRaised: '#252D2D',
   surfaceMuted: '#252D2D',
   text: Palette.textDark,
+  textPrimary: Palette.textDark,
   textSecondary: '#C6D0D0',
   border: Palette.borderDark,
+  focus: Palette.accentDark,
   success: '#81C784',
   successSurface: '#17391F',
   warning: '#FFB45C',
@@ -78,6 +84,29 @@ const dark = {
   tabIconSelected: '#8ADCE2',
 } as const satisfies Record<keyof typeof light, string>;
 
+const highContrast = {
+  ...light,
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  surfaceRaised: '#FFFFFF',
+  surfaceMuted: '#F2F2F2',
+  text: '#000000',
+  textPrimary: '#000000',
+  textSecondary: '#202020',
+  border: '#000000',
+  focus: '#8A3F00',
+  actionPrimary: '#003C43',
+  actionSecondary: '#174D2A',
+  actionAccent: '#FFD59A',
+  disabled: '#D6D6D6',
+  onDisabled: '#3B3B3B',
+  link: '#003C43',
+  icon: '#000000',
+  tint: '#003C43',
+  tabIconDefault: '#202020',
+  tabIconSelected: '#003C43',
+} as const satisfies Record<keyof typeof light, string>;
+
 export { Palette };
-export const Colors = { light, dark } as const;
+export const Colors = { light, dark, highContrast } as const;
 export type ThemeColors = (typeof Colors)[keyof typeof Colors];

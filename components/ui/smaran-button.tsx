@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Pressable,
@@ -10,12 +11,12 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { Colors } from '@constants/colors';
 import { Layout, Radius, Spacing } from '@constants/layout';
-import { Typography } from '@constants/typography';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { getScaledTypography, Typography } from '@constants/typography';
 import { useHaptics } from '@/hooks/use-haptics';
 import { type ReducedMotionOverride, useReducedMotion } from '@/hooks/use-reduced-motion';
+import { useThemeColors } from '@/hooks/use-theme-color';
+import { useTextSize } from '@/hooks/use-text-size';
 
 export type SmaranButtonVariant = 'primary' | 'secondary' | 'accent' | 'outline';
 export type SmaranButtonSize = 'normal' | 'large';
@@ -27,6 +28,7 @@ export type SmaranButtonProps = {
   hapticsEnabled?: boolean;
   icon?: ReactNode;
   label: string;
+  loading?: boolean;
   onPress: (event: GestureResponderEvent) => void;
   reducedMotionOverride?: ReducedMotionOverride;
   size?: SmaranButtonSize;
@@ -43,6 +45,7 @@ export function SmaranButton({
   hapticsEnabled = true,
   icon,
   label,
+  loading = false,
   onPress,
   reducedMotionOverride = null,
   size = 'normal',
@@ -51,8 +54,9 @@ export function SmaranButton({
   textStyle,
   variant = 'primary',
 }: SmaranButtonProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const colors = useThemeColors();
+  const [focused, setFocused] = useState(false);
+  const textSize = useTextSize();
   const reduceMotion = useReducedMotion(reducedMotionOverride);
   const triggerHaptic = useHaptics(hapticsEnabled && !disabled);
   const variants = {
@@ -86,15 +90,18 @@ export function SmaranButton({
 
   return (
     <Pressable
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       accessibilityHint={accessibilityHint}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
+      accessibilityState={{ busy: loading, disabled }}
       disabled={disabled}
       onPress={handlePress}
       testID={testID}
       style={({ pressed }) => [
         styles.button,
+        focused && { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: 3, outlineOffset: 3 },
         {
           backgroundColor: disabled ? colors.disabled : selectedVariant.backgroundColor,
           borderColor: disabled ? colors.disabled : selectedVariant.borderColor,
@@ -109,6 +116,7 @@ export function SmaranButton({
         <Text
           style={[
             styles.label,
+            getScaledTypography('action', textSize),
             { color: disabled ? colors.onDisabled : selectedVariant.color },
             textStyle,
           ]}>
@@ -122,6 +130,7 @@ export function SmaranButton({
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
+    maxWidth: '100%',
     borderRadius: Radius.button,
     borderWidth: 2,
     justifyContent: 'center',
@@ -133,6 +142,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.sm,
     justifyContent: 'center',
+    minWidth: 0,
   },
   label: {
     ...Typography.action,

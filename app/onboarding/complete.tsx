@@ -8,7 +8,6 @@ import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
-import { Colors } from '@constants/colors';
 import { Spacing } from '@constants/layout';
 import { patientRepository } from '@db/repositories/patient.repository';
 import type { PatientProfile, PatientSettings } from '@db/schema.types';
@@ -18,7 +17,7 @@ import {
   getSecureValue,
   SecureStorageKeys,
 } from '@services/secure-storage.service';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColors } from '@/hooks/use-theme-color';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 type CompleteData = {
@@ -27,10 +26,10 @@ type CompleteData = {
 };
 
 function SummaryRow({ label }: { label: string }) {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colors = useThemeColors();
   return (
     <View style={styles.summaryRow}>
-      <MaterialIcons color={Colors[colorScheme].success} name="check-circle" size={26} />
+      <MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" color={colors.success} name="check-circle" size={26} />
       <ThemedText>{label}</ThemedText>
     </View>
   );
@@ -38,10 +37,11 @@ function SummaryRow({ label }: { label: string }) {
 
 export default function CompleteScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? 'light';
+  const colors = useThemeColors();
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
   const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
   const setLanguage = useOnboardingStore((state) => state.setLanguage);
+  const setAccessibility = useOnboardingStore((state) => state.setAccessibilityPreferences);
   const [attempt, setAttempt] = useState(0);
   const [data, setData] = useState<CompleteData | null>(null);
   const [failed, setFailed] = useState(false);
@@ -84,6 +84,12 @@ export default function CompleteScreen() {
       if (active) {
         resetOnboarding();
         setLanguage(settings.language);
+        setAccessibility({
+          highContrast: settings.highContrast,
+          reducedMotion: settings.reducedMotion,
+          textSize: settings.textSize,
+          voiceGuidance: settings.voiceGuidance,
+        });
         setData({ profile, settings });
       }
     };
@@ -100,11 +106,11 @@ export default function CompleteScreen() {
     return () => {
       active = false;
     };
-  }, [attempt, resetOnboarding, router, setLanguage]);
+  }, [attempt, resetOnboarding, router, setAccessibility, setLanguage]);
 
   if (!data) {
     return (
-      <ScreenWrapper contentContainerStyle={styles.loadingScreen}>
+      <ScreenWrapper contentContainerStyle={styles.loadingScreen} scroll>
         <ThemedText accessibilityRole="header" type="screenTitle">
           Smaran AI
         </ThemedText>
@@ -121,7 +127,7 @@ export default function CompleteScreen() {
           <View style={styles.loadingContent}>
             <ActivityIndicator
               accessibilityLabel={t(loadingLanguage, 'loadingSetup')}
-              color={Colors[colorScheme].primary}
+              color={colors.primary}
               size="large"
             />
             <ThemedText>{t(loadingLanguage, 'loadingSetup')}</ThemedText>
@@ -143,6 +149,7 @@ export default function CompleteScreen() {
     <OnboardingScreen
       description={t(settings.language, 'completeIntro')}
       language={settings.language}
+      showReadAloud={settings.voiceGuidance}
       speechText={`${title} ${t(settings.language, 'completeIntro')} ${languageSummary}. ${regionSummary}. ${textSizeSummary}. ${t(settings.language, 'readyOffline')}.`}
       title={title}>
       <SmaranCard style={styles.summary}>

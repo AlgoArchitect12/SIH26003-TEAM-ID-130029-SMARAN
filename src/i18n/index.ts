@@ -25,6 +25,15 @@ export const languageDisplayNames: Record<Language, string> = {
   mni: 'Meitei (Manipuri)',
 };
 
+const languageHelpers: Partial<Record<Language, string>> = {
+  as: 'Assamese',
+  bn: 'Bengali',
+  hi: 'Hindi',
+  kha: 'Khasi',
+  lus: 'Mizo',
+  mni: 'Meitei / Manipuri',
+};
+
 const textSizeKeys: Record<TextSize, TranslationKey> = {
   'extra-large': 'extraLarge',
   large: 'large',
@@ -33,6 +42,10 @@ const textSizeKeys: Record<TextSize, TranslationKey> = {
 
 export function getLanguageName(language: Language) {
   return languageDisplayNames[language];
+}
+
+export function getLanguageHelper(language: Language) {
+  return languageHelpers[language];
 }
 
 export function getTextSizeName(language: Language, textSize: TextSize) {

@@ -4,9 +4,8 @@ import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@components/themed-text';
 import { SmaranCard } from '@components/ui/smaran-card';
-import { Colors } from '@constants/colors';
 import { Layout, Spacing } from '@constants/layout';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColors } from '@/hooks/use-theme-color';
 
 type SelectionCardProps = {
   accessibilityLabel?: string;
@@ -29,8 +28,7 @@ export function SelectionCard({
   selectedLabel,
   title,
 }: SelectionCardProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const colors = useThemeColors();
 
   return (
     <SmaranCard
@@ -40,13 +38,13 @@ export function SelectionCard({
       selected={selected}
       style={styles.card}>
       <View style={styles.row}>
-        <MaterialIcons color={colors.primary} name={icon} size={32} />
+        <MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" color={colors.primary} name={icon} size={40} />
         <View style={styles.copy}>
           <ThemedText type="cardHeading">{title}</ThemedText>
           {description ? <ThemedText>{description}</ThemedText> : null}
           {selected ? (
             <View style={styles.selectedRow}>
-              <MaterialIcons color={colors.success} name="check-circle" size={22} />
+              <MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" color={colors.success} name="check-circle" size={24} />
               <ThemedText type="secondary">{selectedLabel}</ThemedText>
             </View>
           ) : null}

@@ -6,7 +6,6 @@ import { OnboardingScreen } from '@components/onboarding/onboarding-screen';
 import { SelectionCard } from '@components/onboarding/selection-card';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
-import { Colors } from '@constants/colors';
 import { Radius, Spacing } from '@constants/layout';
 import { AgeBrackets } from '@db/schema.types';
 import { patientRepository } from '@db/repositories/patient.repository';
@@ -20,7 +19,9 @@ import {
   validateOptionalName,
   validatePreferredName,
 } from '@/src/utils/validation';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColors } from '@/hooks/use-theme-color';
+import { useTextSize } from '@/hooks/use-text-size';
+import { getScaledTypography } from '@constants/typography';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 type ProfileErrors = Partial<
@@ -29,7 +30,8 @@ type ProfileErrors = Partial<
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? 'light';
+  const colors = useThemeColors();
+  const textSize = useTextSize();
   const accessibility = useOnboardingStore((state) => state.accessibility);
   const selectedLanguage = useOnboardingStore((state) => state.language);
   const language = selectedLanguage ?? 'en';
@@ -41,7 +43,6 @@ export default function ProfileScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [savedProfileId, setSavedProfileId] = useState<string | null>(null);
   const submissionLocked = useRef(false);
-  const colors = Colors[colorScheme];
 
   const saveProfile = async () => {
     if (submissionLocked.current) {
@@ -125,13 +126,18 @@ export default function ProfileScreen() {
 
   const inputStyle = [
     styles.input,
+    getScaledTypography('body', textSize),
     { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text },
   ];
 
   return (
     <OnboardingScreen
+      backDisabled={isSaving}
       description={t(language, 'profileIntro')}
       language={language}
+      onBack={() => router.back()}
+      showReadAloud={accessibility.voiceGuidance}
+      step={5}
       title={t(language, 'profileTitle')}>
       <View style={styles.form}>
         <View style={styles.field}>
@@ -237,16 +243,9 @@ export default function ProfileScreen() {
 
       <View style={styles.actions}>
         <SmaranButton
-          accessibilityLabel={t(language, 'back')}
-          disabled={isSaving}
-          label={t(language, 'back')}
-          onPress={() => router.back()}
-          reducedMotionOverride={accessibility.reducedMotion ? true : null}
-          variant="outline"
-        />
-        <SmaranButton
           accessibilityLabel={errors.save ? t(language, 'retrySave') : t(language, 'saveFinish')}
           disabled={isSaving}
+          loading={isSaving}
           label={
             isSaving
               ? t(language, 'saving')

@@ -6,6 +6,7 @@ import {
   type TypographyVariant,
 } from '@constants/typography';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTextSize } from '@/hooks/use-text-size';
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
@@ -19,9 +20,10 @@ export function ThemedText({
   lightColor,
   darkColor,
   type = 'body',
-  textSize = 'normal',
+  textSize,
   ...rest
 }: ThemedTextProps) {
+  const preferredTextSize = useTextSize();
   const variant: TypographyVariant =
     type === 'default' || type === 'defaultSemiBold'
       ? 'body'
@@ -40,7 +42,7 @@ export function ThemedText({
       style={[
         styles.base,
         { color },
-        getScaledTypography(variant, textSize),
+        getScaledTypography(variant, textSize ?? preferredTextSize),
         type === 'defaultSemiBold' && styles.semiBold,
         style,
       ]}

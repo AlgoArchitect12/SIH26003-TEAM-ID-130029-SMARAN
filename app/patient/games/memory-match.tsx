@@ -11,14 +11,13 @@ import { MemoryCard } from '@components/games/memory-card';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
-import { Colors } from '@constants/colors';
 import { Radius, Spacing } from '@constants/layout';
 import type { TextSizePreference } from '@constants/typography';
 import { cognitiveRepository } from '@db/repositories/cognitive.repository';
 import type { AdaptiveModelState, CognitiveSession, PatientSettings } from '@db/schema.types';
 import { t } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColors } from '@/hooks/use-theme-color';
 import { useCognitiveSessionStore } from '@/src/stores/cognitive-session.store';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import { getMemorySymbol } from '@/src/games/memory-match/assets';
@@ -61,12 +60,13 @@ function textSizeFor(settings: PatientSettings): TextSizePreference {
 export default function MemoryMatchScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const [contentWidth, setContentWidth] = useState(0);
+  const colors = useThemeColors();
   const setPending = useCognitiveSessionStore((state) => state.setPending);
   const clearSession = useCognitiveSessionStore((state) => state.clear);
   const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
   const setLanguage = useOnboardingStore((state) => state.setLanguage);
+  const setAccessibility = useOnboardingStore((state) => state.setAccessibilityPreferences);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');
   const [data, setData] = useState<GameData | null>(null);
@@ -101,6 +101,12 @@ export default function MemoryMatchScreen() {
         ]);
         if (!active) return;
         setLanguage(resolution.settings.language);
+        setAccessibility({
+          highContrast: resolution.settings.highContrast,
+          reducedMotion: resolution.settings.reducedMotion,
+          textSize: resolution.settings.textSize,
+          voiceGuidance: resolution.settings.voiceGuidance,
+        });
         const nextDifficulty = history[0]?.recommendedDifficulty ?? INITIAL_MEMORY_DIFFICULTY;
         setDifficulty(nextDifficulty);
         setGame(createMemoryGame(nextDifficulty));
@@ -120,7 +126,7 @@ export default function MemoryMatchScreen() {
     return () => {
       active = false;
     };
-  }, [clearSession, loadAttempt, router, setLanguage]);
+  }, [clearSession, loadAttempt, router, setAccessibility, setLanguage]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
@@ -133,7 +139,7 @@ export default function MemoryMatchScreen() {
 
   if (loadStatus !== 'ready' || !data) {
     return (
-      <ScreenWrapper contentContainerStyle={styles.centered}>
+      <ScreenWrapper contentContainerStyle={styles.centered} scroll>
         {loadStatus === 'failed' ? (
           <>
             <ThemedText accessibilityRole="alert">{t(loadingLanguage, 'gameLoadFailed')}</ThemedText>
@@ -163,12 +169,10 @@ export default function MemoryMatchScreen() {
   const language = settings.language;
   const textSize = textSizeFor(settings);
   const config = MemoryDifficulties[difficulty];
-  const availableBoardWidth = Math.min(480, Math.max(0, width - Spacing.xl));
-  const cardSize = Math.min(
-    112,
-    Math.floor((availableBoardWidth - Spacing.md * (config.columns - 1)) / config.columns)
-  );
-  const boardWidth = cardSize * config.columns + Spacing.md * (config.columns - 1);
+  const availableBoardWidth = Math.min(480, contentWidth || Math.max(0, width - Spacing.xl));
+  const columns = Math.min(config.columns, Math.max(1, Math.floor((availableBoardWidth + Spacing.md) / (96 + Spacing.md))));
+  const cardSize = Math.min(144, Math.floor((availableBoardWidth - Spacing.md * (columns - 1)) / columns));
+  const boardWidth = cardSize * columns + Spacing.md * (columns - 1);
   const matchedPairs = game.cards.filter(({ state }) => state === 'matched').length / 2;
 
   const leave = () => {
@@ -253,7 +257,7 @@ export default function MemoryMatchScreen() {
 
   return (
     <ScreenWrapper contentContainerStyle={styles.screen} scroll>
-      <View style={styles.content}>
+      <View onLayout={({ nativeEvent }) => setContentWidth(nativeEvent.layout.width)} style={styles.content}>
         <View style={styles.navigation}>
           <SmaranButton accessibilityLabel={t(language, 'backHome')} label={t(language, 'backHome')} onPress={leave} variant="outline" />
         </View>
@@ -261,10 +265,10 @@ export default function MemoryMatchScreen() {
           <ThemedText accessibilityRole="header" textSize={textSize} type="screenTitle">
             {t(language, 'gameTitle')}
           </ThemedText>
-          <ThemedText textSize={textSize}>{t(language, 'gameInstructions')}</ThemedText>
           <ThemedText textSize={textSize} type="defaultSemiBold">
             {t(language, 'gameLevel', { level: String(difficulty) })}
           </ThemedText>
+          <ThemedText textSize={textSize}>{t(language, 'gameInstructions')}</ThemedText>
         </View>
 
         {settings.voiceGuidance ? <ReadScreenButton language={language} text={speechText} /> : null}
@@ -279,7 +283,7 @@ export default function MemoryMatchScreen() {
           />
         ) : (
           <>
-            <View style={styles.progressRow}>
+            <View accessibilityLiveRegion="polite" style={styles.progressRow}>
               <ThemedText textSize={textSize} type="defaultSemiBold">
                 {game.status === 'PREVIEW'
                   ? t(language, 'gamePreview')
@@ -307,7 +311,7 @@ export default function MemoryMatchScreen() {
                     key={card.id}
                     onPress={() => handleCardPress(index)}
                     reducedMotion={settings.reducedMotion}
-                    size={Math.max(config.minimumCardSize, cardSize)}
+                    size={cardSize}
                     state={card.state}
                     symbol={symbol}
                   />
@@ -327,7 +331,7 @@ export default function MemoryMatchScreen() {
                 <SmaranButton
                   accessibilityLabel={t(language, 'gameHint')}
                   disabled={game.inputLocked || game.firstCardIndex !== null}
-                  icon={<MaterialIcons color={colors.text} name="lightbulb-outline" size={26} />}
+                  icon={<MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" color={colors.text} name="lightbulb-outline" size={26} />}
                   label={t(language, 'gameHint')}
                   onPress={handleHint}
                   variant="outline"

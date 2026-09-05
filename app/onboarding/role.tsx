@@ -20,6 +20,7 @@ export default function RoleScreen() {
     <OnboardingScreen
       description={t(language, 'roleDescription')}
       language={language}
+      step={1}
       title={t(language, 'roleTitle')}>
       <View style={styles.choices}>
         <SelectionCard

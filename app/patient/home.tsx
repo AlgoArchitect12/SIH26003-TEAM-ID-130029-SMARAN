@@ -9,14 +9,13 @@ import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { HomeActionCard } from '@components/patient/home-action-card';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
-import { Colors } from '@constants/colors';
 import { Radius, Spacing } from '@constants/layout';
 import type { TextSizePreference } from '@constants/typography';
 import type { PatientProfile, PatientSettings } from '@db/schema.types';
-import { getRegionName, t, type TranslationKey } from '@i18n/index';
+import { t, type TranslationKey } from '@i18n/index';
 import { clearActivePatientFlags, resolveActivePatient } from '@services/active-patient.service';
 import { SecureStorageKeys, setSecureValue } from '@services/secure-storage.service';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColors } from '@/hooks/use-theme-color';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 type HomeData = { profile: PatientProfile; settings: PatientSettings };
@@ -57,11 +56,11 @@ function getTextSizePreference(settings: PatientSettings): TextSizePreference {
 
 export default function PatientHomeScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const colors = useThemeColors();
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
   const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
   const setLanguage = useOnboardingStore((state) => state.setLanguage);
+  const setAccessibility = useOnboardingStore((state) => state.setAccessibilityPreferences);
   const [attempt, setAttempt] = useState(0);
   const [data, setData] = useState<HomeData | null>(null);
   const [status, setStatus] = useState<HomeStatus>('loading');
@@ -85,6 +84,12 @@ export default function PatientHomeScreen() {
         }
         if (active) {
           setLanguage(resolution.settings.language);
+        setAccessibility({
+          highContrast: resolution.settings.highContrast,
+          reducedMotion: resolution.settings.reducedMotion,
+          textSize: resolution.settings.textSize,
+          voiceGuidance: resolution.settings.voiceGuidance,
+        });
           setData({ profile: resolution.profile, settings: resolution.settings });
           setStatus('ready');
         }
@@ -97,7 +102,7 @@ export default function PatientHomeScreen() {
     return () => {
       active = false;
     };
-  }, [attempt, resetOnboarding, router, setLanguage]);
+  }, [attempt, resetOnboarding, router, setAccessibility, setLanguage]);
 
   const returnToSetup = async () => {
     try {
@@ -111,7 +116,7 @@ export default function PatientHomeScreen() {
 
   if (status !== 'ready' || !data) {
     return (
-      <ScreenWrapper contentContainerStyle={styles.centered}>
+      <ScreenWrapper contentContainerStyle={styles.centered} scroll>
         <ThemedText accessibilityRole="header" type="screenTitle">
           Smaran
         </ThemedText>
@@ -146,13 +151,12 @@ export default function PatientHomeScreen() {
 
   const { profile, settings } = data;
   const language = settings.language;
-  const regionName = getRegionName(language, settings.region);
   const textSize = getTextSizePreference(settings);
   const greeting = t(language, getGreetingKey(new Date().getHours()), {
     name: profile.preferredName,
   });
   const descriptions = homeActions.map(({ descriptionKey }) =>
-    t(language, descriptionKey, { region: regionName })
+    t(language, descriptionKey)
   );
   const speechText = [
     greeting,
@@ -169,7 +173,7 @@ export default function PatientHomeScreen() {
         <View style={styles.header}>
           <View style={[styles.brandMark, { backgroundColor: colors.actionPrimary }]}>
             <MaterialIcons
-              accessible={false}
+              accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
               color={colors.onActionPrimary}
               name="spa"
               size={28}
@@ -179,12 +183,6 @@ export default function PatientHomeScreen() {
             <ThemedText textSize={textSize} type="cardHeading">
               Smaran
             </ThemedText>
-            <View style={styles.regionRow}>
-              <MaterialIcons accessible={false} color={colors.secondary} name="place" size={20} />
-              <ThemedText textSize={textSize} type="secondary">
-                {t(language, 'homeRegionContext', { region: regionName })}
-              </ThemedText>
-            </View>
           </View>
         </View>
 
@@ -193,32 +191,6 @@ export default function PatientHomeScreen() {
             {greeting}
           </ThemedText>
           <ThemedText textSize={textSize}>{t(language, 'homeSupportingLine')}</ThemedText>
-        </View>
-
-        {settings.voiceGuidance ? (
-          <ReadScreenButton language={language} text={speechText} />
-        ) : null}
-
-        <View
-          accessible
-          accessibilityLabel={`${t(language, 'readyOffline')}. ${t(language, 'homeOfflineDescription')}`}
-          style={[
-            styles.offline,
-            {
-              backgroundColor: settings.highContrast ? colors.surface : colors.successSurface,
-              borderColor: settings.highContrast ? colors.text : colors.success,
-              borderWidth: settings.highContrast ? 3 : 1,
-            },
-          ]}>
-          <MaterialIcons accessible={false} color={colors.success} name="offline-pin" size={30} />
-          <View style={styles.offlineCopy}>
-            <ThemedText textSize={textSize} type="defaultSemiBold">
-              {t(language, 'readyOffline')}
-            </ThemedText>
-            <ThemedText textSize={textSize} type="secondary">
-              {t(language, 'homeOfflineDescription')}
-            </ThemedText>
-          </View>
         </View>
 
         <View style={styles.actions}>
@@ -235,7 +207,6 @@ export default function PatientHomeScreen() {
                   featured={action.featured}
                   highContrast={settings.highContrast}
                   icon={action.icon}
-                  label={action.featured ? t(language, 'homeFocusLabel') : undefined}
                   onPress={() =>
                     action.featured
                       ? router.push('/patient/games/memory-match')
@@ -254,7 +225,7 @@ export default function PatientHomeScreen() {
                       { backgroundColor: colors.warningSurface, borderColor: colors.warning },
                     ]}>
                     <MaterialIcons
-                      accessible={false}
+                      accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
                       color={colors.warning}
                       name="info-outline"
                       size={28}
@@ -267,6 +238,31 @@ export default function PatientHomeScreen() {
               </View>
             );
           })}
+        </View>
+        {settings.voiceGuidance ? (
+          <ReadScreenButton language={language} text={speechText} />
+        ) : null}
+
+        <View
+          accessible
+          accessibilityLabel={`${t(language, 'readyOffline')}. ${t(language, 'homeOfflineDescription')}`}
+          style={[
+            styles.offline,
+            {
+              backgroundColor: settings.highContrast ? colors.surface : colors.successSurface,
+              borderColor: settings.highContrast ? colors.text : colors.success,
+              borderWidth: settings.highContrast ? 3 : 1,
+            },
+          ]}>
+          <MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" color={colors.success} name="offline-pin" size={30} />
+          <View style={styles.offlineCopy}>
+            <ThemedText textSize={textSize} type="defaultSemiBold">
+              {t(language, 'readyOffline')}
+            </ThemedText>
+            <ThemedText textSize={textSize} type="secondary">
+              {t(language, 'homeOfflineDescription')}
+            </ThemedText>
+          </View>
         </View>
       </View>
     </ScreenWrapper>
@@ -301,7 +297,6 @@ const styles = StyleSheet.create({
     width: 56,
   },
   headerCopy: { flex: 1 },
-  regionRow: { alignItems: 'center', flexDirection: 'row', gap: Spacing.xs },
   greeting: { gap: Spacing.sm, paddingVertical: Spacing.sm },
   offline: {
     alignItems: 'center',

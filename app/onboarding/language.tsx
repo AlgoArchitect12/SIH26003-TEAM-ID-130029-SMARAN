@@ -6,7 +6,7 @@ import { SelectionCard } from '@components/onboarding/selection-card';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { Spacing } from '@constants/layout';
 import { Languages } from '@db/schema.types';
-import { getLanguageName, t } from '@i18n/index';
+import { getLanguageHelper, getLanguageName, t } from '@i18n/index';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 export default function LanguageScreen() {
@@ -20,6 +20,8 @@ export default function LanguageScreen() {
     <OnboardingScreen
       description={t(activeLanguage, 'languageIntro')}
       language={activeLanguage}
+      onBack={() => router.back()}
+      step={2}
       title={t(activeLanguage, 'languageTitle')}>
       <View style={styles.choices}>
         {Languages.map((option) => (
@@ -27,6 +29,7 @@ export default function LanguageScreen() {
             icon="language"
             key={option}
             onPress={() => setLanguage(option)}
+            description={getLanguageHelper(option)}
             selected={language === option}
             selectedLabel={t(activeLanguage, 'selected')}
             title={getLanguageName(option)}
@@ -34,12 +37,6 @@ export default function LanguageScreen() {
         ))}
       </View>
       <View style={styles.actions}>
-        <SmaranButton
-          accessibilityLabel={t(activeLanguage, 'back')}
-          label={t(activeLanguage, 'back')}
-          onPress={() => router.back()}
-          variant="outline"
-        />
         <SmaranButton
           accessibilityLabel={t(activeLanguage, 'continue')}
           disabled={role !== 'patient' || language === null}

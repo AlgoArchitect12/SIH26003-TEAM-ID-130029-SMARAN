@@ -1,21 +1,24 @@
+import { useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import {
   Pressable,
   StyleSheet,
   View,
   type GestureResponderEvent,
+  type AccessibilityRole,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 
-import { Colors } from '@constants/colors';
 import { Elevation, Layout, Radius, Spacing } from '@constants/layout';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useHaptics } from '@/hooks/use-haptics';
 import { type ReducedMotionOverride, useReducedMotion } from '@/hooks/use-reduced-motion';
+import { useThemeColors } from '@/hooks/use-theme-color';
 
 type BaseCardProps = {
   accessibilityHint?: string;
+  accessibilityRole?: AccessibilityRole;
+  checked?: boolean;
   disabled?: boolean;
   hapticsEnabled?: boolean;
   padding?: number;
@@ -42,6 +45,8 @@ export type SmaranCardProps = PropsWithChildren<
 export function SmaranCard({
   accessibilityHint,
   accessibilityLabel,
+  accessibilityRole = 'button',
+  checked,
   children,
   disabled = false,
   hapticsEnabled = true,
@@ -52,15 +57,15 @@ export function SmaranCard({
   style,
   testID,
 }: SmaranCardProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const colors = useThemeColors();
+  const [focused, setFocused] = useState(false);
   const reduceMotion = useReducedMotion(reducedMotionOverride);
   const triggerHaptic = useHaptics(hapticsEnabled && !disabled);
   const cardStyle = [
     styles.card,
     Elevation.card,
     {
-      backgroundColor: colors.surface,
+      backgroundColor: colors.surfaceRaised,
       borderColor: selected ? colors.primary : colors.border,
       borderWidth: selected ? 2 : 1,
       padding,
@@ -83,15 +88,18 @@ export function SmaranCard({
 
   return (
     <Pressable
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       accessibilityHint={accessibilityHint}
       accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
-      accessibilityState={{ disabled, selected }}
+      accessibilityRole={accessibilityRole}
+      accessibilityState={{ checked, disabled, selected: checked === undefined ? selected : undefined }}
       disabled={disabled}
       onPress={handlePress}
       testID={testID}
       style={({ pressed }) => [
         cardStyle,
+        focused && { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: 3, outlineOffset: 3 },
         styles.interactive,
         pressed && !disabled && styles.pressed,
         pressed && !disabled && !reduceMotion && styles.pressedMotion,

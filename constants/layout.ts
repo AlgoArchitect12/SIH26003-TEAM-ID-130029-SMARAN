@@ -11,9 +11,10 @@ export const Spacing = {
 
 export const Layout = {
   minTouchTarget: 56,
-  cardMinHeight: 72,
+  cardMinHeight: 88,
   buttonHeight: 60,
-  largeButtonHeight: 68,
+  largeButtonHeight: 72,
+  gameCardMinSize: 56,
   interactiveSeparation: 16,
 } as const;
 

@@ -10,9 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors } from '@constants/colors';
 import { Layout, Spacing } from '@constants/layout';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColors } from '@/hooks/use-theme-color';
 
 export type ScreenWrapperProps = PropsWithChildren<{
   contentContainerStyle?: StyleProp<ViewStyle>;
@@ -32,8 +31,7 @@ export function ScreenWrapper({
   scroll = false,
   style,
 }: ScreenWrapperProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const backgroundColor = Colors[colorScheme].background;
+  const backgroundColor = useThemeColors().background;
 
   return (
     <SafeAreaView edges={['top', 'right', 'bottom', 'left']} style={[styles.safeArea, { backgroundColor }, style]}>

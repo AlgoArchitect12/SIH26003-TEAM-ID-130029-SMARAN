@@ -4,10 +4,9 @@ import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@components/themed-text';
 import { SmaranCard } from '@components/ui/smaran-card';
-import { Colors } from '@constants/colors';
-import { Layout, Radius, Spacing } from '@constants/layout';
+import { Radius, Spacing } from '@constants/layout';
 import type { TextSizePreference } from '@constants/typography';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColors } from '@/hooks/use-theme-color';
 
 type HomeActionCardProps = {
   accessibilityHint: string;
@@ -15,7 +14,6 @@ type HomeActionCardProps = {
   featured?: boolean;
   highContrast: boolean;
   icon: ComponentProps<typeof MaterialIcons>['name'];
-  label?: string;
   onPress: () => void;
   reducedMotion: boolean;
   textSize: TextSizePreference;
@@ -28,14 +26,12 @@ export function HomeActionCard({
   featured = false,
   highContrast,
   icon,
-  label,
   onPress,
   reducedMotion,
   textSize,
   title,
 }: HomeActionCardProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const colors = useThemeColors();
   const foreground = featured ? colors.onActionPrimary : colors.text;
 
   return (
@@ -60,21 +56,14 @@ export function HomeActionCard({
           { backgroundColor: featured ? colors.surface : colors.surfaceMuted },
         ]}>
         <MaterialIcons
+          accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
           color={featured ? colors.actionPrimary : colors.primary}
           name={icon}
-          size={32}
+          size={featured ? 40 : 36}
         />
       </View>
       <View style={styles.copy}>
-        {label ? (
-          <ThemedText
-            style={[styles.label, { color: foreground }]}
-            textSize={textSize}
-            type="secondary">
-            {label}
-          </ThemedText>
-        ) : null}
-        <ThemedText style={{ color: foreground }} textSize={textSize} type="cardHeading">
+        <ThemedText style={{ color: foreground, textTransform: 'uppercase' }} textSize={textSize} type="cardHeading">
           {title}
         </ThemedText>
         <ThemedText style={{ color: foreground }} textSize={textSize}>
@@ -90,25 +79,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: Spacing.md,
-    minHeight: 120,
+    minHeight: 112,
   },
   featured: {
-    minHeight: 172,
+    alignItems: 'flex-start',
+    flexDirection: 'column',
+    minHeight: 184,
   },
   icon: {
     alignItems: 'center',
     borderRadius: Radius.button,
-    height: Layout.minTouchTarget,
+    height: 64,
     justifyContent: 'center',
-    width: Layout.minTouchTarget,
+    width: 64,
   },
   copy: {
-    flex: 1,
+    flexShrink: 1,
+    flexGrow: 1,
+    minWidth: 0,
     gap: Spacing.xs,
-  },
-  label: {
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
   },
 });

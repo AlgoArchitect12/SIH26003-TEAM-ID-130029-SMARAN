@@ -9,14 +9,13 @@ import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
-import { Colors } from '@constants/colors';
 import { Spacing } from '@constants/layout';
 import type { TextSizePreference } from '@constants/typography';
 import { cognitiveRepository } from '@db/repositories/cognitive.repository';
 import type { ActivityFeedbackLabel, PatientSettings } from '@db/schema.types';
 import { t, type TranslationKey } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColors } from '@/hooks/use-theme-color';
 import { useCognitiveSessionStore } from '@/src/stores/cognitive-session.store';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
@@ -40,14 +39,17 @@ function recommendationKey(direction: 'gentler' | 'hold' | 'challenge'): Transla
 
 export default function MemoryMatchResultScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? 'light';
+  const colors = useThemeColors();
   const pending = useCognitiveSessionStore((state) => state.pending);
   const saved = useCognitiveSessionStore((state) => state.saved);
   const setSaved = useCognitiveSessionStore((state) => state.setSaved);
   const clear = useCognitiveSessionStore((state) => state.clear);
   const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
   const setLanguage = useOnboardingStore((state) => state.setLanguage);
+  const setAccessibility = useOnboardingStore((state) => state.setAccessibilityPreferences);
   const [settings, setSettings] = useState<PatientSettings | null>(null);
+  const [preferredName, setPreferredName] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [status, setStatus] = useState<ResultStatus>('loading');
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
@@ -55,6 +57,7 @@ export default function MemoryMatchResultScreen() {
 
   useEffect(() => {
     let active = true;
+    setStatus('loading');
     if (!pending && !saved) {
       router.replace('/patient/home');
       return;
@@ -73,6 +76,13 @@ export default function MemoryMatchResultScreen() {
           return;
         }
         setLanguage(resolution.settings.language);
+        setAccessibility({
+          highContrast: resolution.settings.highContrast,
+          reducedMotion: resolution.settings.reducedMotion,
+          textSize: resolution.settings.textSize,
+          voiceGuidance: resolution.settings.voiceGuidance,
+        });
+        setPreferredName(resolution.profile.preferredName);
         setSettings(resolution.settings);
         setStatus('ready');
       })
@@ -83,19 +93,22 @@ export default function MemoryMatchResultScreen() {
     return () => {
       active = false;
     };
-  }, [clear, pending, router, saved, setLanguage]);
+  }, [clear, loadAttempt, pending, router, saved, setAccessibility, setLanguage]);
 
   if (!settings || status !== 'ready' || (!pending && !saved)) {
     return (
-      <ScreenWrapper contentContainerStyle={styles.centered}>
+      <ScreenWrapper contentContainerStyle={styles.centered} scroll>
         {status === 'failed' ? (
-          <SmaranButton
-            accessibilityLabel={t(loadingLanguage, 'backHome')}
-            label={t(loadingLanguage, 'backHome')}
-            onPress={() => router.replace('/patient/home')}
-          />
+          <View style={styles.actions}>
+            <ThemedText accessibilityRole="alert">{t(loadingLanguage, 'errorSafeTitle')}</ThemedText>
+            <SmaranButton accessibilityLabel={t(loadingLanguage, 'retry')} label={t(loadingLanguage, 'retry')} onPress={() => setLoadAttempt((value) => value + 1)} />
+            <SmaranButton accessibilityLabel={t(loadingLanguage, 'backHome')} label={t(loadingLanguage, 'backHome')} onPress={() => router.replace('/patient/home')} variant="outline" />
+          </View>
         ) : (
-          <ActivityIndicator accessibilityLabel={t(loadingLanguage, 'gameLoading')} color={Colors[colorScheme].primary} size="large" />
+          <View style={styles.actions}>
+            <ActivityIndicator accessibilityLabel={t(loadingLanguage, 'gameLoading')} color={colors.primary} size="large" />
+            <ThemedText>{t(loadingLanguage, 'gameLoading')}</ThemedText>
+          </View>
         )}
       </ScreenWrapper>
     );
@@ -157,33 +170,24 @@ export default function MemoryMatchResultScreen() {
   };
 
   const readText = [
-    t(language, 'resultTitle'),
+    t(language, 'resultTitle', { name: preferredName }),
     t(language, 'resultSummaryPairs', { pairs: String(pairs) }),
-    t(language, 'resultAttempts', { attempts: String(attempts) }),
-    t(language, 'resultHints', { hints: String(hints) }),
+    t(language, 'nextTime'),
     recommendationText,
+    ...(!saved ? [t(language, 'resultQuestion'), ...feedbackOptions.map((option) => t(language, option.key)), t(language, 'skip')] : [t(language, 'whyLevel'), t(language, 'backHome')]),
   ].join(' ');
 
   return (
     <ScreenWrapper contentContainerStyle={styles.screen} scroll>
       <View style={styles.content}>
         <ThemedText accessibilityRole="header" textSize={textSize} type="screenTitle">
-          {t(language, 'resultTitle')}
+          {t(language, 'resultTitle', { name: preferredName })}
         </ThemedText>
-        <SmaranCard style={styles.summary}>
-          <ThemedText textSize={textSize} type="cardHeading">
-            {t(language, 'gameComplete')}
-          </ThemedText>
-          <ThemedText textSize={textSize}>{t(language, 'resultSummaryPairs', { pairs: String(pairs) })}</ThemedText>
-          <ThemedText textSize={textSize}>{t(language, 'resultAttempts', { attempts: String(attempts) })}</ThemedText>
-          <ThemedText textSize={textSize}>{t(language, 'resultHints', { hints: String(hints) })}</ThemedText>
+        <ThemedText textSize={textSize} type="cardHeading">{t(language, 'resultSummaryPairs', { pairs: String(pairs) })}</ThemedText>
+        <SmaranCard style={styles.recommendation}>
+          <ThemedText textSize={textSize} type="secondary">{t(language, 'nextTime')}</ThemedText>
+          <ThemedText accessibilityLiveRegion="polite" textSize={textSize} type="cardHeading">{recommendationText}</ThemedText>
         </SmaranCard>
-
-        <SmaranCard selected style={styles.recommendation}>
-          <ThemedText textSize={textSize} type="defaultSemiBold">{recommendationText}</ThemedText>
-        </SmaranCard>
-
-        {settings.voiceGuidance ? <ReadScreenButton language={language} text={readText} /> : null}
 
         {!saved ? (
           <View style={styles.feedback}>
@@ -232,6 +236,11 @@ export default function MemoryMatchResultScreen() {
             />
           </View>
         )}
+        <View style={styles.summary}>
+          <ThemedText textSize={textSize} type="secondary">{t(language, 'resultAttempts', { attempts: String(attempts) })}</ThemedText>
+          <ThemedText textSize={textSize} type="secondary">{t(language, 'resultHints', { hints: String(hints) })}</ThemedText>
+        </View>
+        {settings.voiceGuidance ? <ReadScreenButton language={language} text={readText} /> : null}
       </View>
     </ScreenWrapper>
   );
@@ -240,7 +249,7 @@ export default function MemoryMatchResultScreen() {
 const styles = StyleSheet.create({
   screen: { flexGrow: 1 },
   content: { alignSelf: 'center', gap: Spacing.lg, maxWidth: 640, width: '100%' },
-  centered: { alignItems: 'center', justifyContent: 'center' },
+  centered: { flexGrow: 1, gap: Spacing.lg, justifyContent: 'center' },
   summary: { gap: Spacing.sm },
   recommendation: { gap: Spacing.sm },
   feedback: { gap: Spacing.md },

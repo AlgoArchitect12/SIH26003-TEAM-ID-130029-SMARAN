@@ -1,36 +1,68 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import type { PropsWithChildren } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
+import { SmaranButton } from '@components/ui/smaran-button';
+import { useThemeColors } from '@/hooks/use-theme-color';
 import { Spacing } from '@constants/layout';
 import type { Language } from '@db/schema.types';
+import { t } from '@i18n/index';
 
 type OnboardingScreenProps = PropsWithChildren<{
+  backDisabled?: boolean;
   description: string;
   language: Language;
+  onBack?: () => void;
+  showReadAloud?: boolean;
   speechText?: string;
+  step?: number;
   title: string;
 }>;
 
 export function OnboardingScreen({
+  backDisabled = false,
   children,
   description,
   language,
+  onBack,
+  showReadAloud = true,
   speechText,
+  step,
   title,
 }: OnboardingScreenProps) {
+  const colors = useThemeColors();
+
   return (
     <ScreenWrapper contentContainerStyle={styles.scrollContent} scroll>
       <View style={styles.content}>
+        {onBack ? (
+          <SmaranButton
+            accessibilityLabel={t(language, 'back')}
+            disabled={backDisabled}
+            icon={<MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" color={colors.text} name="arrow-back" size={26} />}
+            label={t(language, 'back')}
+            onPress={onBack}
+            style={styles.backButton}
+            variant="outline"
+          />
+        ) : null}
         <View style={styles.introduction}>
+          {step ? (
+            <ThemedText type="caption">
+              {t(language, 'stepProgress', { current: String(step), total: '5' })}
+            </ThemedText>
+          ) : null}
           <ThemedText accessibilityRole="header" type="screenTitle">
             {title}
           </ThemedText>
           <ThemedText>{description}</ThemedText>
         </View>
-        <ReadScreenButton language={language} text={speechText ?? `${title}. ${description}`} />
+        {showReadAloud ? (
+          <ReadScreenButton language={language} text={speechText ?? `${title}. ${description}`} />
+        ) : null}
         {children}
       </View>
     </ScreenWrapper>
@@ -49,5 +81,8 @@ const styles = StyleSheet.create({
   },
   introduction: {
     gap: Spacing.sm,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
   },
 });
