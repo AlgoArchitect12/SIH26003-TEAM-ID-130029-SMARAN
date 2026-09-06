@@ -1,9 +1,11 @@
+import { memoryStrings } from './memory-strings';
 import { myDayStrings } from './my-day-strings';
 import type { Language, Region } from '@db/schema.types';
 
 import type { TranslationCatalog } from './strings';
 
 const bengali = {
+  ...memoryStrings.bn,
   ...myDayStrings.bn,
   accessibilityIntro: 'আপনার জন্য আরামদায়ক পড়া ও নড়াচড়ার সেটিং বেছে নিন।',
   accessibilitySaved: 'সহায়ক সেটিং সংরক্ষিত হয়েছে',
@@ -151,6 +153,7 @@ const bengali = {
 } satisfies TranslationCatalog;
 
 const meitei = {
+  ...memoryStrings.mni,
   ...myDayStrings.mni,
   accessibilityIntro: 'অদোমগীদমক লায়বা পাবা অমসুং শরুক নোংখাইবগী খুদোংচাবশিং খনবিয়ু।',
   accessibilitySaved: 'খুদোংচাবগী অপাম্বশিং থমজরে',
@@ -298,6 +301,7 @@ const meitei = {
 } satisfies TranslationCatalog;
 
 const khasi = {
+  ...memoryStrings.kha,
   ...myDayStrings.kha,
   accessibilityIntro: 'Jied ïa ki rukom pule bad jingïaid kiba suk ïa phi.',
   accessibilitySaved: 'La buh ïa ki jingjied jingïarap',
@@ -445,6 +449,7 @@ const khasi = {
 } satisfies TranslationCatalog;
 
 const mizo = {
+  ...memoryStrings.lus,
   ...myDayStrings.lus,
   accessibilityIntro: 'I tan a nuam turin chhiarna leh chet dan thlang rawh.',
   accessibilitySaved: 'Tanpuina duhthlanna chu vawn a ni',

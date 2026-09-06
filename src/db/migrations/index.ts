@@ -4,12 +4,14 @@ import { coreBootstrapMigration } from './001_core_bootstrap';
 import { cognitiveAdaptationMigration } from './002_cognitive_adaptation';
 import { multilingualExpansionMigration } from './003_multilingual_expansion';
 import { myDayMigration } from './004_my_day';
+import { myMemoriesMigration } from './005_my_memories';
 
 const migrations = [
   coreBootstrapMigration,
   cognitiveAdaptationMigration,
   multilingualExpansionMigration,
   myDayMigration,
+  myMemoriesMigration,
 ] as const;
 
 type AppliedMigrationRow = { version: number };

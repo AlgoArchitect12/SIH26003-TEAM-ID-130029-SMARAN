@@ -7,16 +7,17 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { Spacing } from '@constants/layout';
 import type { Language } from '@db/schema.types';
-import { t } from '@i18n/index';
+import { t, type TranslationKey } from '@i18n/index';
 import { speakScreenText, stopSpeech, type SpeechOutcome } from '@services/speech.service';
 import { useThemeColors } from '@/hooks/use-theme-color';
 
 type ReadScreenButtonProps = {
   language: Language;
   text: string;
+  labelKey?: TranslationKey;
 };
 
-export function ReadScreenButton({ language, text }: ReadScreenButtonProps) {
+export function ReadScreenButton({ language, text, labelKey = 'readScreen' }: ReadScreenButtonProps) {
   const colors = useThemeColors();
   const [isStarting, setIsStarting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -73,7 +74,7 @@ export function ReadScreenButton({ language, text }: ReadScreenButtonProps) {
     }
   };
 
-  const label = t(language, isSpeaking ? 'stopReading' : 'readScreen');
+  const label = t(language, isSpeaking ? 'stopReading' : labelKey);
 
   return (
     <View style={styles.container}>

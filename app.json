@@ -43,7 +43,15 @@
       ],
       "expo-sqlite",
       "expo-secure-store",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Smaran to choose a familiar photo for My Memories.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

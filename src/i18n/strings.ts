@@ -1,9 +1,11 @@
+import { memoryStrings } from './memory-strings';
 import { myDayStrings } from './my-day-strings';
 import type { Language, Region } from '@db/schema.types';
 
 import { regionalRegionNames, regionalStrings } from './regional-strings';
 
 const english = {
+  ...memoryStrings.en,
   ...myDayStrings.en,
   accessibilityIntro: 'Choose the reading and movement settings that feel comfortable for you.',
   accessibilitySaved: 'Accessibility preferences saved',
@@ -275,6 +277,7 @@ const assameseGame = {
 } as const;
 
 const hindi = {
+  ...memoryStrings.hi,
   ...myDayStrings.hi,
   ...hindiGame,
   accessibilityIntro: 'पढ़ने और गति की वे सुविधाएँ चुनें जो आपके लिए आरामदायक हों।',
@@ -370,6 +373,7 @@ const hindi = {
 } satisfies TranslationCatalog;
 
 const assamese = {
+  ...memoryStrings.as,
   ...myDayStrings.as,
   ...assameseGame,
   accessibilityIntro: 'পঢ়া আৰু চলনৰ যিবোৰ সুবিধা আপোনাৰ বাবে আৰামদায়ক, সেইবোৰ বাছক।',
