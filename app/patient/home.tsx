@@ -201,7 +201,7 @@ export default function PatientHomeScreen() {
                 <HomeActionCard
                   accessibilityHint={t(
                     language,
-                    action.featured ? 'homeTrainHint' : action.titleKey === 'homeDayTitle' ? 'dayOpenHint' : action.titleKey === 'homeMemoriesTitle' ? 'memoryOpenHint' : 'homeActionHint'
+                    action.featured ? 'homeTrainHint' : action.titleKey === 'homeDayTitle' ? 'dayOpenHint' : action.titleKey === 'homeMemoriesTitle' ? 'memoryOpenHint' : action.titleKey === 'homeRegionTitle' ? 'regionalOpenHint' : 'homeActionHint'
                   )}
                   description={descriptions[index]}
                   featured={action.featured}
@@ -210,7 +210,7 @@ export default function PatientHomeScreen() {
                   onPress={() =>
                     action.featured
                       ? router.push('/patient/games/memory-match')
-                      : action.titleKey === 'homeDayTitle' ? router.push('/patient/my-day') : action.titleKey === 'homeMemoriesTitle' ? router.push('/patient/my-memories') : setNoticeTitle(title)
+                      : action.titleKey === 'homeDayTitle' ? router.push('/patient/my-day') : action.titleKey === 'homeMemoriesTitle' ? router.push('/patient/my-memories') : action.titleKey === 'homeRegionTitle' ? router.push('/patient/my-home') : setNoticeTitle(title)
                   }
                   reducedMotion={settings.reducedMotion}
                   textSize={textSize}

@@ -1,3 +1,4 @@
+import { myHomeStrings } from './my-home-strings';
 import { memoryStrings } from './memory-strings';
 import { myDayStrings } from './my-day-strings';
 import type { Language, Region } from '@db/schema.types';
@@ -5,6 +6,7 @@ import type { Language, Region } from '@db/schema.types';
 import { regionalRegionNames, regionalStrings } from './regional-strings';
 
 const english = {
+  ...myHomeStrings.en,
   ...memoryStrings.en,
   ...myDayStrings.en,
   accessibilityIntro: 'Choose the reading and movement settings that feel comfortable for you.',
@@ -277,6 +279,7 @@ const assameseGame = {
 } as const;
 
 const hindi = {
+  ...myHomeStrings.hi,
   ...memoryStrings.hi,
   ...myDayStrings.hi,
   ...hindiGame,
@@ -373,6 +376,7 @@ const hindi = {
 } satisfies TranslationCatalog;
 
 const assamese = {
+  ...myHomeStrings.as,
   ...memoryStrings.as,
   ...myDayStrings.as,
   ...assameseGame,

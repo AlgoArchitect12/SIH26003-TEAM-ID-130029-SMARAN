@@ -13,11 +13,12 @@ import { useThemeColors } from '@/hooks/use-theme-color';
 
 type ReadScreenButtonProps = {
   language: Language;
+  speechLanguage?: Language;
   text: string;
   labelKey?: TranslationKey;
 };
 
-export function ReadScreenButton({ language, text, labelKey = 'readScreen' }: ReadScreenButtonProps) {
+export function ReadScreenButton({ language, speechLanguage = language, text, labelKey = 'readScreen' }: ReadScreenButtonProps) {
   const colors = useThemeColors();
   const [isStarting, setIsStarting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -32,7 +33,7 @@ export function ReadScreenButton({ language, text, labelKey = 'readScreen' }: Re
       requestId.current += 1;
       void stopSpeech();
     };
-  }, [language, text]);
+  }, [language, speechLanguage, text]);
 
   useFocusEffect(useCallback(() => {
     setIsStarting(false);
@@ -56,7 +57,7 @@ export function ReadScreenButton({ language, text, labelKey = 'readScreen' }: Re
     setOutcome(null);
     setIsStarting(true);
     setIsSpeaking(true);
-    const nextOutcome = await speakScreenText(text, language, {
+    const nextOutcome = await speakScreenText(text, speechLanguage, {
       onDone: () => {
         if (request === requestId.current) setIsSpeaking(false);
       },

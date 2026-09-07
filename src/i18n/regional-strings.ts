@@ -1,3 +1,4 @@
+import { myHomeStrings } from './my-home-strings';
 import { memoryStrings } from './memory-strings';
 import { myDayStrings } from './my-day-strings';
 import type { Language, Region } from '@db/schema.types';
@@ -5,6 +6,7 @@ import type { Language, Region } from '@db/schema.types';
 import type { TranslationCatalog } from './strings';
 
 const bengali = {
+  ...myHomeStrings.bn,
   ...memoryStrings.bn,
   ...myDayStrings.bn,
   accessibilityIntro: 'আপনার জন্য আরামদায়ক পড়া ও নড়াচড়ার সেটিং বেছে নিন।',
@@ -153,6 +155,7 @@ const bengali = {
 } satisfies TranslationCatalog;
 
 const meitei = {
+  ...myHomeStrings.mni,
   ...memoryStrings.mni,
   ...myDayStrings.mni,
   accessibilityIntro: 'অদোমগীদমক লায়বা পাবা অমসুং শরুক নোংখাইবগী খুদোংচাবশিং খনবিয়ু।',
@@ -301,6 +304,7 @@ const meitei = {
 } satisfies TranslationCatalog;
 
 const khasi = {
+  ...myHomeStrings.kha,
   ...memoryStrings.kha,
   ...myDayStrings.kha,
   accessibilityIntro: 'Jied ïa ki rukom pule bad jingïaid kiba suk ïa phi.',
@@ -449,6 +453,7 @@ const khasi = {
 } satisfies TranslationCatalog;
 
 const mizo = {
+  ...myHomeStrings.lus,
   ...memoryStrings.lus,
   ...myDayStrings.lus,
   accessibilityIntro: 'I tan a nuam turin chhiarna leh chet dan thlang rawh.',
