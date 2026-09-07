@@ -117,4 +117,11 @@ async function acknowledgeNotification(reminder: Reminder, notificationId: strin
     validateRecordId(reminder.patientId), validateRecordId(reminder.id), reminder.revision);
   return result.changes === 1;
 }
-export const myDayRepository = { get, list, save, setEnabled, remove, today, complete, history, currentCompletions, acknowledgeNotification };
+async function recentCompletions(patientId: string) {
+  return (await getDatabase()).getAllAsync<ReminderEvent>(`SELECT e.id, e.reminder_id AS reminderId, e.patient_id AS patientId,
+    e.scheduled_for AS scheduledFor, e.status, e.completed_at AS completedAt, e.created_at AS createdAt
+    FROM reminder_events e JOIN reminders r ON r.id = e.reminder_id AND r.patient_id = e.patient_id
+    WHERE e.patient_id = ? AND e.status = 'completed' ORDER BY e.completed_at DESC, e.id DESC LIMIT 10`,
+    validateRecordId(patientId));
+}
+export const myDayRepository = { get, list, save, setEnabled, remove, today, complete, history, currentCompletions, acknowledgeNotification, recentCompletions };

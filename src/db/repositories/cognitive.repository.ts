@@ -242,6 +242,16 @@ async function getAdaptiveModel(patientId: string) {
   return row ? mapModel(row) : null;
 }
 
+async function countSessions(patientId: string, start: Date, end: Date) {
+  const row = await (await getDatabase()).getFirstAsync<{ count: number }>(
+    `SELECT COUNT(*) AS count FROM cognitive_sessions
+     WHERE patient_id = ? AND game_type = 'memory_match' AND is_demo_seed = 0
+       AND completed_at >= ? AND completed_at < ?`,
+    validateRecordId(patientId, 'Patient ID'), start.toISOString(), end.toISOString()
+  );
+  return row?.count ?? 0;
+}
+
 async function saveCompletedSession(input: CompletedSessionInput, model?: AdaptiveModelState) {
   if (model && model.patientId !== input.patientId) {
     throw new Error('Activity session and model must belong to the same patient.');
@@ -264,6 +274,7 @@ async function saveCompletedSession(input: CompletedSessionInput, model?: Adapti
 }
 
 export const cognitiveRepository = {
+  countSessions,
   getAdaptiveModel,
   getRecentSessions,
   getSessionById,

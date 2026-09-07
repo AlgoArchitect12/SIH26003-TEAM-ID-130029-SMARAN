@@ -40,7 +40,7 @@ const homeActions: readonly {
     titleKey: 'homeMemoriesTitle',
   },
   { descriptionKey: 'homeRegionDescription', icon: 'landscape', titleKey: 'homeRegionTitle' },
-  { descriptionKey: 'homeCareDescription', icon: 'favorite', titleKey: 'homeCareTitle' },
+  { descriptionKey: 'careOpen', icon: 'favorite', titleKey: 'homeCareTitle' },
 ];
 
 function getGreetingKey(hour: number): TranslationKey {
@@ -64,7 +64,6 @@ export default function PatientHomeScreen() {
   const [attempt, setAttempt] = useState(0);
   const [data, setData] = useState<HomeData | null>(null);
   const [status, setStatus] = useState<HomeStatus>('loading');
-  const [noticeTitle, setNoticeTitle] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -201,7 +200,7 @@ export default function PatientHomeScreen() {
                 <HomeActionCard
                   accessibilityHint={t(
                     language,
-                    action.featured ? 'homeTrainHint' : action.titleKey === 'homeDayTitle' ? 'dayOpenHint' : action.titleKey === 'homeMemoriesTitle' ? 'memoryOpenHint' : action.titleKey === 'homeRegionTitle' ? 'regionalOpenHint' : 'homeActionHint'
+                    action.featured ? 'homeTrainHint' : action.titleKey === 'homeDayTitle' ? 'dayOpenHint' : action.titleKey === 'homeMemoriesTitle' ? 'memoryOpenHint' : action.titleKey === 'homeRegionTitle' ? 'regionalOpenHint' : 'careOpen'
                   )}
                   description={descriptions[index]}
                   featured={action.featured}
@@ -210,31 +209,12 @@ export default function PatientHomeScreen() {
                   onPress={() =>
                     action.featured
                       ? router.push('/patient/games/memory-match')
-                      : action.titleKey === 'homeDayTitle' ? router.push('/patient/my-day') : action.titleKey === 'homeMemoriesTitle' ? router.push('/patient/my-memories') : action.titleKey === 'homeRegionTitle' ? router.push('/patient/my-home') : setNoticeTitle(title)
+                      : action.titleKey === 'homeDayTitle' ? router.push('/patient/my-day') : action.titleKey === 'homeMemoriesTitle' ? router.push('/patient/my-memories') : action.titleKey === 'homeRegionTitle' ? router.push('/patient/my-home') : router.push('/caregiver/home')
                   }
                   reducedMotion={settings.reducedMotion}
                   textSize={textSize}
                   title={title}
                 />
-                {noticeTitle === title ? (
-                  <View
-                    accessibilityLiveRegion="polite"
-                    accessibilityRole="alert"
-                    style={[
-                      styles.notice,
-                      { backgroundColor: colors.warningSurface, borderColor: colors.warning },
-                    ]}>
-                    <MaterialIcons
-                      accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-                      color={colors.warning}
-                      name="info-outline"
-                      size={28}
-                    />
-                    <ThemedText style={styles.noticeText} textSize={textSize}>
-                      {t(language, 'homeActionNotice', { title })}
-                    </ThemedText>
-                  </View>
-                ) : null}
               </View>
             );
           })}
@@ -308,13 +288,4 @@ const styles = StyleSheet.create({
   offlineCopy: { flex: 1, gap: Spacing.xs },
   actions: { gap: Spacing.md },
   action: { gap: Spacing.sm },
-  notice: {
-    alignItems: 'flex-start',
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    padding: Spacing.md,
-  },
-  noticeText: { flex: 1 },
 });
