@@ -1,3 +1,4 @@
+import { cognitiveStrings } from './cognitive-strings';
 import { careStrings } from './care-strings';
 import { myHomeStrings } from './my-home-strings';
 import { memoryStrings } from './memory-strings';
@@ -9,6 +10,7 @@ import { regionalRegionNames, regionalStrings } from './regional-strings';
 const english = {
   ...myHomeStrings.en,
   ...careStrings.en,
+  ...cognitiveStrings.en,
   ...memoryStrings.en,
   ...myDayStrings.en,
   accessibilityIntro: 'Choose the reading and movement settings that feel comfortable for you.',
@@ -283,6 +285,7 @@ const assameseGame = {
 const hindi = {
   ...myHomeStrings.hi,
   ...careStrings.hi,
+  ...cognitiveStrings.hi,
   ...memoryStrings.hi,
   ...myDayStrings.hi,
   ...hindiGame,
@@ -381,6 +384,7 @@ const hindi = {
 const assamese = {
   ...myHomeStrings.as,
   ...careStrings.as,
+  ...cognitiveStrings.as,
   ...memoryStrings.as,
   ...myDayStrings.as,
   ...assameseGame,

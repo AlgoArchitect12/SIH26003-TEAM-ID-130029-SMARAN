@@ -1,9 +1,10 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { recommendDifficulty } from '@ai/adaptive-engine';
-import { updateModelFromOptionalFeedback } from '@ai/online-trainer';
+import { saveCognitiveResult } from '@services/cognitive.service';
+import { activitySummary, activityTitleKeys } from '@/src/games/presentation';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
@@ -11,7 +12,6 @@ import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { Spacing } from '@constants/layout';
 import type { TextSizePreference } from '@constants/typography';
-import { cognitiveRepository } from '@db/repositories/cognitive.repository';
 import type { ActivityFeedbackLabel, PatientSettings } from '@db/schema.types';
 import { t, type TranslationKey } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
@@ -37,8 +37,9 @@ function recommendationKey(direction: 'gentler' | 'hold' | 'challenge'): Transla
   return direction === 'challenge' ? 'recommendationChallenge' : 'recommendationHold';
 }
 
-export default function MemoryMatchResultScreen() {
+export default function CognitiveResultScreen() {
   const router = useRouter();
+  const focused = useIsFocused();
   const colors = useThemeColors();
   const pending = useCognitiveSessionStore((state) => state.pending);
   const saved = useCognitiveSessionStore((state) => state.saved);
@@ -56,10 +57,11 @@ export default function MemoryMatchResultScreen() {
   const submissionLocked = useRef(false);
 
   useEffect(() => {
+    if (!focused) return;
     let active = true;
     setStatus('loading');
     if (!pending && !saved) {
-      router.replace('/patient/home');
+      router.replace('/patient/games');
       return;
     }
     resolveActivePatient()
@@ -72,7 +74,7 @@ export default function MemoryMatchResultScreen() {
         const patientId = pending?.patientId ?? saved?.session.patientId;
         if (patientId !== resolution.profile.id) {
           clear();
-          router.replace('/patient/home');
+          router.replace('/patient/games');
           return;
         }
         setLanguage(resolution.settings.language);
@@ -93,7 +95,7 @@ export default function MemoryMatchResultScreen() {
     return () => {
       active = false;
     };
-  }, [clear, loadAttempt, pending, router, saved, setAccessibility, setLanguage]);
+  }, [clear, focused, loadAttempt, pending, router, saved, setAccessibility, setLanguage]);
 
   if (!settings || status !== 'ready' || (!pending && !saved)) {
     return (
@@ -102,7 +104,7 @@ export default function MemoryMatchResultScreen() {
           <View style={styles.actions}>
             <ThemedText accessibilityRole="alert">{t(loadingLanguage, 'errorSafeTitle')}</ThemedText>
             <SmaranButton accessibilityLabel={t(loadingLanguage, 'retry')} label={t(loadingLanguage, 'retry')} onPress={() => setLoadAttempt((value) => value + 1)} />
-            <SmaranButton accessibilityLabel={t(loadingLanguage, 'backHome')} label={t(loadingLanguage, 'backHome')} onPress={() => router.replace('/patient/home')} variant="outline" />
+            <SmaranButton accessibilityLabel={t(loadingLanguage, 'activitiesBack')} label={t(loadingLanguage, 'activitiesBack')} onPress={() => router.replace('/patient/games')} variant="outline" />
           </View>
         ) : (
           <View style={styles.actions}>
@@ -116,7 +118,10 @@ export default function MemoryMatchResultScreen() {
 
   const language = settings.language;
   const textSize = textSizeFor(settings);
-  const pairs = saved?.session.totalPairs ?? pending?.telemetry.totalPairs ?? 0;
+  const metrics = saved?.session ?? pending?.telemetry;
+  if (!metrics) return null;
+  const activity = t(language, activityTitleKeys[metrics.gameType]);
+  const completedSummary = activitySummary(language, metrics);
   const attempts = saved?.session.attempts ?? pending?.telemetry.attempts ?? 0;
   const hints = saved?.session.hintsUsed ?? pending?.telemetry.hintsUsed ?? 0;
   const recommendation = saved?.recommendation ?? pending?.initialRecommendation;
@@ -129,39 +134,9 @@ export default function MemoryMatchResultScreen() {
     setSaving(true);
     setSaveFailed(false);
     try {
-      const modelAfterFeedback = updateModelFromOptionalFeedback(
-        pending.model,
-        pending.extraction.features,
-        feedback,
-        new Date().toISOString()
-      );
-      const finalRecommendation = recommendDifficulty(
-        pending.currentDifficulty,
-        pending.extraction.features,
-        modelAfterFeedback
-      );
-      const session = await cognitiveRepository.saveCompletedSession(
-        {
-          accuracy: pending.telemetry.accuracy,
-          attempts: pending.telemetry.attempts,
-          averageResponseMs: pending.telemetry.averageResponseMs,
-          completedAt: new Date(pending.telemetry.completedAtMs).toISOString(),
-          difficulty: pending.currentDifficulty,
-          feedbackLabel: feedback,
-          gameType: 'memory_match',
-          hintsUsed: pending.telemetry.hintsUsed,
-          matches: pending.telemetry.matches,
-          patientId: pending.patientId,
-          recommendedDifficulty: finalRecommendation.recommendedDifficulty,
-          repeatedMistakes: pending.telemetry.repeatedMistakes,
-          startedAt: new Date(pending.telemetry.startedAtMs).toISOString(),
-          totalPairs: pending.telemetry.totalPairs,
-        },
-        feedback === null ? undefined : modelAfterFeedback
-      );
-      setSaved({ feedback, recommendation: finalRecommendation, session });
+      setSaved(await saveCognitiveResult(pending, feedback));
     } catch (error) {
-      if (__DEV__) console.error('Completed Memory Match session could not be saved', error);
+      if (__DEV__) console.error('Completed activity could not be saved', error);
       setSaveFailed(true);
       submissionLocked.current = false;
     } finally {
@@ -170,11 +145,11 @@ export default function MemoryMatchResultScreen() {
   };
 
   const readText = [
-    t(language, 'resultTitle', { name: preferredName }),
-    t(language, 'resultSummaryPairs', { pairs: String(pairs) }),
+    t(language, 'resultTitle', { name: preferredName }), activity,
+    completedSummary,
     t(language, 'nextTime'),
     recommendationText,
-    ...(!saved ? [t(language, 'resultQuestion'), ...feedbackOptions.map((option) => t(language, option.key)), t(language, 'skip')] : [t(language, 'whyLevel'), t(language, 'backHome')]),
+    ...(!saved ? [t(language, 'resultQuestion'), ...feedbackOptions.map((option) => t(language, option.key)), t(language, 'skip')] : [t(language, 'whyLevel'), t(language, 'activitiesBack')]),
   ].join(' ');
 
   return (
@@ -183,8 +158,11 @@ export default function MemoryMatchResultScreen() {
         <ThemedText accessibilityRole="header" textSize={textSize} type="screenTitle">
           {t(language, 'resultTitle', { name: preferredName })}
         </ThemedText>
-        <ThemedText textSize={textSize} type="cardHeading">{t(language, 'resultSummaryPairs', { pairs: String(pairs) })}</ThemedText>
+        <ThemedText textSize={textSize} type="cardHeading">{activity}</ThemedText>
+        <ThemedText textSize={textSize}>{completedSummary}</ThemedText>
+        <ThemedText textSize={textSize}>{t(language, 'activityAccuracy', { accuracy: new Intl.NumberFormat(language, { style: 'percent', maximumFractionDigits: 0 }).format(metrics.accuracy) })}</ThemedText>
         <SmaranCard style={styles.recommendation}>
+          <ThemedText textSize={textSize}>{t(language, 'activityNextLevel', { level: String(recommendation.recommendedDifficulty) })}</ThemedText>
           <ThemedText textSize={textSize} type="secondary">{t(language, 'nextTime')}</ThemedText>
           <ThemedText accessibilityLiveRegion="polite" textSize={textSize} type="cardHeading">{recommendationText}</ThemedText>
         </SmaranCard>
@@ -227,17 +205,17 @@ export default function MemoryMatchResultScreen() {
               variant="outline"
             />
             <SmaranButton
-              accessibilityLabel={t(language, 'backHome')}
-              label={t(language, 'backHome')}
+              accessibilityLabel={t(language, 'activitiesBack')}
+              label={t(language, 'activitiesBack')}
               onPress={() => {
                 clear();
-                router.replace('/patient/home');
+                router.replace('/patient/games');
               }}
             />
           </View>
         )}
         <View style={styles.summary}>
-          <ThemedText textSize={textSize} type="secondary">{t(language, 'resultAttempts', { attempts: String(attempts) })}</ThemedText>
+          <ThemedText textSize={textSize} type="secondary">{metrics.gameType === 'memory_match' ? t(language, 'resultAttempts', { attempts: String(attempts) }) : t(language, 'selectionsAttempts', { count: String(attempts) })}</ThemedText>
           <ThemedText textSize={textSize} type="secondary">{t(language, 'resultHints', { hints: String(hints) })}</ThemedText>
         </View>
         {settings.voiceGuidance ? <ReadScreenButton language={language} text={readText} /> : null}

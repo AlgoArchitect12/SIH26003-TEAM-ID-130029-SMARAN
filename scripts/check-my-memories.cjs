@@ -5,6 +5,8 @@ const os = require('node:os');
 const path = require('node:path');
 const { fileURLToPath, pathToFileURL } = require('node:url');
 const { load } = require('./check-elderly-ux.cjs');
+// Compare every historical field; MVP-12 separately verifies the new activity fields.
+const historicalColumns = {"cognitive_sessions":"id,patient_id,game_type,difficulty,started_at,completed_at,total_pairs,attempts,matches,hints_used,repeated_mistakes,avg_response_ms,accuracy,feedback_label,recommended_difficulty,is_demo_seed,created_at","adaptive_model_state":"patient_id,bias,weight_accuracy,weight_pace,weight_memory,weight_hints,weight_stability,sample_count,updated_at"};
 
 // Actual migrations/repositories/services, real SQLite and files; only the Expo native boundary is replaced.
 async function main() {
@@ -97,13 +99,13 @@ async function main() {
     const { localDay } = load('src/my-day/types.ts');
     const reminder = await day.save(patient, { type: 'custom', title: 'Preserved reminder', note: '', timeOfDay: '08:00', repeatRule: 'daily', scheduledDate: null });
     await day.complete(patient, reminder.id, localDay());
-    const snapshot = () => Promise.all(['patient_profiles', 'patient_settings', 'cognitive_sessions', 'adaptive_model_state', 'reminders', 'reminder_events'].map(table => db.getAllAsync('SELECT * FROM ' + table)));
+    const snapshot = () => Promise.all(['patient_profiles', 'patient_settings', 'cognitive_sessions', 'adaptive_model_state', 'reminders', 'reminder_events'].map(table => db.getAllAsync('SELECT ' + (historicalColumns[table] ?? '*') + ' FROM ' + table)));
     const before = await snapshot();
     const { runMigrations } = load('src/db/migrations/index.ts');
     await runMigrations(db); await runMigrations(db);
-    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 5);
+    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 6);
     assert.deepEqual(await snapshot(), before);
-    console.log('PASS: real migration 001-005 upgrade, idempotent runner, existing patient/cognitive/My Day data preserved');
+    console.log('PASS: real migration 001-006 upgrade, idempotent runner, existing patient/cognitive/My Day data preserved');
 
     assert.deepEqual(await repo.list(patient), []);
     assert.deepEqual(validateMemory({ ...input, name: '  e\u0301  ' }), { ...input, name: '\u00e9' });
@@ -231,7 +233,7 @@ async function main() {
     // Fresh-install path uses the same production migration runner too.
     sqlite.close(); sqlite = new DatabaseSync(':memory:'); sqlite.exec('PRAGMA foreign_keys=ON');
     await runMigrations(db); await runMigrations(db);
-    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 5);
+    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 6);
     assert.deepEqual(await db.getAllAsync('PRAGMA foreign_key_check'), []);
     console.log('PASS: fresh migration chain. Expo Android ImagePicker/FileSystem: NOT NATIVE VERIFIED.');
   } finally {

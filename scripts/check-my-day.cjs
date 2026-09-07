@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { load } = require('./check-elderly-ux.cjs');
+// Compare every historical field; MVP-12 separately verifies the new activity fields.
+const historicalColumns = {"cognitive_sessions":"id,patient_id,game_type,difficulty,started_at,completed_at,total_pairs,attempts,matches,hints_used,repeated_mistakes,avg_response_ms,accuracy,feedback_label,recommended_difficulty,is_demo_seed,created_at","adaptive_model_state":"patient_id,bias,weight_accuracy,weight_pace,weight_memory,weight_hints,weight_stability,sample_count,updated_at"};
 
 async function main() {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'smaran-my-day-'));
@@ -42,12 +44,12 @@ async function main() {
     await load('src/db/migrations/003_multilingual_expansion.ts').multilingualExpansionMigration.up(db);
     await db.execAsync(`CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE,applied_at TEXT NOT NULL);
       INSERT INTO schema_migrations VALUES (1,'core_bootstrap','old'),(2,'cognitive_adaptation','old'),(3,'multilingual_expansion','old');`);
-    const snapshot = async () => Promise.all(['patient_profiles','patient_settings','cognitive_sessions','adaptive_model_state'].map(table => db.getAllAsync('SELECT * FROM '+table)));
+    const snapshot = async () => Promise.all(['patient_profiles','patient_settings','cognitive_sessions','adaptive_model_state'].map(table => db.getAllAsync('SELECT ' + (historicalColumns[table] ?? '*') + ' FROM ' + table)));
     const before = await snapshot();
     const { runMigrations } = load('src/db/migrations/index.ts');
     await runMigrations(db); await runMigrations(db);
     assert.deepEqual(await snapshot(), before);
-    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length,5);
+    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length,6);
     assert.deepEqual(await repo.today(patient),[]);
     for (const bad of [{type:'invalid'}, {timeOfDay:'24:00'}, {title:' '}, {repeatRule:'weekly'}, {repeatRule:'once',scheduledDate:'2026-02-30'}]) {
       assert.throws(() => validateReminder({...base,...bad}));
@@ -264,9 +266,9 @@ async function main() {
     }
     sqlite.close(); sqlite=new DatabaseSync(':memory:'); sqlite.exec('PRAGMA foreign_keys = ON');
     await runMigrations(db); await runMigrations(db);
-    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length,5);
+    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length,6);
     assert.deepEqual(await repo.list(patient),[]);
-    console.log('PASS: migrations 001–005 and idempotence, existing data, constraints/FKs, patient isolation, five categories, file reopen persistence, append-only/duplicate Done, local dates, CRUD, notification permission/failure/retry/cancel/reschedule/queue and web fallback; explicit completion ownership/status, binding audit, early-Done and tomorrow schedule preservation');
+    console.log('PASS: migrations 001–006 and idempotence, existing data, constraints/FKs, patient isolation, five categories, file reopen persistence, append-only/duplicate Done, local dates, CRUD, notification permission/failure/retry/cancel/reschedule/queue and web fallback; explicit completion ownership/status, binding audit, early-Done and tomorrow schedule preservation');
   } finally { sqlite.close(); assert.ok(path.resolve(directory).startsWith(path.resolve(os.tmpdir()) + path.sep) && path.basename(directory).startsWith('smaran-my-day-')); fs.rmSync(directory,{recursive:true,force:true}); }
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

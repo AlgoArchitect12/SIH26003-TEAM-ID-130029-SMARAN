@@ -1,4 +1,4 @@
-import type { AdaptiveModelState, DifficultyLevel } from '@db/schema.types';
+import type { AdaptiveModelState, CognitiveActivityType, DifficultyLevel } from '@db/schema.types';
 
 import type { AdaptiveFeatures, AdaptiveRecommendation } from './types';
 
@@ -8,9 +8,10 @@ export const INITIAL_MODEL_PARAMETERS = {
   weights: { accuracy: 1.4, pace: 0.5, memory: 0.7, hints: 0.8, stability: 0.4 },
 } as const;
 
-export function createInitialAdaptiveModel(patientId: string): AdaptiveModelState {
+export function createInitialAdaptiveModel(patientId: string, gameType: CognitiveActivityType): AdaptiveModelState {
   return {
     patientId,
+    gameType,
     bias: INITIAL_MODEL_PARAMETERS.bias,
     weights: { ...INITIAL_MODEL_PARAMETERS.weights },
     sampleCount: 0,

@@ -66,18 +66,22 @@ export type DifficultyLevel = (typeof DifficultyLevels)[number];
 export const ActivityFeedbackLabels = ['easy', 'comfortable', 'challenging'] as const;
 export type ActivityFeedbackLabel = (typeof ActivityFeedbackLabels)[number];
 
-export type CognitiveSession = {
+export const CognitiveActivityTypes = ['memory_match', 'pattern_recognition', 'routine_recall'] as const;
+export type CognitiveActivityType = (typeof CognitiveActivityTypes)[number];
+
+export type CognitiveSessionMetrics =
+  | { gameType: 'memory_match'; totalPairs: number; matches: number; repeatedMistakes: number }
+  | { gameType: 'pattern_recognition'; challengesCompleted: number; correctSelections: number; repeatedErrors: number }
+  | { gameType: 'routine_recall'; stepsCompleted: number; correctSelections: number; repeatedErrors: number };
+
+type CognitiveSessionEnvelope = {
   id: string;
   patientId: string;
-  gameType: 'memory_match';
   difficulty: DifficultyLevel;
   startedAt: string;
   completedAt: string;
-  totalPairs: number;
   attempts: number;
-  matches: number;
   hintsUsed: number;
-  repeatedMistakes: number;
   averageResponseMs: number;
   accuracy: number;
   feedbackLabel: ActivityFeedbackLabel | null;
@@ -86,10 +90,12 @@ export type CognitiveSession = {
   createdAt: string;
 };
 
-export type CompletedSessionInput = Omit<CognitiveSession, 'createdAt' | 'id' | 'isDemoSeed'>;
+export type CognitiveSession = CognitiveSessionEnvelope & CognitiveSessionMetrics;
+export type CompletedSessionInput = Omit<CognitiveSessionEnvelope, 'createdAt' | 'id' | 'isDemoSeed'> & CognitiveSessionMetrics;
 
 export type AdaptiveModelState = {
   patientId: string;
+  gameType: CognitiveActivityType;
   bias: number;
   weights: {
     accuracy: number;

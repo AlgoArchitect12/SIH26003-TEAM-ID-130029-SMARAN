@@ -14,7 +14,7 @@ import { t, type TranslationKey } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
 import { loadCaregiverDashboard } from '@services/caregiver.service';
 import type { CareActivity, CaregiverDashboard, UpcomingReminder } from '@/src/caregiver/types';
-import type { CognitiveSession } from '@db/schema.types';
+import { activityFacts, activityTitleKeys } from '@/src/games/presentation';
 import { timeLabel } from '@/src/my-day/types';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
@@ -69,10 +69,6 @@ export default function CaregiverHomeScreen() {
   const date = (value: string) => new Intl.DateTimeFormat(language, {
     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
   }).format(new Date(value));
-  const facts = (session: CognitiveSession) => t(language, 'careFacts', {
-    accuracy: new Intl.NumberFormat(language, { style: 'percent', maximumFractionDigits: 0 }).format(session.accuracy),
-    pairs: number(session.totalPairs), attempts: number(session.attempts), hints: number(session.hintsUsed), ms: number(session.averageResponseMs),
-  });
   const upcomingText = (item: UpcomingReminder) => `${item.reminder.title} • ${date(item.scheduledAt)}`;
   const latest = data?.cognitive.recent[0];
   const summary = data ? [
@@ -84,7 +80,7 @@ export default function CaregiverHomeScreen() {
     t(language, 'careNext'), data.upcoming[0] ? upcomingText(data.upcoming[0]) : t(language, 'careNoUpcoming'),
     t(language, 'careAppointment'), data.appointment ? upcomingText(data.appointment) : t(language, 'careNoAppointment'),
     latest ? t(language, 'careNextLevel', { level: number(latest.recommendedDifficulty) }) : t(language, 'careNoSessions'),
-    latest ? t(language, 'careLevelSource') : '', t(language, 'careDisclaimer'),
+    latest ? t(language, activityTitleKeys[latest.gameType]) + '. ' + t(language, 'careLevelSource') : '', t(language, 'careDisclaimer'),
   ].join('. ') : '';
   return <ScreenWrapper scroll><View style={styles.content}>
     <Stack.Screen options={{ animation: 'none' }} />
@@ -119,16 +115,17 @@ export default function CaregiverHomeScreen() {
         </View>
         {latest ? <SmaranCard style={styles.group}>
           <ThemedText type="action">{t(language, 'careNextLevel', { level: number(latest.recommendedDifficulty) })}</ThemedText>
+          <ThemedText type="cardHeading">{t(language, activityTitleKeys[latest.gameType])}</ThemedText>
           <ThemedText>{t(language, 'careLevelSource')}</ThemedText>
           <ThemedText type="secondary">{date(latest.completedAt)}</ThemedText>
           <ThemedText>{t(language, 'careAdaptive')}</ThemedText>
         </SmaranCard> : <ThemedText>{t(language, 'careNoSessions')}</ThemedText>}
         {!!data.cognitive.recent.length && <ThemedText type="action" accessibilityRole="header">{t(language, 'careRecentSessions')}</ThemedText>}
         {data.cognitive.recent.map(session => <SmaranCard key={session.id} style={styles.group}>
-          <ThemedText type="action">{t(language, 'gameTitle')}</ThemedText>
+          <ThemedText type="action">{t(language, activityTitleKeys[session.gameType])}</ThemedText>
           <ThemedText type="secondary">{date(session.completedAt)}</ThemedText>
           <ThemedText>{t(language, 'carePlayedLevel', { level: number(session.difficulty) })}</ThemedText>
-          <ThemedText>{facts(session)}</ThemedText>
+          <ThemedText>{activityFacts(language, session)}</ThemedText>
         </SmaranCard>)}
       </Section>
       <Section title={t(language, 'careRoutine')}>
@@ -161,7 +158,7 @@ export default function CaregiverHomeScreen() {
       <Section title={t(language, 'careRecent')}>
         {!data.recentActivity.length && <ThemedText>{t(language, 'careNoActivity')}</ThemedText>}
         {data.recentActivity.map(event => <SmaranCard key={event.id} style={styles.group}>
-          <ThemedText>{t(language, eventKeys[event.kind], { name: event.name ?? '' })}</ThemedText>
+          <ThemedText>{event.kind === 'session' && event.gameType ? t(language, 'activityComplete', { activity: t(language, activityTitleKeys[event.gameType]) }) : t(language, eventKeys[event.kind], { name: event.name ?? '' })}</ThemedText>
           <ThemedText type="secondary">{date(event.at)}</ThemedText>
         </SmaranCard>)}
       </Section>

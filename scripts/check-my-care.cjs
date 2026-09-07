@@ -79,7 +79,7 @@ async function main() {
     await session('end-boundary', patient, w.end.toISOString());
     assert.equal(await cognitive.countSessions(patient, w.today, w.end), 2, 'exclusive local end');
     sqlite.prepare('DELETE FROM cognitive_sessions WHERE id = ?').run('end-boundary');
-    await db.runAsync("INSERT INTO adaptive_model_state VALUES (?,99,99,99,99,99,99,100,?)", patient, iso(0));
+    await db.runAsync("INSERT INTO adaptive_model_state VALUES (?,'memory_match',99,99,99,99,99,99,100,?)", patient, iso(0));
     assert.deepEqual((await dashboard(patient, now)).cognitive, result.cognitive, 'model weights never treated as a level');
     for (let i = 0; i < 55; i++) await session(`bulk-${i}`, other, iso(-4000 - i));
     assert.equal((await dashboard(other, now)).cognitive.today, 56, 'counts not limited to recent-session cap');
@@ -147,7 +147,7 @@ async function main() {
     assert.equal((await resolver.resolveActivePatient()).profile.id, patient);
     flags.active = ''; flags.complete = ''; assert.equal((await resolver.resolveActivePatient()).status, 'fresh');
     flags.active = 'missing'; assert.equal((await resolver.resolveActivePatient()).status, 'inconsistent');
-    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 5);
+    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 6);
     assert.equal(w.end.getHours(), 0); assert.equal(w.last7.getHours(), 0);
     assert.equal(localDay(w.last7), '2026-03-02'); assert.equal(localDay(w.previous7), '2026-02-23');
     if (process.env.TZ === 'America/New_York') assert.equal((w.end - w.today) / 3600000, 23);
@@ -174,11 +174,11 @@ async function main() {
   assert.match(screen, /useIsFocused/u); assert.match(screen, /\[focused, attempt\]/u);
   assert.match(screen, /MemoryPhoto/u); assert.doesNotMatch(screen, /numberOfLines|ellipsizeMode/u);
   assert.deepEqual(fs.readdirSync(path.join(__dirname, '../src/db/migrations')).filter(file => /^\d/u.test(file)).sort(),
-    ['001_core_bootstrap.ts','002_cognitive_adaptation.ts','003_multilingual_expansion.ts','004_my_day.ts','005_my_memories.ts']);
+    ['001_core_bootstrap.ts','002_cognitive_adaptation.ts','003_multilingual_expansion.ts','004_my_day.ts','005_my_memories.ts','006_cognitive_expansion.ts']);
   const { validateMemoryPhotoPath } = load('src/memories/types.ts');
   assert.throws(() => validateMemoryPhotoPath('care-one', 'memories/care-two/' + 'a'.repeat(32) + '.jpg'));
   assert.throws(() => validateMemoryPhotoPath('care-one', '../outside.jpg'));
-  console.log('PASS: seven-language caregiver parity, factual wording, offline dependency scan, focus refresh contract, existing photo-path guards, no migration 006');
+  console.log('PASS: seven-language caregiver parity, factual wording, offline dependency scan, focus refresh contract, existing photo-path guards, approved migration 006 registered');
 }
 if (require.main === module) {
   main().then(() => {

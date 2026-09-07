@@ -4,7 +4,7 @@ import type {
   CognitiveSession,
   DifficultyLevel,
 } from '@db/schema.types';
-import type { CompletedMemoryTelemetry } from '@/src/games/memory-match/telemetry';
+import type { CompletedCognitiveTelemetry } from '../games/telemetry';
 
 export type AdaptiveFeatures = {
   accuracy: number;
@@ -33,7 +33,7 @@ export type AdaptiveSessionInput = {
   currentDifficulty: DifficultyLevel;
   patientId: string;
   recentSessions: readonly CognitiveSession[];
-  telemetry: CompletedMemoryTelemetry;
+  telemetry: CompletedCognitiveTelemetry;
 };
 
 export type PendingCognitiveSession = {
@@ -41,7 +41,7 @@ export type PendingCognitiveSession = {
   initialRecommendation: AdaptiveRecommendation;
   model: AdaptiveModelState;
   patientId: string;
-  telemetry: CompletedMemoryTelemetry;
+  telemetry: CompletedCognitiveTelemetry;
   currentDifficulty: DifficultyLevel;
 };
 

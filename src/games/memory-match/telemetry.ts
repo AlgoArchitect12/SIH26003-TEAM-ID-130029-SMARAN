@@ -13,6 +13,7 @@ export type MemoryTelemetryState = {
 };
 
 export type CompletedMemoryTelemetry = {
+  gameType: 'memory_match';
   accuracy: number;
   attempts: number;
   averageResponseMs: number;
@@ -83,6 +84,7 @@ export function finalizeTelemetry(
 ): CompletedMemoryTelemetry {
   const totalDecisionTime = state.decisionDurationsMs.reduce((total, value) => total + value, 0);
   return {
+    gameType: 'memory_match',
     accuracy: state.attempts === 0 ? 0 : state.matchedPairs / state.attempts,
     attempts: state.attempts,
     averageResponseMs:

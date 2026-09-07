@@ -45,7 +45,7 @@ export async function loadCaregiverDashboard(patientId: string, now = new Date()
   }
   upcoming.sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.reminder.id.localeCompare(b.reminder.id));
   const recentActivity: CareActivity[] = [
-    ...sessions.map(session => ({ id: `session-${session.id}`, kind: 'session' as const, at: session.completedAt })),
+    ...sessions.map(session => ({ id: `session-${session.id}`, kind: 'session' as const, gameType: session.gameType, at: session.completedAt })),
     // Event rows do not snapshot the original reminder title/category. Do not invent them from an edited reminder.
     ...events.map(event => ({ id: `reminder-${event.id}`, kind: 'reminder' as const, at: event.completedAt })),
     ...memories.flatMap(memory => [

@@ -96,8 +96,8 @@ export default function MemoryMatchScreen() {
           return;
         }
         const [history, savedModel] = await Promise.all([
-          cognitiveRepository.getRecentSessions(resolution.profile.id, 5),
-          cognitiveRepository.getAdaptiveModel(resolution.profile.id),
+          cognitiveRepository.getRecentSessions(resolution.profile.id, 5, 'memory_match'),
+          cognitiveRepository.getAdaptiveModel(resolution.profile.id, 'memory_match'),
         ]);
         if (!active) return;
         setLanguage(resolution.settings.language);
@@ -112,7 +112,7 @@ export default function MemoryMatchScreen() {
         setGame(createMemoryGame(nextDifficulty));
         setData({
           history,
-          model: savedModel ?? createInitialAdaptiveModel(resolution.profile.id),
+          model: savedModel ?? createInitialAdaptiveModel(resolution.profile.id, 'memory_match'),
           patientId: resolution.profile.id,
           settings: resolution.settings,
         });
@@ -149,9 +149,9 @@ export default function MemoryMatchScreen() {
               onPress={() => setLoadAttempt((value) => value + 1)}
             />
             <SmaranButton
-              accessibilityLabel={t(loadingLanguage, 'backHome')}
-              label={t(loadingLanguage, 'backHome')}
-              onPress={() => router.replace('/patient/home')}
+              accessibilityLabel={t(loadingLanguage, 'activitiesBack')}
+              label={t(loadingLanguage, 'activitiesBack')}
+              onPress={() => router.replace('/patient/games')}
               variant="outline"
             />
           </>
@@ -177,7 +177,7 @@ export default function MemoryMatchScreen() {
 
   const leave = () => {
     clearSession();
-    router.replace('/patient/home');
+    router.replace('/patient/games');
   };
 
   const begin = () => {
@@ -259,7 +259,7 @@ export default function MemoryMatchScreen() {
     <ScreenWrapper contentContainerStyle={styles.screen} scroll>
       <View onLayout={({ nativeEvent }) => setContentWidth(nativeEvent.layout.width)} style={styles.content}>
         <View style={styles.navigation}>
-          <SmaranButton accessibilityLabel={t(language, 'backHome')} label={t(language, 'backHome')} onPress={leave} variant="outline" />
+          <SmaranButton accessibilityLabel={t(language, 'activitiesBack')} label={t(language, 'activitiesBack')} onPress={leave} variant="outline" />
         </View>
         <View style={styles.heading}>
           <ThemedText accessibilityRole="header" textSize={textSize} type="screenTitle">

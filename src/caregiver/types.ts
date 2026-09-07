@@ -1,4 +1,4 @@
-import type { CognitiveSession, PatientProfile } from '../db/schema.types';
+import type { CognitiveActivityType, CognitiveSession, PatientProfile } from '../db/schema.types';
 import type { PersonalMemory } from '../memories/types';
 import type { Reminder, TodayReminder } from '../my-day/types';
 
@@ -8,6 +8,7 @@ export type CareActivity = {
   kind: 'session' | 'reminder' | 'memoryCreated' | 'memoryUpdated';
   at: string;
   name?: string;
+  gameType?: CognitiveActivityType;
 };
 export type CaregiverDashboard = {
   patient: Pick<PatientProfile, 'id' | 'preferredName'>;

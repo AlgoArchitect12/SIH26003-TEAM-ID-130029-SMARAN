@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -5,6 +6,8 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { createInitialAdaptiveModel, recommendDifficulty } from '@ai/adaptive-engine';
 import { chooseExplanationTemplate } from '@ai/explanation';
 import { extractAdaptiveFeatures } from '@ai/feature-extractor';
+import { sessionTelemetry } from '@/src/games/telemetry';
+import { activitySummary, activityTitleKeys } from '@/src/games/presentation';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
@@ -35,6 +38,7 @@ function textSizeFor(settings: PatientSettings): TextSizePreference {
 
 export default function WhyLevelScreen() {
   const router = useRouter();
+  const focused = useIsFocused();
   const { sessionId } = useLocalSearchParams<{ sessionId?: string }>();
   const colors = useThemeColors();
   const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
@@ -45,23 +49,25 @@ export default function WhyLevelScreen() {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (!focused) return;
     let active = true;
     setFailed(false);
     if (!sessionId) {
-      router.replace('/patient/home');
+      router.replace('/patient/games');
       return;
     }
 
-    Promise.all([resolveActivePatient(), cognitiveRepository.getSessionById(sessionId)])
-      .then(async ([resolution, session]) => {
+    resolveActivePatient()
+      .then(async (resolution) => {
+        const session = resolution.status === 'ready' ? await cognitiveRepository.getSessionById(resolution.profile.id, sessionId) : null;
         if (!active) return;
         if (resolution.status !== 'ready' || !session || session.patientId !== resolution.profile.id) {
-          router.replace('/patient/home');
+          router.replace('/patient/games');
           return;
         }
         const [recentSessions, savedModel] = await Promise.all([
-          cognitiveRepository.getRecentSessions(session.patientId, 6),
-          cognitiveRepository.getAdaptiveModel(session.patientId),
+          cognitiveRepository.getRecentSessions(session.patientId, 5, session.gameType, session.completedAt),
+          cognitiveRepository.getAdaptiveModel(session.patientId, session.gameType),
         ]);
         if (!active) return;
         setLanguage(resolution.settings.language);
@@ -76,23 +82,12 @@ export default function WhyLevelScreen() {
           currentDifficulty: session.difficulty,
           patientId: session.patientId,
           recentSessions: history,
-          telemetry: {
-            accuracy: session.accuracy,
-            attempts: session.attempts,
-            averageResponseMs: session.averageResponseMs,
-            completedAtMs: Date.parse(session.completedAt),
-            hintsUsed: session.hintsUsed,
-            idleTimeBeforeFirstFlipMs: 0,
-            matches: session.matches,
-            repeatedMistakes: session.repeatedMistakes,
-            startedAtMs: Date.parse(session.startedAt),
-            totalPairs: session.totalPairs,
-          },
+          telemetry: sessionTelemetry(session),
         });
         const computed = recommendDifficulty(
           session.difficulty,
           extraction.features,
-          savedModel ?? createInitialAdaptiveModel(session.patientId)
+          savedModel ?? createInitialAdaptiveModel(session.patientId, session.gameType)
         );
         const direction: AdaptiveDirection =
           session.recommendedDifficulty < session.difficulty
@@ -106,7 +101,7 @@ export default function WhyLevelScreen() {
           recommendedDifficulty: session.recommendedDifficulty,
         };
         setData({
-          explanationKey: chooseExplanationTemplate(recommendation, extraction),
+          explanationKey: chooseExplanationTemplate(recommendation, extraction, session.gameType),
           extraction,
           session,
           settings: resolution.settings,
@@ -120,7 +115,7 @@ export default function WhyLevelScreen() {
     return () => {
       active = false;
     };
-  }, [loadAttempt, router, sessionId, setAccessibility, setLanguage]);
+  }, [focused, loadAttempt, router, sessionId, setAccessibility, setLanguage]);
 
   if (!data) {
     return (
@@ -129,7 +124,7 @@ export default function WhyLevelScreen() {
           <View style={styles.actions}>
             <ThemedText accessibilityRole="alert">{t(loadingLanguage, 'errorSafeTitle')}</ThemedText>
             <SmaranButton accessibilityLabel={t(loadingLanguage, 'retry')} label={t(loadingLanguage, 'retry')} onPress={() => setLoadAttempt((value) => value + 1)} />
-            <SmaranButton accessibilityLabel={t(loadingLanguage, 'backHome')} label={t(loadingLanguage, 'backHome')} onPress={() => router.replace('/patient/home')} variant="outline" />
+            <SmaranButton accessibilityLabel={t(loadingLanguage, 'activitiesBack')} label={t(loadingLanguage, 'activitiesBack')} onPress={() => router.replace('/patient/games')} variant="outline" />
           </View>
         ) : (
           <View style={styles.actions}>
@@ -144,16 +139,17 @@ export default function WhyLevelScreen() {
   const { extraction, session, settings, explanationKey } = data;
   const language = settings.language;
   const textSize = textSizeFor(settings);
-  const explanation = t(language, explanationKey);
+  const activity = t(language, activityTitleKeys[session.gameType]);
+  const explanation = t(language, explanationKey, { activity });
   const recommendationText = t(language, session.recommendedDifficulty < session.difficulty ? 'recommendationGentler' : session.recommendedDifficulty > session.difficulty ? 'recommendationChallenge' : 'recommendationHold');
   const paceKey = extraction.hasPersonalBaseline ? 'factorPaceSimilar' : 'factorPaceLearning';
   const facts = [
-    t(language, 'factorPairs', { value: `${session.matches} / ${session.totalPairs}` }),
+    session.gameType === 'memory_match' ? t(language, 'factorPairs', { value: `${session.matches} / ${session.totalPairs}` }) : activitySummary(language, session),
     t(language, 'factorHints', { value: String(session.hintsUsed) }),
     t(language, paceKey),
   ];
   const readText = [
-    t(language, 'whyTitle'),
+    t(language, 'whyTitle'), activity,
     t(language, 'nextTime'),
     recommendationText,
     ...facts,
@@ -167,6 +163,7 @@ export default function WhyLevelScreen() {
         <ThemedText accessibilityRole="header" textSize={textSize} type="screenTitle">
           {t(language, 'whyTitle')}
         </ThemedText>
+        <ThemedText textSize={textSize} type="cardHeading">{activity}</ThemedText>
         <SmaranCard style={styles.facts}>
           <ThemedText textSize={textSize} type="secondary">{t(language, 'nextTime')}</ThemedText>
           <ThemedText textSize={textSize} type="cardHeading">{recommendationText}</ThemedText>
@@ -182,7 +179,7 @@ export default function WhyLevelScreen() {
         {settings.voiceGuidance ? <ReadScreenButton language={language} text={readText} /> : null}
         <View style={styles.actions}>
           <SmaranButton accessibilityLabel={t(language, 'back')} label={t(language, 'back')} onPress={() => router.back()} variant="outline" />
-          <SmaranButton accessibilityLabel={t(language, 'backHome')} label={t(language, 'backHome')} onPress={() => router.replace('/patient/home')} />
+          <SmaranButton accessibilityLabel={t(language, 'activitiesBack')} label={t(language, 'activitiesBack')} onPress={() => router.replace('/patient/games')} />
         </View>
       </View>
     </ScreenWrapper>

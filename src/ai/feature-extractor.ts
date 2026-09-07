@@ -1,4 +1,7 @@
 import type { AdaptiveSessionInput, FeatureExtraction } from './types';
+import type { CognitiveSession } from '../db/schema.types';
+import type { CompletedMemoryTelemetry } from '../games/memory-match/telemetry';
+import type { CompletedPatternTelemetry, CompletedRoutineTelemetry } from '../games/telemetry';
 
 function clamp01(value: number) {
   if (!Number.isFinite(value)) return 0.5;
@@ -14,9 +17,18 @@ function complexityAdjustedPace(milliseconds: number, totalPairs: number) {
 }
 
 export function extractAdaptiveFeatures(input: AdaptiveSessionInput): FeatureExtraction {
+  switch (input.telemetry.gameType) {
+    case 'memory_match': return extractMemoryFeatures({ ...input, telemetry: input.telemetry });
+    case 'pattern_recognition': return extractPatternFeatures({ ...input, telemetry: input.telemetry });
+    case 'routine_recall': return extractRoutineFeatures({ ...input, telemetry: input.telemetry });
+  }
+}
+
+function extractMemoryFeatures(input: Omit<AdaptiveSessionInput, 'telemetry'> & { telemetry: CompletedMemoryTelemetry }): FeatureExtraction {
   // Repository queries are patient-scoped; this additional filter keeps the pure boundary verifiable.
   const history = input.recentSessions
-    .filter((session) => session.patientId === input.patientId && !session.isDemoSeed)
+    .filter((session): session is Extract<CognitiveSession, { gameType: 'memory_match' }> =>
+      session.patientId === input.patientId && !session.isDemoSeed && session.gameType === 'memory_match')
     .slice(0, 5);
   const personalPaces = history.map((session) =>
     complexityAdjustedPace(session.averageResponseMs, session.totalPairs)
@@ -51,5 +63,44 @@ export function extractAdaptiveFeatures(input: AdaptiveSessionInput): FeatureExt
     },
     hasPersonalBaseline: history.length > 0,
     personalPaceBaselineMs,
+  };
+}
+
+// Each selection is one decision. Compare only this patient's same-activity decision times.
+function selectionBaseline(input: AdaptiveSessionInput) {
+  const history = input.recentSessions.filter(session => session.patientId === input.patientId &&
+    session.gameType === input.telemetry.gameType && !session.isDemoSeed).slice(0, 5);
+  const pace = history.length ? average(history.map(session => session.averageResponseMs)) : null;
+  return {
+    hasPersonalBaseline: history.length > 0,
+    personalPaceBaselineMs: pace,
+    relativePace: pace === null || pace <= 0 ? 0.5 : clamp01(0.5 + (pace - input.telemetry.averageResponseMs) / (2 * pace)),
+    stability: history.length ? clamp01(0.5 + (input.telemetry.accuracy - average(history.map(session => session.accuracy))) / 2) : 0.5,
+  };
+}
+
+export function extractPatternFeatures(input: Omit<AdaptiveSessionInput, 'telemetry'> & { telemetry: CompletedPatternTelemetry }): FeatureExtraction {
+  const baseline = selectionBaseline(input), value = input.telemetry;
+  return {
+    hasPersonalBaseline: baseline.hasPersonalBaseline, personalPaceBaselineMs: baseline.personalPaceBaselineMs,
+    features: {
+      accuracy: clamp01(value.accuracy), relativePace: baseline.relativePace,
+      workingMemory: value.attempts ? clamp01(1 - value.repeatedErrors / value.attempts) : 0.5,
+      independence: value.challengesCompleted ? clamp01(1 - value.hintsUsed / value.challengesCompleted) : 0.5,
+      stability: baseline.stability,
+    },
+  };
+}
+
+export function extractRoutineFeatures(input: Omit<AdaptiveSessionInput, 'telemetry'> & { telemetry: CompletedRoutineTelemetry }): FeatureExtraction {
+  const baseline = selectionBaseline(input), value = input.telemetry;
+  return {
+    hasPersonalBaseline: baseline.hasPersonalBaseline, personalPaceBaselineMs: baseline.personalPaceBaselineMs,
+    features: {
+      accuracy: clamp01(value.accuracy), relativePace: baseline.relativePace,
+      workingMemory: value.attempts ? clamp01((value.correctSelections - value.repeatedErrors) / value.attempts) : 0.5,
+      independence: value.stepsCompleted ? clamp01(1 - value.hintsUsed / value.stepsCompleted) : 0.5,
+      stability: baseline.stability,
+    },
   };
 }

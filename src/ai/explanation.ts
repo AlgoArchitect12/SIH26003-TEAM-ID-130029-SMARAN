@@ -1,8 +1,10 @@
 import type { TranslationKey } from '@i18n/index';
+import type { CognitiveActivityType } from '../db/schema.types';
 
 import type { AdaptiveRecommendation, FeatureExtraction } from './types';
 
 export const ExplanationTemplateKeys = [
+  'activityColdStart', 'activityChallenge', 'activitySupport', 'activityHold',
   'explanationColdStart',
   'explanationAddChallenge',
   'explanationMoreSupport',
@@ -14,8 +16,13 @@ export type ExplanationTemplateKey = (typeof ExplanationTemplateKeys)[number];
 
 export function chooseExplanationTemplate(
   recommendation: AdaptiveRecommendation,
-  extraction: FeatureExtraction
+  extraction: FeatureExtraction,
+  gameType: CognitiveActivityType = 'memory_match'
 ): ExplanationTemplateKey {
+  if (gameType !== 'memory_match') {
+    if (!extraction.hasPersonalBaseline) return 'activityColdStart';
+    return recommendation.direction === 'challenge' ? 'activityChallenge' : recommendation.direction === 'gentler' ? 'activitySupport' : 'activityHold';
+  }
   if (!extraction.hasPersonalBaseline) return 'explanationColdStart';
   if (recommendation.direction === 'challenge') return 'explanationAddChallenge';
   if (recommendation.direction === 'gentler') return 'explanationMoreSupport';
