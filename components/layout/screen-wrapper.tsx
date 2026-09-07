@@ -70,5 +70,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.xl,
   },
 });

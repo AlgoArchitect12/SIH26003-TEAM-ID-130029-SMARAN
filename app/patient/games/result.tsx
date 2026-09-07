@@ -1,3 +1,4 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -61,7 +62,7 @@ export default function CognitiveResultScreen() {
     let active = true;
     setStatus('loading');
     if (!pending && !saved) {
-      router.replace('/patient/games');
+      router.dismissTo('/patient/games');
       return;
     }
     resolveActivePatient()
@@ -74,7 +75,7 @@ export default function CognitiveResultScreen() {
         const patientId = pending?.patientId ?? saved?.session.patientId;
         if (patientId !== resolution.profile.id) {
           clear();
-          router.replace('/patient/games');
+          router.dismissTo('/patient/games');
           return;
         }
         setLanguage(resolution.settings.language);
@@ -104,7 +105,7 @@ export default function CognitiveResultScreen() {
           <View style={styles.actions}>
             <ThemedText accessibilityRole="alert">{t(loadingLanguage, 'errorSafeTitle')}</ThemedText>
             <SmaranButton accessibilityLabel={t(loadingLanguage, 'retry')} label={t(loadingLanguage, 'retry')} onPress={() => setLoadAttempt((value) => value + 1)} />
-            <SmaranButton accessibilityLabel={t(loadingLanguage, 'activitiesBack')} label={t(loadingLanguage, 'activitiesBack')} onPress={() => router.replace('/patient/games')} variant="outline" />
+            <SmaranButton accessibilityLabel={t(loadingLanguage, 'activitiesBack')} label={t(loadingLanguage, 'activitiesBack')} onPress={() => router.dismissTo('/patient/games')} variant="outline" />
           </View>
         ) : (
           <View style={styles.actions}>
@@ -146,8 +147,8 @@ export default function CognitiveResultScreen() {
 
   const readText = [
     t(language, 'resultTitle', { name: preferredName }), activity,
-    completedSummary,
-    t(language, 'nextTime'),
+    t(language, 'activityFinished'), completedSummary,
+    t(language, 'activityNextLevel', { level: String(recommendation.recommendedDifficulty) }),
     recommendationText,
     ...(!saved ? [t(language, 'resultQuestion'), ...feedbackOptions.map((option) => t(language, option.key)), t(language, 'skip')] : [t(language, 'whyLevel'), t(language, 'activitiesBack')]),
   ].join(' ');
@@ -158,13 +159,20 @@ export default function CognitiveResultScreen() {
         <ThemedText accessibilityRole="header" textSize={textSize} type="screenTitle">
           {t(language, 'resultTitle', { name: preferredName })}
         </ThemedText>
-        <ThemedText textSize={textSize} type="cardHeading">{activity}</ThemedText>
-        <ThemedText textSize={textSize}>{completedSummary}</ThemedText>
-        <ThemedText textSize={textSize}>{t(language, 'activityAccuracy', { accuracy: new Intl.NumberFormat(language, { style: 'percent', maximumFractionDigits: 0 }).format(metrics.accuracy) })}</ThemedText>
-        <SmaranCard style={styles.recommendation}>
-          <ThemedText textSize={textSize}>{t(language, 'activityNextLevel', { level: String(recommendation.recommendedDifficulty) })}</ThemedText>
-          <ThemedText textSize={textSize} type="secondary">{t(language, 'nextTime')}</ThemedText>
-          <ThemedText accessibilityLiveRegion="polite" textSize={textSize} type="cardHeading">{recommendationText}</ThemedText>
+        <View style={styles.completion}>
+          <MaterialIcons name="check-circle" color={colors.success} size={32} accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+          <ThemedText textSize={textSize} type="action" style={{ flex: 1 }}>{t(language, 'activityFinished')}</ThemedText>
+        </View>
+        <SmaranCard style={styles.summary}>
+          <ThemedText textSize={textSize} type="cardHeading">{activity}</ThemedText>
+          <ThemedText textSize={textSize}>{completedSummary}</ThemedText>
+          <ThemedText textSize={textSize}>{t(language, 'activityAccuracy', { accuracy: new Intl.NumberFormat(language, { style: 'percent', maximumFractionDigits: 0 }).format(metrics.accuracy) })}</ThemedText>
+          <ThemedText textSize={textSize} type="secondary">{metrics.gameType === 'memory_match' ? t(language, 'factorAttempts', { value: String(attempts) }) : t(language, 'selectionsAttempts', { count: String(attempts) })}</ThemedText>
+          <ThemedText textSize={textSize} type="secondary">{t(language, 'resultHints', { hints: String(hints) })}</ThemedText>
+        </SmaranCard>
+        <SmaranCard style={[styles.recommendation, { borderColor: colors.primary, backgroundColor: colors.surfaceMuted }]}>
+          <ThemedText textSize={textSize} type="action">{t(language, 'activityNextLevel', { level: String(recommendation.recommendedDifficulty) })}</ThemedText>
+          <ThemedText accessibilityLiveRegion="polite" textSize={textSize}>{recommendationText}</ThemedText>
         </SmaranCard>
 
         {!saved ? (
@@ -186,6 +194,7 @@ export default function CognitiveResultScreen() {
             <SmaranButton
               accessibilityLabel={t(language, 'skip')}
               disabled={saving}
+              loading={saving}
               label={saving ? t(language, 'gameSaving') : t(language, 'skip')}
               onPress={() => void submit(null)}
               variant="outline"
@@ -209,15 +218,11 @@ export default function CognitiveResultScreen() {
               label={t(language, 'activitiesBack')}
               onPress={() => {
                 clear();
-                router.replace('/patient/games');
+                router.dismissTo('/patient/games');
               }}
             />
           </View>
         )}
-        <View style={styles.summary}>
-          <ThemedText textSize={textSize} type="secondary">{metrics.gameType === 'memory_match' ? t(language, 'resultAttempts', { attempts: String(attempts) }) : t(language, 'selectionsAttempts', { count: String(attempts) })}</ThemedText>
-          <ThemedText textSize={textSize} type="secondary">{t(language, 'resultHints', { hints: String(hints) })}</ThemedText>
-        </View>
         {settings.voiceGuidance ? <ReadScreenButton language={language} text={readText} /> : null}
       </View>
     </ScreenWrapper>
@@ -228,6 +233,7 @@ const styles = StyleSheet.create({
   screen: { flexGrow: 1 },
   content: { alignSelf: 'center', gap: Spacing.lg, maxWidth: 640, width: '100%' },
   centered: { flexGrow: 1, gap: Spacing.lg, justifyContent: 'center' },
+  completion: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   summary: { gap: Spacing.sm },
   recommendation: { gap: Spacing.sm },
   feedback: { gap: Spacing.md },

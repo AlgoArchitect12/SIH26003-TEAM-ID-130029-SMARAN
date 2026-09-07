@@ -1,6 +1,10 @@
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { ScreenWrapper } from '@components/layout/screen-wrapper';
+import { SmaranLoading } from '@components/ui/smaran-loading';
+import { Colors } from '@constants/colors';
 
 import { ErrorBoundary } from '@components/error-boundary';
 import { ThemedText } from '@components/themed-text';
@@ -44,17 +48,18 @@ function DatabaseBootstrap() {
   }, [attempt]);
 
   if (status === 'ready') {
-    return <Stack screenOptions={{ headerShown: false }} />;
+    return <>
+      <StatusBar style={colors.background === Colors.dark.background ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false, animation: 'none' }} />
+    </>;
   }
 
   return (
-    <ScrollView accessibilityRole={status === 'failed' ? 'alert' : undefined} style={{ backgroundColor: colors.background }} contentContainerStyle={styles.container}>
+    <ScreenWrapper scroll contentContainerStyle={styles.container}>
+      <StatusBar style={colors.background === Colors.dark.background ? 'light' : 'dark'} />
       <ThemedText type="screenTitle">Smaran AI</ThemedText>
-      <ThemedText style={styles.message}>
-        {status === 'failed'
-          ? t(language, 'setupUnavailable')
-          : t(language, 'loadingSetup')}
-      </ThemedText>
+      {status === 'failed' ? <ThemedText accessibilityRole="alert" style={styles.message}>{t(language, 'setupUnavailable')}</ThemedText>
+        : <SmaranLoading label={t(language, 'loadingSetup')} />}
       {status === 'failed' ? (
         <SmaranButton
           accessibilityLabel={t(language, 'retry')}
@@ -63,7 +68,7 @@ function DatabaseBootstrap() {
           style={styles.button}
         />
       ) : null}
-    </ScrollView>
+    </ScreenWrapper>
   );
 }
 

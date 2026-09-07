@@ -1,3 +1,4 @@
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useIsFocused } from '@react-navigation/native';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { Stack, useRouter } from 'expo-router';
@@ -64,7 +65,7 @@ export default function CaregiverHomeScreen() {
     return () => { active = false; };
   }, [focused, attempt]);
 
-  const back = () => router.canGoBack() ? router.back() : router.replace(data ? '/patient/home' : '/onboarding/role');
+  const back = () => data ? router.dismissTo('/patient/home') : router.canGoBack() ? router.back() : router.replace('/onboarding/role');
   const number = (value: number) => new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(value);
   const date = (value: string) => new Intl.DateTimeFormat(language, {
     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
@@ -84,28 +85,25 @@ export default function CaregiverHomeScreen() {
   ].join('. ') : '';
   return <ScreenWrapper scroll><View style={styles.content}>
     <Stack.Screen options={{ animation: 'none' }} />
-    <SmaranButton label={t(language, 'back')} accessibilityLabel={t(language, 'back')} variant="outline" onPress={back} />
+    <SmaranButton label={t(language, data ? 'backHome' : 'back')} accessibilityLabel={t(language, data ? 'backHome' : 'back')} variant="outline" onPress={back} />
     <View style={styles.group}>
       <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeCareTitle')}</ThemedText>
       <ThemedText type="secondary">{t(language, 'careLocal')}</ThemedText>
-      <ThemedText>{t(language, 'careIntro')}</ThemedText>
+      {data && <ThemedText type="cardHeading" accessibilityRole="header">{data.patient.preferredName}</ThemedText>}
     </View>
-    {status === 'loading' && <ThemedText accessibilityLiveRegion="polite">{t(language, 'loadingSetup')}</ThemedText>}
+    {status === 'loading' && <SmaranLoading label={t(language, 'loadingSetup')} />}
     {status === 'failed' && <View style={styles.group} accessibilityRole="alert">
       <ThemedText>{t(language, 'careFailed')}</ThemedText>
       <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={() => setAttempt(n => n + 1)} />
     </View>}
     {status === 'missing' && <SmaranCard><ThemedText>{t(language, 'careMissing')}</ThemedText></SmaranCard>}
     {status === 'ready' && data && <>
-      <ThemedText type="cardHeading" accessibilityRole="header">{data.patient.preferredName}</ThemedText>
       {voiceGuidance && <ReadScreenButton language={language} text={summary} labelKey="careReadSummary" />}
       <Section title={t(language, 'careGlance')}>
         <View style={styles.metrics}>
           <Metric label={t(language, 'careToday')} value={t(language, 'careCount', { count: number(data.cognitive.today) })} />
           <Metric label={t(language, 'careRoutine')} value={t(language, 'careDoneCount', { done: number(data.routine.done), total: number(data.routine.today.length) })} />
           <Metric label={t(language, 'homeMemoriesTitle')} value={t(language, 'careMemories', { count: number(data.memories.count) })} />
-          <Metric label={t(language, 'careNext')} value={data.upcoming[0] ? upcomingText(data.upcoming[0]) : t(language, 'careNoUpcoming')} />
-          <Metric label={t(language, 'careAppointment')} value={data.appointment ? upcomingText(data.appointment) : t(language, 'careNoAppointment')} />
         </View>
       </Section>
       <Section title={t(language, 'careCognitive')}>
@@ -119,7 +117,7 @@ export default function CaregiverHomeScreen() {
           <ThemedText>{t(language, 'careLevelSource')}</ThemedText>
           <ThemedText type="secondary">{date(latest.completedAt)}</ThemedText>
           <ThemedText>{t(language, 'careAdaptive')}</ThemedText>
-        </SmaranCard> : <ThemedText>{t(language, 'careNoSessions')}</ThemedText>}
+        </SmaranCard> : <View style={styles.group}><ThemedText>{t(language, 'careNoSessions')}</ThemedText><SmaranButton label={t(language, 'homeTrainTitle')} accessibilityLabel={t(language, 'homeTrainTitle')} onPress={() => router.push('/patient/games')} /></View>}
         {!!data.cognitive.recent.length && <ThemedText type="action" accessibilityRole="header">{t(language, 'careRecentSessions')}</ThemedText>}
         {data.cognitive.recent.map(session => <SmaranCard key={session.id} style={styles.group}>
           <ThemedText type="action">{t(language, activityTitleKeys[session.gameType])}</ThemedText>
@@ -130,7 +128,7 @@ export default function CaregiverHomeScreen() {
       </Section>
       <Section title={t(language, 'careRoutine')}>
         <ThemedText>{t(language, 'carePending', { count: number(data.routine.pending) })}</ThemedText>
-        {!data.routine.today.length && <ThemedText>{t(language, 'careNoRoutine')}</ThemedText>}
+        {!data.routine.today.length && <View style={styles.group}><ThemedText>{t(language, 'careNoRoutine')}</ThemedText><SmaranButton label={t(language, 'dayAdd')} accessibilityLabel={t(language, 'dayAdd')} onPress={() => router.push('/patient/my-day-reminder')} variant="outline" /></View>}
         {data.routine.today.map(reminder => <SmaranCard key={reminder.id} style={styles.group}>
           <ThemedText type="secondary">{t(language, category[reminder.type].key)} • {timeLabel(language, reminder.timeOfDay)}</ThemedText>
           <ThemedText type="action">{reminder.title}</ThemedText>
@@ -138,6 +136,9 @@ export default function CaregiverHomeScreen() {
         </SmaranCard>)}
       </Section>
       <Section title={t(language, 'careUpcoming')}>
+        <View style={styles.metrics}>
+          <Metric label={t(language, 'careAppointment')} value={data.appointment ? upcomingText(data.appointment) : t(language, 'careNoAppointment')} />
+        </View>
         {!data.upcoming.length && <ThemedText>{t(language, 'careNoUpcoming')}</ThemedText>}
         {data.upcoming.map(item => <SmaranCard key={item.reminder.id} style={styles.group}>
           <ThemedText type="secondary">{t(language, item.reminder.type === 'appointment' ? 'careAppointment' : category[item.reminder.type].key)}</ThemedText>
@@ -147,7 +148,7 @@ export default function CaregiverHomeScreen() {
       </Section>
       <Section title={t(language, 'homeMemoriesTitle')}>
         <ThemedText>{t(language, 'careMemories', { count: number(data.memories.count) })}</ThemedText>
-        {!data.memories.count && <ThemedText>{t(language, 'careNoMemories')}</ThemedText>}
+        {!data.memories.count && <View style={styles.group}><ThemedText>{t(language, 'careNoMemories')}</ThemedText><SmaranButton label={t(language, 'memoryAdd')} accessibilityLabel={t(language, 'memoryAdd')} onPress={() => router.push('/patient/my-memory-editor')} variant="outline" /></View>}
         {data.memories.recent.map(memory => <SmaranCard key={memory.id} style={styles.group}>
           <MemoryPhoto patientId={memory.patientId} path={memory.photoPath} name={memory.name} language={language} />
           <ThemedText type="action">{memory.name}</ThemedText>
@@ -167,7 +168,6 @@ export default function CaregiverHomeScreen() {
       <ThemedText>{t(language, 'careBoundary')}</ThemedText>
       <ThemedText>{t(language, 'careDisclaimer')}</ThemedText>
     </Section>
-    <SmaranButton label={t(language, 'back')} accessibilityLabel={t(language, 'back')} variant="outline" onPress={back} />
   </View></ScreenWrapper>;
 }
 const styles = StyleSheet.create({

@@ -1,3 +1,4 @@
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -34,7 +35,7 @@ export default function MyMemoriesScreen() {
     ...memories.map(memory => `${memory.name}. ${memory.relationship}`),
     loaded && !memories.length ? `${t(language, 'memoryEmpty')} ${t(language, 'memoryEmptyHelp')}` : ''].join(' ');
   return <ScreenWrapper scroll><View style={styles.content}>
-    <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" onPress={() => router.replace('/patient/home')} />
+    <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" onPress={() => router.dismissTo('/patient/home')} />
     <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeMemoriesTitle')}</ThemedText>
     <ThemedText>{t(language, 'memoryIntro')}</ThemedText>
     <ReadScreenButton language={language} text={speech} />
@@ -42,7 +43,7 @@ export default function MyMemoriesScreen() {
     {(failed || patientFailed) ? <View style={styles.group} accessibilityRole="alert">
       <ThemedText>{t(language, 'memoryFailed')}</ThemedText>
       <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={() => { retryPatient(); setAttempt(n => n + 1); }} />
-    </View> : !loaded && <ThemedText>{t(language, 'loadingSetup')}</ThemedText>}
+    </View> : !loaded && <SmaranLoading label={t(language, 'loadingSetup')} />}
     {loaded && !failed && !memories.length && <View style={styles.group}>
       <ThemedText type="cardHeading">{t(language, 'memoryEmpty')}</ThemedText>
       <ThemedText>{t(language, 'memoryEmptyHelp')}</ThemedText>
@@ -53,7 +54,7 @@ export default function MyMemoriesScreen() {
       <View style={styles.group}>
         <MemoryPhoto patientId={memory.patientId} path={memory.photoPath} name={memory.name} language={language} />
         <ThemedText type="cardHeading">{memory.name}</ThemedText>
-        {!!memory.relationship && <ThemedText>{memory.relationship}</ThemedText>}
+        {!!memory.relationship && <ThemedText type="secondary">{memory.relationship}</ThemedText>}
         <ThemedText type="defaultSemiBold">{t(language, 'memoryOpen')}</ThemedText>
       </View>
     </SmaranCard>)}

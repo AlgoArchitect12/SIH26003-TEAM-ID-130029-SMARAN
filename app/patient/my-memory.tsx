@@ -1,3 +1,4 @@
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -40,21 +41,21 @@ export default function MemoryDetailScreen() {
     locked.current = true; setBusy(true);
     try {
       const result = await memoriesService.remove(patientId, memory.id);
-      router.replace({ pathname: '/patient/my-memories', params: { cleanup: result.cleanupFailed ? '1' : '0' } });
+      router.dismissTo({ pathname: '/patient/my-memories', params: { cleanup: result.cleanupFailed ? '1' : '0' } });
     } catch (error) { setFailed(true); if (error instanceof MemoryError && error.code === 'missing') setMissing(true); }
     finally { locked.current = false; setBusy(false); }
   };
   return <ScreenWrapper scroll><View style={styles.content}>
-    <SmaranButton label={t(language, 'back')} accessibilityLabel={t(language, 'memoryBack')} variant="outline" disabled={busy} onPress={() => router.replace('/patient/my-memories')} />
+    <SmaranButton label={t(language, 'back')} accessibilityLabel={t(language, 'memoryBack')} variant="outline" disabled={busy} onPress={() => router.dismissTo('/patient/my-memories')} />
     {(failed || patientFailed || missing) && <View style={styles.group} accessibilityRole="alert">
       <ThemedText>{t(language, missing ? 'memoryMissing' : 'memoryFailed')}</ThemedText>
       {!missing && <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} disabled={busy} onPress={() => { retryPatient(); setAttempt(n => n + 1); }} />}
     </View>}
-    {!memory && !failed && !patientFailed && !missing && <ThemedText>{t(language, 'loadingSetup')}</ThemedText>}
+    {!memory && !failed && !patientFailed && !missing && <SmaranLoading label={t(language, 'loadingSetup')} />}
     {memory && !missing && <>
       <MemoryPhoto patientId={memory.patientId} path={memory.photoPath} name={memory.name} language={language} />
       <ThemedText type="screenTitle" accessibilityRole="header">{memory.name}</ThemedText>
-      {!!memory.relationship && <ThemedText type="cardHeading">{memory.relationship}</ThemedText>}
+      {!!memory.relationship && <ThemedText type="secondary">{memory.relationship}</ThemedText>}
       {!!memory.description && <ThemedText>{memory.description}</ThemedText>}
       <ReadScreenButton language={language} labelKey="memoryHear" text={[t(language, 'memorySpeakIntro', { name: memory.name }), memory.relationship, memory.description].filter(Boolean).join(' ')} />
       {cleanup === '1' && <ThemedText accessibilityRole="alert">{t(language, 'memorySavedCleanup')}</ThemedText>}
@@ -67,6 +68,6 @@ export default function MemoryDetailScreen() {
         <SmaranButton label={t(language, 'memoryRemove')} accessibilityLabel={t(language, 'memoryRemove')} disabled={busy} loading={busy} variant="outline" onPress={() => void remove()} />
       </View> : <SmaranButton label={t(language, 'memoryRemove')} accessibilityLabel={t(language, 'memoryRemove')} variant="outline" onPress={() => setConfirm(true)} />}
     </>}
-    <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" disabled={busy} onPress={() => router.replace('/patient/home')} />
+    <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" disabled={busy} onPress={() => router.dismissTo('/patient/home')} />
   </View></ScreenWrapper>;
 }

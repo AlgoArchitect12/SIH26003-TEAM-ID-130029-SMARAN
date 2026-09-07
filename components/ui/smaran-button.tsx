@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -112,7 +113,7 @@ export function SmaranButton({
         style,
       ]}>
       <View style={styles.content}>
-        {icon}
+        {loading ? <ActivityIndicator color={disabled ? colors.onDisabled : selectedVariant.color} /> : icon}
         <Text
           style={[
             styles.label,

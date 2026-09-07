@@ -15,7 +15,7 @@ if (Platform.OS !== 'web') Notifications.setNotificationHandler({
 export async function reminderPermission(request = false): Promise<ReminderPermission> {
   if (Platform.OS === 'web') return 'unavailable';
   if (Platform.OS === 'android') await Notifications.setNotificationChannelAsync(channelId, {
-    name: 'Smaran', importance: Notifications.AndroidImportance.DEFAULT,
+    name: 'Smaran reminders', importance: Notifications.AndroidImportance.DEFAULT,
   });
   const permission = request ? await Notifications.requestPermissionsAsync() : await Notifications.getPermissionsAsync();
   if (permission.granted || (permission.ios && [Notifications.IosAuthorizationStatus.PROVISIONAL,

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useIsFocused } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@components/themed-text';
@@ -46,13 +46,12 @@ export function useMyHomePatient() {
 export function RegionalRecovery({ status, language, retry }: {
   status: 'loading' | 'invalid' | 'failed'; language: Language; retry: () => void;
 }) {
-  const router = useRouter();
+  if (status === 'loading') return <SmaranLoading label={t(language, 'loadingSetup')} />;
   return <View style={homeStyles.group}>
-    <ThemedText accessibilityRole={status === 'loading' ? undefined : 'alert'}>
-      {t(language, status === 'loading' ? 'loadingSetup' : status === 'invalid' ? 'regionalInvalid' : 'regionalFailed')}
+    <ThemedText accessibilityRole="alert">
+      {t(language, status === 'invalid' ? 'regionalInvalid' : 'regionalFailed')}
     </ThemedText>
-    {status !== 'loading' && <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={retry} />}
-    <SmaranButton label={t(language, 'returnHome')} accessibilityLabel={t(language, 'returnHome')} variant="outline" onPress={() => router.replace('/patient/home')} />
+    <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={retry} />
   </View>;
 }
 

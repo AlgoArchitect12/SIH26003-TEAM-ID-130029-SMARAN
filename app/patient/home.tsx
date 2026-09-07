@@ -40,7 +40,7 @@ const homeActions: readonly {
     titleKey: 'homeMemoriesTitle',
   },
   { descriptionKey: 'homeRegionDescription', icon: 'landscape', titleKey: 'homeRegionTitle' },
-  { descriptionKey: 'careOpen', icon: 'favorite', titleKey: 'homeCareTitle' },
+  { descriptionKey: 'careIntro', icon: 'favorite', titleKey: 'homeCareTitle' },
 ];
 
 function getGreetingKey(hour: number): TranslationKey {
@@ -117,7 +117,7 @@ export default function PatientHomeScreen() {
     return (
       <ScreenWrapper contentContainerStyle={styles.centered} scroll>
         <ThemedText accessibilityRole="header" type="screenTitle">
-          Smaran
+          Smaran AI
         </ThemedText>
         {status === 'failed' ? (
           <View accessibilityRole="alert" style={styles.recovery}>
@@ -180,8 +180,9 @@ export default function PatientHomeScreen() {
           </View>
           <View style={styles.headerCopy}>
             <ThemedText textSize={textSize} type="cardHeading">
-              Smaran
+              Smaran AI
             </ThemedText>
+            <ThemedText textSize={textSize} type="secondary">{t(language, 'appTagline')}</ThemedText>
           </View>
         </View>
 

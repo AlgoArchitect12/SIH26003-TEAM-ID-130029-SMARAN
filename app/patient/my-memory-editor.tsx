@@ -1,3 +1,4 @@
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -57,7 +58,7 @@ export default function MemoryEditorScreen() {
     try {
       const input = validateMemory({ name, relationship, description });
       const result = await memoriesService.save(patientId, input, photo, id);
-      router.replace({ pathname: '/patient/my-memory', params: { id: result.memory.id, cleanup: result.cleanupFailed ? '1' : '0' } });
+      router.dismissTo({ pathname: '/patient/my-memory', params: { id: result.memory.id, cleanup: result.cleanupFailed ? '1' : '0' } });
     } catch (reason) { setError(reason instanceof MemoryError ? reason.code === 'invalid' ? 'memoryInvalid' : reason.code === 'photo' ? 'memoryPhotoFailed' : reason.code === 'cleanup' ? 'memorySaveCleanup' : reason.code === 'missing' ? 'memoryMissing' : 'memoryFailed' : 'memoryFailed'); }
     finally { locked.current = false; setBusy(false); }
   };
@@ -65,7 +66,7 @@ export default function MemoryEditorScreen() {
   const hasPhoto = photo.kind === 'replace' || (photo.kind === 'keep' && originalPath !== null);
   return <ScreenWrapper scroll key={step}><View style={styles.content}>
     <SmaranButton label={t(language, 'back')} accessibilityLabel={t(language, 'back')} variant="outline" disabled={busy}
-      onPress={() => { if (step > 0) { setStep(step - 1); setError(null); } else if (id) router.replace({ pathname: '/patient/my-memory', params: { id } }); else router.replace('/patient/my-memories'); }} />
+      onPress={() => { if (step > 0) { setStep(step - 1); setError(null); } else if (id) router.dismissTo({ pathname: '/patient/my-memory', params: { id } }); else router.dismissTo('/patient/my-memories'); }} />
     <ThemedText type="screenTitle" accessibilityRole="header">{t(language, id ? 'memoryEdit' : 'memoryAdd')}</ThemedText>
     <ThemedText accessibilityLiveRegion="polite">{t(language, 'stepProgress', { current: String(step + 1), total: '4' })}</ThemedText>
     <ThemedText type="cardHeading" accessibilityRole="header">{t(language, heading)}</ThemedText>
@@ -73,7 +74,7 @@ export default function MemoryEditorScreen() {
       <ThemedText>{t(language, error ?? 'memoryFailed')}</ThemedText>
       {(!loaded || patientFailed) && <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} disabled={busy} onPress={() => { retryPatient(); setAttempt(n => n + 1); }} />}
     </View>}
-    {!patientId || !loaded ? (!error && !patientFailed && <ThemedText>{t(language, 'loadingSetup')}</ThemedText>) : <>
+    {!patientId || !loaded ? (!error && !patientFailed && <SmaranLoading label={t(language, 'loadingSetup')} />) : <>
       {step === 0 && <>
         <ThemedText>{t(language, 'memoryPhotoHelp')}</ThemedText>
         <MemoryPhoto patientId={patientId} path={photo.kind === 'keep' ? originalPath : null} selected={photo.kind === 'replace' ? photo.photo : undefined} name={name} language={language} />
@@ -90,7 +91,7 @@ export default function MemoryEditorScreen() {
       </>}
       <SmaranButton label={t(language, step === 3 ? 'memorySave' : step === 0 && !hasPhoto ? 'memoryWithoutPhoto' : 'continue')}
         accessibilityLabel={t(language, step === 3 ? 'memorySave' : step === 0 && !hasPhoto ? 'memoryWithoutPhoto' : 'continue')}
-        size="large" disabled={busy} onPress={() => {
+        size="large" disabled={busy} loading={busy} onPress={() => {
           if (step === 3) void save();
           else if (step === 1 && !name.trim()) setError('memoryInvalid');
           else { setError(null); setStep(step + 1); }

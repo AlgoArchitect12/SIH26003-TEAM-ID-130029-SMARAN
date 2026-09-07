@@ -1,3 +1,4 @@
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
@@ -55,31 +56,30 @@ export default function MyDayScreen() {
       disabled={busy} size={primary ? 'large' : 'normal'} variant={primary ? 'primary' : 'outline'} />;
   const completedState = (reminder: Reminder) => reminder.repeatRule === 'once'
     ? events.some(event => event.reminderId === reminder.id) : today.some(item => item.id === reminder.id && item.completed);
-  const completionKey = (reminder: Reminder) => reminder.repeatRule === 'once' && reminder.scheduledDate !== displayDay ? 'dayDone' : 'dayCompleted';
   const content = (manage ? all : today);
   const speech = [t(language, 'homeDayTitle'), t(language, 'dayIntro'), ...content.map(r =>
     `${t(language, category[r.type].key)}. ${r.title}. ${timeLabel(language, r.timeOfDay)}. ${r.note}. ${t(language,
-      !r.isEnabled ? 'dayDisabled' : completedState(r) ? completionKey(r) : 'dayPending')}`),
+      !r.isEnabled ? 'dayDisabled' : completedState(r) ? 'careDone' : 'dayPending')}`),
     !content.length ? t(language, 'dayEmpty') : ''].join(' ');
   return <ScreenWrapper scroll><View style={styles.content}>
-    {button('backHome', () => router.replace('/patient/home'))}
+    {button('backHome', () => router.dismissTo('/patient/home'))}
     <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeDayTitle')}</ThemedText>
     <ThemedText>{t(language, 'dayIntro')}</ThemedText>
     {(error || patientFailed) && <View accessibilityRole="alert" style={styles.group}>
       <ThemedText>{t(language, 'dayFailed')}</ThemedText>
       {button('retry', () => { if (patientFailed) retry(); else void act(refresh); })}
     </View>}
-    {!loaded && !error && !patientFailed && <ThemedText accessibilityLiveRegion="polite">{t(language, 'loadingSetup')}</ThemedText>}
+    {!loaded && !error && !patientFailed && <SmaranLoading label={t(language, 'loadingSetup')} />}
     {patientId && button('dayAdd', () => router.push('/patient/my-day-reminder'), true)}
     {loaded && <>
       {button(manage ? 'dayToday' : 'dayManage', () => { setManage(!manage); setRemoving(null); })}
       <ThemedText type="cardHeading" accessibilityRole="header">{t(language, manage ? 'dayManage' : 'dayToday')}</ThemedText>
-      {!content.length && <ThemedText>{t(language, 'dayEmpty')}</ThemedText>}
+      {!content.length && <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}><ThemedText>{t(language, manage ? 'dayEmpty' : 'careNoRoutine')}</ThemedText></View>}
       {content.map(reminder => {
         const completed = completedState(reminder);
-        const state = t(language, !reminder.isEnabled ? 'dayDisabled' : completed ? completionKey(reminder) : 'dayPending');
+        const state = t(language, !reminder.isEnabled ? 'dayDisabled' : completed ? 'careDone' : 'dayPending');
         const summary = `${t(language, category[reminder.type].key)}. ${reminder.title}. ${timeLabel(language, reminder.timeOfDay)}. ${reminder.note}. ${reminder.repeatRule === 'daily' ? t(language, 'dayDaily') : reminder.scheduledDate}. ${state}`;
-        return <View key={reminder.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: completed ? colors.success : colors.border }]}>
+        return <View key={reminder.id} style={[styles.card, { backgroundColor: completed ? colors.successSurface : colors.surface, borderColor: completed ? colors.success : colors.border }]}>
           <View accessible accessibilityLabel={summary} style={styles.group}>
             <View style={styles.category}>
               <MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" name={category[reminder.type].icon} color={colors.primary} size={32} />
@@ -87,9 +87,12 @@ export default function MyDayScreen() {
             </View>
             <ThemedText type="cardHeading">{reminder.title}</ThemedText>
             <ThemedText type="cardHeading">{timeLabel(language, reminder.timeOfDay)}</ThemedText>
-            <ThemedText>{reminder.repeatRule === 'daily' ? t(language, 'dayDaily') : reminder.scheduledDate}</ThemedText>
+            <ThemedText type="secondary">{reminder.repeatRule === 'daily' ? t(language, 'dayDaily') : reminder.scheduledDate}</ThemedText>
             {!!reminder.note && <ThemedText>{reminder.note}</ThemedText>}
-            <ThemedText accessibilityLiveRegion="polite">{state}</ThemedText>
+            <View style={styles.category}>
+              <MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" name={completed ? 'check-circle' : 'schedule'} color={completed ? colors.success : colors.textSecondary} size={28} />
+              <ThemedText accessibilityLiveRegion="polite" type="defaultSemiBold" style={styles.copy}>{state}</ThemedText>
+            </View>
           </View>
           {!manage && !completed && button('dayDone', () => void act(async () => {
             if (!patientId) return;

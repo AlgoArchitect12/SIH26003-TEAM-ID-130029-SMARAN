@@ -14,6 +14,16 @@
     },
     "android": {
       "package": "com.smaran.ai",
+      "versionCode": 1,
+      "blockedPermissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -41,7 +51,14 @@
           }
         }
       ],
-      "expo-sqlite",
+      [
+        "expo-sqlite",
+        {
+          "android": {
+            "customBuildFlags": "-DSQLITE_DEFAULT_FOREIGN_KEYS=1"
+          }
+        }
+      ],
       "expo-secure-store",
       "expo-notifications",
       [
@@ -56,6 +73,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a3173c92-71a7-49d2-9a6c-cb0e9696493d"
+      }
+    },
+    "owner": "smaran-ai"
   }
 }

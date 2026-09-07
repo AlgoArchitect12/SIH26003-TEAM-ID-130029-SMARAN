@@ -14,7 +14,7 @@ export default function MyHomeScreen() {
   const { state, status, language, retry } = useMyHomePatient();
   const items = getRegionalPack(state);
   return <ScreenWrapper scroll><View style={styles.content}>
-    <SmaranButton label={t(language, 'back')} accessibilityLabel={t(language, 'returnHome')} variant="outline" onPress={() => router.replace('/patient/home')} />
+    <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" onPress={() => router.dismissTo('/patient/home')} />
     <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeRegionTitle')}</ThemedText>
     {status !== 'ready' ? <RegionalRecovery status={status} language={language} retry={retry} /> : state && <>
       <ThemedText type="cardHeading">{t(language, 'homeRegionContext', { region: getRegionName(language, state) })}</ThemedText>
@@ -33,7 +33,6 @@ export default function MyHomeScreen() {
           accessibilityLabel={`${item.title}. ${getRegionName(language, item.state)}. ${t(language, regionalCategoryKeys[item.category])}. ${t(language, 'memoryOpen')}.`}
           onPress={() => router.push({ pathname: '/patient/my-home-memory', params: { id: item.id } })} />
       </SmaranCard>)}
-      <SmaranButton label={t(language, 'returnHome')} accessibilityLabel={t(language, 'returnHome')} variant="outline" onPress={() => router.replace('/patient/home')} />
     </>}
   </View></ScreenWrapper>;
 }

@@ -39,7 +39,7 @@ export function HomeActionCard({
       accessibilityHint={accessibilityHint}
       accessibilityLabel={`${title}. ${description}`}
       onPress={onPress}
-      padding={Spacing.lg}
+      padding={featured ? Spacing.lg : Spacing.md}
       reducedMotionOverride={reducedMotion ? true : null}
       style={[
         styles.card,
@@ -59,14 +59,14 @@ export function HomeActionCard({
           accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
           color={featured ? colors.actionPrimary : colors.primary}
           name={icon}
-          size={featured ? 40 : 36}
+          size={featured ? 36 : 28}
         />
       </View>
       <View style={styles.copy}>
-        <ThemedText style={{ color: foreground, textTransform: 'uppercase' }} textSize={textSize} type="cardHeading">
+        <ThemedText style={{ color: foreground }} textSize={textSize} type={featured ? 'cardHeading' : 'action'}>
           {title}
         </ThemedText>
-        <ThemedText style={{ color: foreground }} textSize={textSize}>
+        <ThemedText style={{ color: featured ? foreground : colors.textSecondary }} textSize={textSize} type="secondary">
           {description}
         </ThemedText>
       </View>
@@ -79,19 +79,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: Spacing.md,
-    minHeight: 112,
+    minHeight: 104,
   },
   featured: {
-    alignItems: 'flex-start',
-    flexDirection: 'column',
-    minHeight: 184,
+    minHeight: 156,
   },
   icon: {
     alignItems: 'center',
     borderRadius: Radius.button,
-    height: 64,
+    height: 52,
+    flexShrink: 0,
     justifyContent: 'center',
-    width: 64,
+    width: 52,
   },
   copy: {
     flexShrink: 1,

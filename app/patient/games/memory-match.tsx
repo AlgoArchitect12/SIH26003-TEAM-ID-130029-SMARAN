@@ -151,7 +151,7 @@ export default function MemoryMatchScreen() {
             <SmaranButton
               accessibilityLabel={t(loadingLanguage, 'activitiesBack')}
               label={t(loadingLanguage, 'activitiesBack')}
-              onPress={() => router.replace('/patient/games')}
+              onPress={() => router.dismissTo('/patient/games')}
               variant="outline"
             />
           </>
@@ -177,7 +177,7 @@ export default function MemoryMatchScreen() {
 
   const leave = () => {
     clearSession();
-    router.replace('/patient/games');
+    router.dismissTo('/patient/games');
   };
 
   const begin = () => {

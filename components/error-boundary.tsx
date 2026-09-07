@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<PropsWithChildren, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('Unhandled application error', error, info.componentStack);
+    if (__DEV__) console.error('Unhandled application error', error, info.componentStack);
   }
 
   private returnHome = () => {

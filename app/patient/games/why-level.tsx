@@ -53,7 +53,7 @@ export default function WhyLevelScreen() {
     let active = true;
     setFailed(false);
     if (!sessionId) {
-      router.replace('/patient/games');
+      router.dismissTo('/patient/games');
       return;
     }
 
@@ -62,7 +62,7 @@ export default function WhyLevelScreen() {
         const session = resolution.status === 'ready' ? await cognitiveRepository.getSessionById(resolution.profile.id, sessionId) : null;
         if (!active) return;
         if (resolution.status !== 'ready' || !session || session.patientId !== resolution.profile.id) {
-          router.replace('/patient/games');
+          router.dismissTo('/patient/games');
           return;
         }
         const [recentSessions, savedModel] = await Promise.all([
@@ -124,7 +124,7 @@ export default function WhyLevelScreen() {
           <View style={styles.actions}>
             <ThemedText accessibilityRole="alert">{t(loadingLanguage, 'errorSafeTitle')}</ThemedText>
             <SmaranButton accessibilityLabel={t(loadingLanguage, 'retry')} label={t(loadingLanguage, 'retry')} onPress={() => setLoadAttempt((value) => value + 1)} />
-            <SmaranButton accessibilityLabel={t(loadingLanguage, 'activitiesBack')} label={t(loadingLanguage, 'activitiesBack')} onPress={() => router.replace('/patient/games')} variant="outline" />
+            <SmaranButton accessibilityLabel={t(loadingLanguage, 'activitiesBack')} label={t(loadingLanguage, 'activitiesBack')} onPress={() => router.dismissTo('/patient/games')} variant="outline" />
           </View>
         ) : (
           <View style={styles.actions}>
@@ -136,17 +136,16 @@ export default function WhyLevelScreen() {
     );
   }
 
-  const { extraction, session, settings, explanationKey } = data;
+  const { session, settings, explanationKey } = data;
   const language = settings.language;
   const textSize = textSizeFor(settings);
   const activity = t(language, activityTitleKeys[session.gameType]);
   const explanation = t(language, explanationKey, { activity });
   const recommendationText = t(language, session.recommendedDifficulty < session.difficulty ? 'recommendationGentler' : session.recommendedDifficulty > session.difficulty ? 'recommendationChallenge' : 'recommendationHold');
-  const paceKey = extraction.hasPersonalBaseline ? 'factorPaceSimilar' : 'factorPaceLearning';
   const facts = [
     session.gameType === 'memory_match' ? t(language, 'factorPairs', { value: `${session.matches} / ${session.totalPairs}` }) : activitySummary(language, session),
     t(language, 'factorHints', { value: String(session.hintsUsed) }),
-    t(language, paceKey),
+    t(language, 'careAdaptive'),
   ];
   const readText = [
     t(language, 'whyTitle'), activity,
@@ -170,16 +169,16 @@ export default function WhyLevelScreen() {
           <ThemedText textSize={textSize}>{t(language, 'gameLevel', { level: String(session.recommendedDifficulty) })}</ThemedText>
         </SmaranCard>
         <SmaranCard style={styles.facts}>
+          <ThemedText textSize={textSize}>{explanation}</ThemedText>
           {facts.map((fact) => (
             <ThemedText key={fact} textSize={textSize}>{fact}</ThemedText>
           ))}
         </SmaranCard>
-        <ThemedText textSize={textSize}>{explanation}</ThemedText>
         <ThemedText textSize={textSize} type="secondary">{t(language, 'personalizationDisclaimer')}</ThemedText>
         {settings.voiceGuidance ? <ReadScreenButton language={language} text={readText} /> : null}
         <View style={styles.actions}>
-          <SmaranButton accessibilityLabel={t(language, 'back')} label={t(language, 'back')} onPress={() => router.back()} variant="outline" />
-          <SmaranButton accessibilityLabel={t(language, 'activitiesBack')} label={t(language, 'activitiesBack')} onPress={() => router.replace('/patient/games')} />
+          <SmaranButton accessibilityLabel={t(language, 'back')} label={t(language, 'back')} onPress={() => router.canGoBack() ? router.back() : router.dismissTo('/patient/games')} variant="outline" />
+          <SmaranButton accessibilityLabel={t(language, 'activitiesBack')} label={t(language, 'activitiesBack')} onPress={() => router.dismissTo('/patient/games')} />
         </View>
       </View>
     </ScreenWrapper>

@@ -22,7 +22,7 @@ export default function MyHomeMemoryScreen() {
   const item = candidate?.state === state ? candidate : undefined;
   const credit = item ? imageCredits[item.imageCredit] : undefined;
   return <ScreenWrapper scroll><View style={styles.content}>
-    <SmaranButton label={t(language, 'back')} accessibilityLabel={`${t(language, 'back')}. ${t(language, 'homeRegionTitle')}`} variant="outline" onPress={() => router.replace('/patient/my-home')} />
+    <SmaranButton label={t(language, 'back')} accessibilityLabel={`${t(language, 'back')}. ${t(language, 'homeRegionTitle')}`} variant="outline" onPress={() => router.dismissTo('/patient/my-home')} />
     {status !== 'ready' ? <RegionalRecovery status={status} language={language} retry={retry} /> : !item ?
       <ThemedText accessibilityRole="alert">{t(language, 'regionalMissing')}</ThemedText> : <>
         <RegionalImage key={item.id} item={item} language={language} />
@@ -38,7 +38,7 @@ export default function MyHomeMemoryScreen() {
           <SmaranButton label={t(language, 'regionalYes')} accessibilityLabel={t(language, 'regionalYes')} onPress={() => setResponded(true)} />
           <SmaranButton label={t(language, 'regionalNotToday')} accessibilityLabel={t(language, 'regionalNotToday')} variant="outline" onPress={() => setResponded(true)} />
         </View>}
-        <SmaranButton label={t(language, 'returnHome')} accessibilityLabel={t(language, 'returnHome')} variant="outline" onPress={() => router.replace('/patient/home')} />
+        <SmaranButton label={t(language, 'returnHome')} accessibilityLabel={t(language, 'returnHome')} variant="outline" onPress={() => router.dismissTo('/patient/home')} />
         <SmaranButton label={t(language, 'regionalCredits')} accessibilityLabel={t(language, 'regionalCredits')} variant="outline" onPress={() => setShowCredits(value => !value)} />
         {showCredits && credit && <View style={styles.group}>
           <ThemedText>{credit.title}</ThemedText>
@@ -50,6 +50,6 @@ export default function MyHomeMemoryScreen() {
           <ThemedText selectable>{credit.licenseUrl.replace(/([/_.])/gu, '$1\u200b')}</ThemedText>
         </View>}
       </>}
-    {status === 'ready' && !item && <SmaranButton label={t(language, 'returnHome')} accessibilityLabel={t(language, 'returnHome')} variant="outline" onPress={() => router.replace('/patient/home')} />}
+    {status === 'ready' && !item && <SmaranButton label={t(language, 'returnHome')} accessibilityLabel={t(language, 'returnHome')} variant="outline" onPress={() => router.dismissTo('/patient/home')} />}
   </View></ScreenWrapper>;
 }

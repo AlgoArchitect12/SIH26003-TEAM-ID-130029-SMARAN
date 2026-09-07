@@ -9,6 +9,7 @@ import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { Spacing } from '@constants/layout';
 import { cognitiveRepository } from '@db/repositories/cognitive.repository';
@@ -102,7 +103,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
     return () => subscription.remove();
   }, []);
 
-  const back = () => { useCognitiveSessionStore.getState().clear(); router.replace('/patient/games'); };
+  const back = () => { useCognitiveSessionStore.getState().clear(); router.dismissTo('/patient/games'); };
   const title = t(language, activityTitleKeys[gameType]);
   const instructions = t(language, gameType === 'pattern_recognition' ? 'patternInstructions' : 'routineInstructions');
   const task = data?.tasks[selection?.position ?? 0];
@@ -132,14 +133,16 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
     <SmaranButton accessibilityLabel={t(language, 'activitiesBack')} label={t(language, 'activitiesBack')} onPress={back} variant="outline" />
     <ThemedText accessibilityRole="header" type="screenTitle">{title}</ThemedText>
     {!data ? <>
-      <ThemedText accessibilityRole={failed ? 'alert' : undefined}>{t(language, failed ? 'activityPrepareFailed' : 'gameLoading')}</ThemedText>
+      {failed ? <ThemedText accessibilityRole="alert">{t(language, 'activityPrepareFailed')}</ThemedText> : <SmaranLoading label={t(language, 'gameLoading')} />}
       {failed && <SmaranButton accessibilityLabel={t(language, 'retry')} label={t(language, 'retry')} onPress={() => setAttempt(value => value + 1)} />}
     </> : <>
-      <ThemedText type="cardHeading">{t(language, 'gameLevel', { level: String(data.level) })}</ThemedText>
-      <ThemedText>{instructions}</ThemedText>
+      <View style={styles.group}>
+        <ThemedText type="secondary">{t(language, 'gameLevel', { level: String(data.level) })}</ThemedText>
+        <ThemedText>{instructions}</ThemedText>
+      </View>
       {data.settings.voiceGuidance && <ReadScreenButton language={language} labelKey="activityHear" text={title + '. ' + instructions} />}
       {data.routine && <>
-        <ThemedText type="secondary">{t(language, 'routineEnglish')}</ThemedText>
+        {language !== 'en' && <ThemedText type="secondary">{t(language, 'routineEnglish')}</ThemedText>}
         <ThemedText accessibilityLanguage="en" type="cardHeading">{data.routine.title}</ThemedText>
       </>}
       {!selection ? <>
@@ -152,7 +155,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
         <SmaranButton testID="activity-start" size="large" label={t(language, 'gameStart')} accessibilityLabel={t(language, 'gameStart')}
           onPress={() => { if (!current.current) update(createSelection(data.tasks, Date.now())); }} />
       </> : <>
-        <ThemedText accessibilityLiveRegion="polite" type="cardHeading">{t(language, 'activityProgress', { current: String(selection.correctSelections), total: String(data.tasks.length) })}</ThemedText>
+        <ThemedText accessibilityLiveRegion="polite" type="action">{t(language, 'activityProgress', { current: String(selection.correctSelections), total: String(data.tasks.length) })}</ThemedText>
         {pattern && <View style={styles.group}>
           <ThemedText>{t(language, 'patternRepeat')}</ThemedText>
           <ShapeRow shapes={pattern.group} language={language} />

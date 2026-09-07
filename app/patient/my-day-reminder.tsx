@@ -1,3 +1,4 @@
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -55,7 +56,7 @@ export default function ReminderEditor() {
       if (input.repeatRule === 'once' && localDateTime(input.scheduledDate!, input.timeOfDay).getTime() <= Date.now()) throw new MyDayError('past');
       locked.current = true; setBusy(true);
       await myDayService.save(patientId, input, id);
-      router.replace('/patient/my-day');
+      router.dismissTo('/patient/my-day');
     } catch (reason) { setError(reason instanceof MyDayError ? reason.code === 'limit' ? 'dayLimit' : reason.code === 'past' ? 'dayPast' : reason.code === 'invalid' ? 'dayInvalid' : 'dayFailed' : 'dayFailed'); }
     finally { locked.current = false; setBusy(false); }
   };
@@ -65,7 +66,7 @@ export default function ReminderEditor() {
       : `${t(language, 'dayTime')}. ${hour}:${minute}. ${t(language, repeat === 'daily' ? 'dayDaily' : 'dayOnce')}. ${repeat === 'once' ? `${day} ${month} ${year}` : ''}. ${t(language, 'dayTimeHelp')}`].join(' ');
   return <ScreenWrapper scroll key={step}><View style={styles.content}>
     <SmaranButton label={t(language, 'back')} accessibilityLabel={t(language, 'back')} disabled={busy} variant="outline"
-      onPress={() => { if (step > 0) { setStep(step - 1); setError(null); } else router.replace('/patient/my-day'); }} />
+      onPress={() => { if (step > 0) { setStep(step - 1); setError(null); } else router.dismissTo('/patient/my-day'); }} />
     <ThemedText type="screenTitle" accessibilityRole="header">{t(language, id ? 'dayEdit' : 'dayAdd')}</ThemedText>
     <ThemedText accessibilityLiveRegion="polite">{t(language, 'stepProgress', { current: String(step + 1), total: '3' })}</ThemedText>
     <ThemedText type="cardHeading" accessibilityRole="header">{t(language, heading)}</ThemedText>
@@ -73,7 +74,7 @@ export default function ReminderEditor() {
       <ThemedText>{t(language, error ?? 'dayFailed')}</ThemedText>
       {(!loaded || failed) && <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={() => { retry(); setAttempt(n => n + 1); }} />}
     </View>}
-    {!patientId || !loaded ? <ThemedText>{t(language, 'loadingSetup')}</ThemedText> : <>
+    {!patientId || !loaded ? (!error && !failed && <SmaranLoading label={t(language, 'loadingSetup')} />) : <>
       {step === 0 && ReminderTypes.map(item => <SelectionCard key={item} icon={category[item].icon}
         title={t(language, category[item].key)} selected={type === item} selectedLabel={t(language, 'selected')}
         onPress={() => { if (type !== item) { setType(item); setRepeat(item === 'appointment' ? 'once' : 'daily'); } }} />)}
