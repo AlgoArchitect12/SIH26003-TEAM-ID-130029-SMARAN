@@ -60,10 +60,10 @@ export function OnboardingScreen({
           </ThemedText>
           <ThemedText>{description}</ThemedText>
         </View>
+        {children}
         {showReadAloud ? (
           <ReadScreenButton language={language} text={speechText ?? `${title}. ${description}`} />
         ) : null}
-        {children}
       </View>
     </ScreenWrapper>
   );

@@ -1,3 +1,4 @@
+import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -20,6 +21,7 @@ type ReadScreenButtonProps = {
 
 export function ReadScreenButton({ language, speechLanguage = language, text, labelKey = 'readScreen' }: ReadScreenButtonProps) {
   const colors = useThemeColors();
+  const voiceGuidance = useOnboardingStore(s => s.accessibility.voiceGuidance);
   const [isStarting, setIsStarting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [outcome, setOutcome] = useState<SpeechOutcome | null>(null);
@@ -33,7 +35,7 @@ export function ReadScreenButton({ language, speechLanguage = language, text, la
       requestId.current += 1;
       void stopSpeech();
     };
-  }, [language, speechLanguage, text]);
+  }, [language, speechLanguage, text, voiceGuidance]);
 
   useFocusEffect(useCallback(() => {
     setIsStarting(false);
@@ -74,6 +76,8 @@ export function ReadScreenButton({ language, speechLanguage = language, text, la
       setIsStarting(false);
     }
   };
+
+  if (!voiceGuidance) return null;
 
   const label = t(language, isSpeaking ? 'stopReading' : labelKey);
 

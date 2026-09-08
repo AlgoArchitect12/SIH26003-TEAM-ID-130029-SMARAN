@@ -21,8 +21,8 @@ export default function RegionScreen() {
     <OnboardingScreen
       description={t(language, 'regionIntro')}
       language={language}
-      onBack={() => router.back()}
-      step={3}
+      onBack={() => router.dismissTo('/onboarding/profile')}
+      step={4}
       title={t(language, 'regionTitle')}>
       <View style={styles.choices}>
         {Regions.map((option) => (

@@ -4,6 +4,8 @@ import { AppState } from 'react-native';
 import { resolveActivePatient } from '@services/active-patient.service';
 import { myDayService } from '@services/my-day.service';
 
+export const unstable_settings = { initialRouteName: 'home' };
+
 export default function PatientLayout() {
   useEffect(() => {
     const sync = () => { void resolveActivePatient().then(result => {

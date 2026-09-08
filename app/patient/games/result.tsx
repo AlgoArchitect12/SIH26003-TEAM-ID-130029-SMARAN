@@ -1,8 +1,9 @@
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { saveCognitiveResult } from '@services/cognitive.service';
 import { activitySummary, activityTitleKeys } from '@/src/games/presentation';
@@ -109,7 +110,7 @@ export default function CognitiveResultScreen() {
           </View>
         ) : (
           <View style={styles.actions}>
-            <ActivityIndicator accessibilityLabel={t(loadingLanguage, 'gameLoading')} color={colors.primary} size="large" />
+            <SmaranLoading label={t(loadingLanguage, 'gameLoading')} />
             <ThemedText>{t(loadingLanguage, 'gameLoading')}</ThemedText>
           </View>
         )}

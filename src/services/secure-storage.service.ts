@@ -4,9 +4,10 @@ export const SecureStorageKeys = {
   onboardingCompleted: 'smaran.onboarding-completed',
   activeProfileId: 'smaran.active-profile-id',
   authToken: 'smaran.auth-token',
+  appearance: 'smaran.appearance',
 } as const;
 
-export type SecureStorageKey = (typeof SecureStorageKeys)[keyof typeof SecureStorageKeys];
+export type SecureStorageKey = (typeof SecureStorageKeys)[keyof typeof SecureStorageKeys] | `smaran.dob.${string}`;
 
 export class SecureStorageUnavailableError extends Error {
   constructor() {

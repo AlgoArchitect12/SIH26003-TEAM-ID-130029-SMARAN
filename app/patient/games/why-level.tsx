@@ -1,7 +1,8 @@
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { createInitialAdaptiveModel, recommendDifficulty } from '@ai/adaptive-engine';
 import { chooseExplanationTemplate } from '@ai/explanation';
@@ -19,7 +20,6 @@ import { cognitiveRepository } from '@db/repositories/cognitive.repository';
 import type { CognitiveSession, PatientSettings } from '@db/schema.types';
 import { t } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
-import { useThemeColors } from '@/hooks/use-theme-color';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 import type { AdaptiveDirection, FeatureExtraction } from '@ai/types';
@@ -40,7 +40,6 @@ export default function WhyLevelScreen() {
   const router = useRouter();
   const focused = useIsFocused();
   const { sessionId } = useLocalSearchParams<{ sessionId?: string }>();
-  const colors = useThemeColors();
   const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
   const setLanguage = useOnboardingStore((state) => state.setLanguage);
   const setAccessibility = useOnboardingStore((state) => state.setAccessibilityPreferences);
@@ -128,7 +127,7 @@ export default function WhyLevelScreen() {
           </View>
         ) : (
           <View style={styles.actions}>
-            <ActivityIndicator accessibilityLabel={t(loadingLanguage, 'gameLoading')} color={colors.primary} size="large" />
+            <SmaranLoading label={t(loadingLanguage, 'gameLoading')} />
             <ThemedText>{t(loadingLanguage, 'gameLoading')}</ThemedText>
           </View>
         )}

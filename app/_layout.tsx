@@ -1,14 +1,15 @@
+import { PatientNavigation } from '@components/patient/patient-navigation';
+import { loadAppearance } from '@/src/stores/appearance.store';
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { SmaranLoading } from '@components/ui/smaran-loading';
-import { Colors } from '@constants/colors';
 
 import { ErrorBoundary } from '@components/error-boundary';
 import { ThemedText } from '@components/themed-text';
-import { useThemeColors } from '@/hooks/use-theme-color';
+import { useAppearance, useThemeColors } from '@/hooks/use-theme-color';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { Spacing } from '@constants/layout';
 import { initializeDatabase } from '@db/client';
@@ -19,6 +20,7 @@ type BootstrapStatus = 'loading' | 'ready' | 'failed';
 
 function DatabaseBootstrap() {
   const colors = useThemeColors();
+  const { dark } = useAppearance();
   const language = useOnboardingStore((state) => state.language) ?? 'en';
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<BootstrapStatus>('loading');
@@ -27,7 +29,7 @@ function DatabaseBootstrap() {
     let active = true;
     setStatus('loading');
 
-    initializeDatabase()
+    Promise.all([initializeDatabase(), loadAppearance()])
       .then(() => {
         if (active) {
           setStatus('ready');
@@ -48,15 +50,16 @@ function DatabaseBootstrap() {
   }, [attempt]);
 
   if (status === 'ready') {
-    return <>
-      <StatusBar style={colors.background === Colors.dark.background ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, animation: 'none' }} />
-    </>;
+    return <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar style={dark ? 'light' : 'dark'} />
+      <View style={{ flex: 1 }}><Stack screenOptions={{ headerShown: false, animation: 'none', contentStyle: { backgroundColor: colors.background } }} /></View>
+      <PatientNavigation />
+    </View>;
   }
 
   return (
     <ScreenWrapper scroll contentContainerStyle={styles.container}>
-      <StatusBar style={colors.background === Colors.dark.background ? 'light' : 'dark'} />
+      <StatusBar style={dark ? 'light' : 'dark'} />
       <ThemedText type="screenTitle">Smaran AI</ThemedText>
       {status === 'failed' ? <ThemedText accessibilityRole="alert" style={styles.message}>{t(language, 'setupUnavailable')}</ThemedText>
         : <SmaranLoading label={t(language, 'loadingSetup')} />}

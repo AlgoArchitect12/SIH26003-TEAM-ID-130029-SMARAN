@@ -1,10 +1,11 @@
+import { FinishOnboarding } from '@components/onboarding/finish-onboarding';
+import { AppearanceChoices } from '@components/ui/appearance-choices';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { OnboardingScreen } from '@components/onboarding/onboarding-screen';
 import { SelectionCard } from '@components/onboarding/selection-card';
 import { ThemedText } from '@components/themed-text';
-import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { Spacing } from '@constants/layout';
 import type { Language, TextSize } from '@db/schema.types';
@@ -58,16 +59,14 @@ export default function AccessibilityScreen() {
   const accessibility = useOnboardingStore((state) => state.accessibility);
   const selectedLanguage = useOnboardingStore((state) => state.language);
   const language = selectedLanguage ?? 'en';
-  const region = useOnboardingStore((state) => state.region);
-  const role = useOnboardingStore((state) => state.role);
   const setAccessibility = useOnboardingStore((state) => state.setAccessibilityPreferences);
 
   return (
     <OnboardingScreen
       description={t(language, 'accessibilityIntro')}
       language={language}
-      onBack={() => router.back()}
-      step={4}
+      onBack={() => router.dismissTo('/onboarding/region')}
+      step={5}
       title={t(language, 'accessibilityTitle')}>
       <View style={styles.preference}>
         <ThemedText type="cardHeading">{t(language, 'textSize')}</ThemedText>
@@ -98,13 +97,8 @@ export default function AccessibilityScreen() {
         </ThemedText>
       </SmaranCard>
 
-      <BinaryPreference
-        language={language}
-        onChange={(highContrast) => setAccessibility({ highContrast })}
-        reducedMotion={accessibility.reducedMotion}
-        title={t(language, 'highContrast')}
-        value={accessibility.highContrast}
-      />
+      <ThemedText type="cardHeading">{t(language, 'appearance')}</ThemedText>
+      <AppearanceChoices language={language} />
       <BinaryPreference
         language={language}
         onChange={(voiceGuidance) => setAccessibility({ voiceGuidance })}
@@ -120,16 +114,7 @@ export default function AccessibilityScreen() {
         value={accessibility.reducedMotion}
       />
 
-      <View style={styles.actions}>
-        <SmaranButton
-          accessibilityLabel={t(language, 'continue')}
-          disabled={role !== 'patient' || selectedLanguage === null || region === null}
-          label={t(language, 'continue')}
-          onPress={() => router.push('/onboarding/profile')}
-          reducedMotionOverride={accessibility.reducedMotion ? true : null}
-          size="large"
-        />
-      </View>
+      <FinishOnboarding />
     </OnboardingScreen>
   );
 }

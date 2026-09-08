@@ -1,7 +1,8 @@
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { AppState, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { createInitialAdaptiveModel, recommendDifficulty } from '@ai/adaptive-engine';
 import { extractAdaptiveFeatures } from '@ai/feature-extractor';
@@ -157,7 +158,7 @@ export default function MemoryMatchScreen() {
           </>
         ) : (
           <>
-            <ActivityIndicator accessibilityLabel={t(loadingLanguage, 'gameLoading')} color={colors.primary} size="large" />
+            <SmaranLoading label={t(loadingLanguage, 'gameLoading')} />
             <ThemedText>{t(loadingLanguage, 'gameLoading')}</ThemedText>
           </>
         )}

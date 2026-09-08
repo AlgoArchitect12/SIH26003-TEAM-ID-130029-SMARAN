@@ -1,7 +1,10 @@
+import { SmaranLoading } from '@components/ui/smaran-loading';
+import { getDateOfBirth } from '@services/profile-details.service';
+import { displayDateOfBirth, ageFromDateOfBirth } from '@/src/utils/date-of-birth';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { OnboardingScreen } from '@components/onboarding/onboarding-screen';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
@@ -21,6 +24,7 @@ import { useThemeColors } from '@/hooks/use-theme-color';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 type CompleteData = {
+  dateOfBirth: string | null;
   profile: PatientProfile;
   settings: PatientSettings;
 };
@@ -37,7 +41,6 @@ function SummaryRow({ label }: { label: string }) {
 
 export default function CompleteScreen() {
   const router = useRouter();
-  const colors = useThemeColors();
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
   const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
   const setLanguage = useOnboardingStore((state) => state.setLanguage);
@@ -81,6 +84,7 @@ export default function CompleteScreen() {
         return;
       }
 
+      const dateOfBirth = await getDateOfBirth(profile.id);
       if (active) {
         resetOnboarding();
         setLanguage(settings.language);
@@ -90,7 +94,7 @@ export default function CompleteScreen() {
           textSize: settings.textSize,
           voiceGuidance: settings.voiceGuidance,
         });
-        setData({ profile, settings });
+        setData({ profile, settings, dateOfBirth });
       }
     };
 
@@ -125,12 +129,7 @@ export default function CompleteScreen() {
           </View>
         ) : (
           <View style={styles.loadingContent}>
-            <ActivityIndicator
-              accessibilityLabel={t(loadingLanguage, 'loadingSetup')}
-              color={colors.primary}
-              size="large"
-            />
-            <ThemedText>{t(loadingLanguage, 'loadingSetup')}</ThemedText>
+            <SmaranLoading label={t(loadingLanguage, 'loadingSetup')} />
           </View>
         )}
       </ScreenWrapper>
@@ -141,6 +140,7 @@ export default function CompleteScreen() {
   const title = t(settings.language, 'completeTitle', { name: profile.preferredName });
   const languageSummary = `${t(settings.language, 'languageLabel')}: ${getLanguageName(settings.language)}`;
   const regionSummary = `${t(settings.language, 'regionLabel')}: ${getRegionName(settings.language, settings.region)}`;
+  const dobSummary = data.dateOfBirth ? `${t(settings.language, 'dob')}: ${displayDateOfBirth(data.dateOfBirth)}. ${t(settings.language, 'ageYears', { age: String(ageFromDateOfBirth(data.dateOfBirth)) })}` : t(settings.language, 'dobMissing');
   const textSizeSummary = t(settings.language, 'textSizeSaved', {
     size: getTextSizeName(settings.language, settings.textSize),
   });
@@ -150,9 +150,11 @@ export default function CompleteScreen() {
       description={t(settings.language, 'completeIntro')}
       language={settings.language}
       showReadAloud={settings.voiceGuidance}
-      speechText={`${title} ${t(settings.language, 'completeIntro')} ${languageSummary}. ${regionSummary}. ${textSizeSummary}. ${t(settings.language, 'readyOffline')}.`}
+      speechText={`${title} ${t(settings.language, 'completeIntro')} ${dobSummary}. ${languageSummary}. ${regionSummary}. ${textSizeSummary}. ${t(settings.language, 'readyOffline')}.`}
       title={title}>
       <SmaranCard style={styles.summary}>
+        <SummaryRow label={data.dateOfBirth ? `${t(settings.language, 'dob')}: ${displayDateOfBirth(data.dateOfBirth)}` : t(settings.language, 'dobMissing')} />
+        {data.dateOfBirth && <SummaryRow label={t(settings.language, 'ageYears', { age: String(ageFromDateOfBirth(data.dateOfBirth)) })} />}
         <SummaryRow label={languageSummary} />
         <SummaryRow label={regionSummary} />
         <SummaryRow label={t(settings.language, 'accessibilitySaved')} />

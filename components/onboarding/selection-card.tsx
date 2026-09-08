@@ -36,9 +36,10 @@ export function SelectionCard({
       onPress={onPress}
       reducedMotionOverride={reducedMotionOverride ?? null}
       selected={selected}
+      padding={Spacing.md}
       style={styles.card}>
       <View style={styles.row}>
-        <MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" color={colors.primary} name={icon} size={40} />
+        <MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" color={colors.primary} name={icon} size={28} />
         <View style={styles.copy}>
           <ThemedText type="cardHeading">{title}</ThemedText>
           {description ? <ThemedText>{description}</ThemedText> : null}

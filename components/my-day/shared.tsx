@@ -1,14 +1,11 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, type ComponentProps } from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
-import { getScaledTypography } from '@constants/typography';
 import { t, type TranslationKey } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
-import { useThemeColors } from '@/hooks/use-theme-color';
-import { useTextSize } from '@/hooks/use-text-size';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import type { ReminderType } from '@/src/my-day/types';
 import type { NotificationResult } from '@services/my-day.service';
@@ -41,15 +38,7 @@ export function useMyDayPatient() {
   }, [attempt, router]);
   return { patientId, language, failed, retry };
 }
-export function Field({ label, ...props }: TextInputProps & { label: string }) {
-  const colors = useThemeColors();
-  const size = useTextSize();
-  return <View style={dayStyles.group}>
-    <ThemedText>{label}</ThemedText>
-    <TextInput {...props} accessibilityLabel={label} placeholderTextColor={colors.textSecondary}
-      style={[dayStyles.input, getScaledTypography('body', size), { color: colors.text, backgroundColor: colors.surface, borderColor: colors.primary }, props.style]} />
-  </View>;
-}
+export { Field } from '@components/ui/smaran-field';
 export function NotificationNotice({ result, busy, onRetry, onAllow }: {
   result: NotificationResult | null; busy: boolean; onRetry: () => void; onAllow: () => void;
 }) {

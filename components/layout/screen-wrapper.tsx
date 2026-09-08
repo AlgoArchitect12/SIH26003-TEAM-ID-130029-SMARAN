@@ -1,3 +1,5 @@
+import { isPatientNavigationVisible } from '@/src/utils/patient-navigation';
+import { usePathname } from 'expo-router';
 import type { PropsWithChildren, ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
@@ -31,10 +33,12 @@ export function ScreenWrapper({
   scroll = false,
   style,
 }: ScreenWrapperProps) {
+  const pathname = usePathname();
+  const hasNavigation = isPatientNavigationVisible(pathname);
   const backgroundColor = useThemeColors().background;
 
   return (
-    <SafeAreaView edges={['top', 'right', 'bottom', 'left']} style={[styles.safeArea, { backgroundColor }, style]}>
+    <SafeAreaView edges={hasNavigation ? ['top', 'right', 'left'] : ['top', 'right', 'bottom', 'left']} style={[styles.safeArea, { backgroundColor }, style]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         enabled={keyboardAvoiding}

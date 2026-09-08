@@ -1,11 +1,11 @@
 const Palette = {
   primary: '#0B4F56',
-  primaryDark: '#148A96',
+  primaryDark: '#8ADCE2',
   secondary: '#5B8266',
   secondaryDark: '#7DA88A',
   accent: '#D9822B',
   accentDark: '#E5A054',
-  background: '#F9F8F5',
+  background: '#F3F0E9',
   backgroundDark: '#121616',
   surface: '#FFFFFF',
   surfaceDark: '#1C2222',
@@ -14,8 +14,8 @@ const Palette = {
   error: '#C62828',
   text: '#1C2526',
   textDark: '#F0F4F4',
-  border: '#D8DCD6',
-  borderDark: '#2C3636',
+  border: '#7D8981',
+  borderDark: '#7F9993',
 } as const;
 
 const light = {
@@ -30,7 +30,7 @@ const light = {
   textPrimary: Palette.text,
   textSecondary: '#405052',
   border: Palette.border,
-  focus: Palette.accent,
+  focus: '#894500',
   success: Palette.success,
   successSurface: '#E6F3E7',
   warning: Palette.warning,
@@ -108,5 +108,12 @@ const highContrast = {
 } as const satisfies Record<keyof typeof light, string>;
 
 export { Palette };
-export const Colors = { light, dark, highContrast } as const;
+const highContrastDark = {
+  ...dark,
+  background: '#080C0B', surface: '#101A17', surfaceRaised: '#101A17', surfaceMuted: '#1C2B25',
+  text: '#FFFFFF', textPrimary: '#FFFFFF', textSecondary: '#F0F4F1', border: '#D1E5DB',
+  primary: '#B2F4E5', icon: '#FFFFFF', focus: '#FFD59A', link: '#B2F4E5', tint: '#B2F4E5',
+  actionPrimary: '#B2F4E5', onActionPrimary: '#080C0B', tabIconSelected: '#B2F4E5', tabIconDefault: '#F0F4F1',
+} as const satisfies Record<keyof typeof light, string>;
+export const Colors = { light, dark, highContrast, highContrastDark } as const;
 export type ThemeColors = (typeof Colors)[keyof typeof Colors];

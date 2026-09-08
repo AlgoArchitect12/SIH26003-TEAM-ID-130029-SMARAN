@@ -1,3 +1,4 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import {
@@ -97,6 +98,7 @@ export function SmaranButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       accessibilityState={{ busy: loading, disabled }}
+      aria-busy={loading} aria-disabled={disabled}
       disabled={disabled}
       onPress={handlePress}
       testID={testID}
@@ -113,7 +115,7 @@ export function SmaranButton({
         style,
       ]}>
       <View style={styles.content}>
-        {loading ? <ActivityIndicator color={disabled ? colors.onDisabled : selectedVariant.color} /> : icon}
+        {loading ? (reduceMotion ? <MaterialIcons name="hourglass-empty" size={24} color={disabled ? colors.onDisabled : selectedVariant.color} accessible={false} aria-hidden /> : <ActivityIndicator color={disabled ? colors.onDisabled : selectedVariant.color} />) : icon}
         <Text
           style={[
             styles.label,

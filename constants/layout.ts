@@ -21,7 +21,7 @@ export const Layout = {
 export const Radius = {
   card: 16,
   largeCard: 24,
-  button: 28,
+  button: 16,
 } as const;
 
 export const Elevation = {

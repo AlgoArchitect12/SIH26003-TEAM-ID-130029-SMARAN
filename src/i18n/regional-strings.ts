@@ -1,3 +1,4 @@
+import { uxStrings } from './ux-strings';
 import { cognitiveStrings } from './cognitive-strings';
 import { careStrings } from './care-strings';
 import { myHomeStrings } from './my-home-strings';
@@ -8,6 +9,7 @@ import type { Language, Region } from '@db/schema.types';
 import type { TranslationCatalog } from './strings';
 
 const bengali = {
+  ...uxStrings.bn,
   ...myHomeStrings.bn,
   ...careStrings.bn,
   ...cognitiveStrings.bn,
@@ -159,6 +161,7 @@ const bengali = {
 } satisfies TranslationCatalog;
 
 const meitei = {
+  ...uxStrings.mni,
   ...myHomeStrings.mni,
   ...careStrings.mni,
   ...cognitiveStrings.mni,
@@ -310,6 +313,7 @@ const meitei = {
 } satisfies TranslationCatalog;
 
 const khasi = {
+  ...uxStrings.kha,
   ...myHomeStrings.kha,
   ...careStrings.kha,
   ...cognitiveStrings.kha,
@@ -461,6 +465,7 @@ const khasi = {
 } satisfies TranslationCatalog;
 
 const mizo = {
+  ...uxStrings.lus,
   ...myHomeStrings.lus,
   ...careStrings.lus,
   ...cognitiveStrings.lus,

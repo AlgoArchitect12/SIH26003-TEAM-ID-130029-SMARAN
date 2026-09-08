@@ -34,11 +34,12 @@ export function ThemedText({
           : type;
   const color = useThemeColor(
     { light: lightColor, dark: darkColor },
-    variant === 'link' ? 'link' : 'text'
+    variant === 'link' ? 'link' : variant === 'secondary' || variant === 'caption' ? 'textSecondary' : 'text'
   );
 
   return (
     <Text
+      accessibilityRole={variant === 'screenTitle' || variant === 'cardHeading' ? 'header' : undefined}
       style={[
         styles.base,
         { color },

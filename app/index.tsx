@@ -1,6 +1,7 @@
+import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
@@ -9,14 +10,12 @@ import { Spacing } from '@constants/layout';
 import { t } from '@i18n/index';
 import { clearActivePatientFlags, resolveActivePatient } from '@services/active-patient.service';
 import { SecureStorageKeys, setSecureValue } from '@services/secure-storage.service';
-import { useThemeColors } from '@/hooks/use-theme-color';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 type LaunchStatus = 'loading' | 'failed';
 
 export default function IndexScreen() {
   const router = useRouter();
-  const colors = useThemeColors();
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
   const language = useOnboardingStore((state) => state.language) ?? 'en';
   const setLanguage = useOnboardingStore((state) => state.setLanguage);
@@ -82,11 +81,7 @@ export default function IndexScreen() {
         </ThemedText>
       </View>
       {status === 'loading' ? (
-        <ActivityIndicator
-          accessibilityLabel={t(language, 'loadingSetup')}
-          color={colors.primary}
-          size="large"
-        />
+        <SmaranLoading label={t(language, 'loadingSetup')} />
       ) : (
         <View accessibilityRole="alert" style={styles.recovery}>
           <ThemedText>{t(language, 'setupUnavailable')}</ThemedText>

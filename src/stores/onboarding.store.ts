@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { AgeBracket, Language, Region, TextSize } from '@db/schema.types';
+import type { Language, Region, TextSize } from '@db/schema.types';
 
 export type OnboardingRole = 'patient' | 'caregiver';
 
@@ -12,7 +12,7 @@ export type AccessibilityPreferences = {
 };
 
 export type ProfileDraft = {
-  ageBracket: AgeBracket | null;
+  dateOfBirth: string;
   emergencyName: string;
   emergencyPhone: string;
   preferredName: string;
@@ -24,6 +24,8 @@ type OnboardingState = {
   profile: ProfileDraft;
   region: Region | null;
   role: OnboardingRole | null;
+  savedProfileId: string | null;
+  setSavedProfileId: (id: string) => void;
   resetOnboarding: () => void;
   setAccessibilityPreferences: (preferences: Partial<AccessibilityPreferences>) => void;
   setLanguage: (language: Language) => void;
@@ -41,7 +43,7 @@ const initialState = {
   },
   language: null,
   profile: {
-    ageBracket: null,
+    dateOfBirth: '',
     emergencyName: '',
     emergencyPhone: '',
     preferredName: '',
@@ -52,9 +54,12 @@ const initialState = {
 
 export const useOnboardingStore = create<OnboardingState>()((set) => ({
   ...initialState,
+  savedProfileId: null,
+  setSavedProfileId: (savedProfileId) => set({ savedProfileId }),
   resetOnboarding: () =>
     set({
       ...initialState,
+      savedProfileId: null,
       accessibility: { ...initialState.accessibility },
       profile: { ...initialState.profile },
     }),

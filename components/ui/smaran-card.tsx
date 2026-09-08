@@ -13,7 +13,7 @@ import {
 import { Elevation, Layout, Radius, Spacing } from '@constants/layout';
 import { useHaptics } from '@/hooks/use-haptics';
 import { type ReducedMotionOverride, useReducedMotion } from '@/hooks/use-reduced-motion';
-import { useThemeColors } from '@/hooks/use-theme-color';
+import { useAppearance, useThemeColors } from '@/hooks/use-theme-color';
 
 type BaseCardProps = {
   accessibilityHint?: string;
@@ -58,6 +58,7 @@ export function SmaranCard({
   testID,
 }: SmaranCardProps) {
   const colors = useThemeColors();
+  const { highContrast } = useAppearance();
   const [focused, setFocused] = useState(false);
   const reduceMotion = useReducedMotion(reducedMotionOverride);
   const triggerHaptic = useHaptics(hapticsEnabled && !disabled);
@@ -65,9 +66,9 @@ export function SmaranCard({
     styles.card,
     Elevation.card,
     {
-      backgroundColor: colors.surfaceRaised,
+      backgroundColor: selected ? colors.surfaceMuted : colors.surfaceRaised,
       borderColor: selected ? colors.primary : colors.border,
-      borderWidth: selected ? 2 : 1,
+      borderWidth: selected || highContrast ? 3 : 1,
       padding,
     },
     style,
@@ -94,6 +95,7 @@ export function SmaranCard({
       accessibilityLabel={accessibilityLabel}
       accessibilityRole={accessibilityRole}
       accessibilityState={{ checked, disabled, selected: checked === undefined ? selected : undefined }}
+      aria-checked={checked} aria-disabled={disabled} aria-selected={checked === undefined ? selected : undefined}
       disabled={disabled}
       onPress={handlePress}
       testID={testID}

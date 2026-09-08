@@ -10,7 +10,7 @@ export const TextSizeMultipliers: Record<TextSizePreference, number> = {
 
 export const Typography = {
   screenTitle: { fontSize: 34, fontWeight: '700', lineHeight: 42 },
-  cardHeading: { fontSize: 28, fontWeight: '600', lineHeight: 36 },
+  cardHeading: { fontSize: 24, fontWeight: '600', lineHeight: 32 },
   action: { fontSize: 22, fontWeight: '600', lineHeight: 30 },
   body: { fontSize: 20, fontWeight: '400', lineHeight: 30 },
   secondary: { fontSize: 18, fontWeight: '500', lineHeight: 26 },

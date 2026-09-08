@@ -20,7 +20,7 @@ export default function LanguageScreen() {
     <OnboardingScreen
       description={t(activeLanguage, 'languageIntro')}
       language={activeLanguage}
-      onBack={() => router.back()}
+      onBack={() => router.dismissTo('/onboarding/role')}
       step={2}
       title={t(activeLanguage, 'languageTitle')}>
       <View style={styles.choices}>
@@ -41,7 +41,7 @@ export default function LanguageScreen() {
           accessibilityLabel={t(activeLanguage, 'continue')}
           disabled={role !== 'patient' || language === null}
           label={t(activeLanguage, 'continue')}
-          onPress={() => router.push('/onboarding/region')}
+          onPress={() => router.push('/onboarding/profile')}
           size="large"
         />
       </View>
