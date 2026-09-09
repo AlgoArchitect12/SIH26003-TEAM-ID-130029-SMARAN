@@ -10,6 +10,7 @@ import { useThemeColors } from '@/hooks/use-theme-color';
 type SelectionCardProps = {
   accessibilityLabel?: string;
   description?: string;
+  disabled?: boolean;
   icon: ComponentProps<typeof MaterialIcons>['name'];
   onPress: () => void;
   reducedMotionOverride?: boolean;
@@ -21,6 +22,7 @@ type SelectionCardProps = {
 export function SelectionCard({
   accessibilityLabel,
   description,
+  disabled = false,
   icon,
   onPress,
   reducedMotionOverride,
@@ -32,6 +34,7 @@ export function SelectionCard({
 
   return (
     <SmaranCard
+      disabled={disabled}
       accessibilityLabel={accessibilityLabel ?? `${title}. ${description ?? ''}`.trim()}
       onPress={onPress}
       reducedMotionOverride={reducedMotionOverride ?? null}

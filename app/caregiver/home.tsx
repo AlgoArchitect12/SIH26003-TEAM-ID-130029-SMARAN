@@ -96,7 +96,11 @@ export default function CaregiverHomeScreen() {
       <ThemedText>{t(language, 'careFailed')}</ThemedText>
       <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={() => setAttempt(n => n + 1)} />
     </View>}
-    {status === 'missing' && <SmaranCard><ThemedText>{t(language, 'careMissing')}</ThemedText></SmaranCard>}
+    {status === 'missing' && <SmaranCard style={styles.group}>
+      <ThemedText>{t(language, 'careMissing')}</ThemedText>
+      <SmaranButton label={t(language, 'homeReturnSetup')} accessibilityLabel={t(language, 'homeReturnSetup')}
+        onPress={() => router.replace('/onboarding/role')} />
+    </SmaranCard>}
     {status === 'ready' && data && <>
       {voiceGuidance && <ReadScreenButton language={language} text={summary} labelKey="careReadSummary" />}
       <Section title={t(language, 'careGlance')}>

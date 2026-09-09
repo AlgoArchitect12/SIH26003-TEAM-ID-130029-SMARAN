@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
+import { SmaranBrand } from '@components/ui/smaran-brand';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { useThemeColors } from '@/hooks/use-theme-color';
 import { Spacing } from '@constants/layout';
@@ -38,6 +39,10 @@ export function OnboardingScreen({
   return (
     <ScreenWrapper contentContainerStyle={styles.scrollContent} scroll>
       <View style={styles.content}>
+        {step === 1 && <>
+          <SmaranBrand />
+          <ThemedText type="secondary" style={{ textAlign: 'center' }}>{t(language, 'appTagline')}</ThemedText>
+        </>}
         {onBack ? (
           <SmaranButton
             accessibilityLabel={t(language, 'back')}

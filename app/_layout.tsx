@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { SmaranLoading } from '@components/ui/smaran-loading';
+import { SmaranBrand } from '@components/ui/smaran-brand';
 
 import { ErrorBoundary } from '@components/error-boundary';
 import { ThemedText } from '@components/themed-text';
@@ -60,7 +61,8 @@ function DatabaseBootstrap() {
   return (
     <ScreenWrapper scroll contentContainerStyle={styles.container}>
       <StatusBar style={dark ? 'light' : 'dark'} />
-      <ThemedText type="screenTitle">Smaran AI</ThemedText>
+      <SmaranBrand />
+      <ThemedText style={styles.message}>{t(language, 'appTagline')}</ThemedText>
       {status === 'failed' ? <ThemedText accessibilityRole="alert" style={styles.message}>{t(language, 'setupUnavailable')}</ThemedText>
         : <SmaranLoading label={t(language, 'loadingSetup')} />}
       {status === 'failed' ? (

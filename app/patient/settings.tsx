@@ -38,11 +38,13 @@ export default function SettingsScreen() {
     <ThemedText>{t(language, 'settingsIntro')}</ThemedText>
     {section === 'appearance' ? <AppearanceChoices language={language} /> : section === 'language' ? Languages.map(option =>
       <SelectionCard key={option} icon="language" title={getLanguageName(option)} selectedLabel={t(language, 'selected')}
+        disabled={status === 'saving'}
         selected={language === option} onPress={() => void save({ language: option })} />)
       : <View style={{ gap: 16 }}>
         {section !== 'voice' && <>
           <ThemedText type="cardHeading">{t(language, 'textSize')}</ThemedText>
           {TextSizes.map(option => <SelectionCard key={option} icon="text-fields" title={getTextSizeName(language, option)}
+            disabled={status === 'saving'}
             selectedLabel={t(language, 'selected')} selected={preferences.textSize === option} onPress={() => void save({ textSize: option })} />)}
           <ThemedText>{t(language, 'previewBody')}</ThemedText>
         </>}
@@ -56,7 +58,7 @@ export default function SettingsScreen() {
         {section === 'voice' && <ReadScreenButton language={language} text={t(language, 'previewBody')} />}
       </View>}
     {status !== 'idle' && <ThemedText accessibilityLiveRegion="polite" accessibilityRole={status === 'failed' ? 'alert' : undefined}>
-      {t(language, status === 'saving' ? 'saving' : status === 'saved' ? 'saved' : 'saveFailed')}
+      {t(language, status === 'saving' ? 'saving' : status === 'saved' ? 'saved' : 'settingsSaveFailed')}
     </ThemedText>}
   </PatientPage>;
 }

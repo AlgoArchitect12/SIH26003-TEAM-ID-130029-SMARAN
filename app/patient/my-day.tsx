@@ -60,7 +60,7 @@ export default function MyDayScreen() {
   const speech = [t(language, 'homeDayTitle'), t(language, 'dayIntro'), ...content.map(r =>
     `${t(language, category[r.type].key)}. ${r.title}. ${timeLabel(language, r.timeOfDay)}. ${r.note}. ${t(language,
       !r.isEnabled ? 'dayDisabled' : completedState(r) ? 'careDone' : 'dayPending')}`),
-    !content.length ? t(language, 'dayEmpty') : ''].join(' ');
+    !content.length ? t(language, manage ? 'dayEmpty' : 'careNoRoutine') : ''].join(' ');
   return <ScreenWrapper scroll><View style={styles.content}>
     {button('backHome', () => router.dismissTo('/patient/home'))}
     <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeDayTitle')}</ThemedText>

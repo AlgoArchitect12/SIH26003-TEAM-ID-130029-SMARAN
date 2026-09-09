@@ -12,6 +12,7 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { SmaranLoading } from '@components/ui/smaran-loading';
+import { SmaranBrand } from '@components/ui/smaran-brand';
 import { useMyDayPatient } from '@components/my-day/shared';
 import { myDayRepository } from '@db/repositories/my-day.repository';
 import { memoriesRepository } from '@db/repositories/memories.repository';
@@ -57,7 +58,7 @@ export default function PatientHomeScreen() {
   }, [patientId, attempt]));
   const button = (label: string, onPress: () => void) => <SmaranButton label={label} accessibilityLabel={label} onPress={onPress} variant="outline" />;
   if (failed || patientFailed || !data) return <ScreenWrapper scroll><View style={styles.content}>
-    <ThemedText type="screenTitle">Smaran AI</ThemedText>
+    <SmaranBrand />
     {failed || patientFailed ? <>
       <ThemedText accessibilityRole="alert">{t(language, 'homeLoadFailed')}</ThemedText>
       {button(t(language, 'retry'), () => { retry(); setAttempt(n => n + 1); })}
@@ -73,8 +74,7 @@ export default function PatientHomeScreen() {
     t(language, 'homeTrainDescription'), t(language, 'familiarMemory'), memory ? `${memory.name}. ${memory.relationship}` : t(language, 'memoryEmpty')].join('. ');
   return <ScreenWrapper scroll><View style={styles.content}>
     <View style={styles.brand}>
-      <MaterialIcons name="spa" color={colors.primary} size={28} accessible={false} aria-hidden />
-      <ThemedText type="defaultSemiBold">Smaran AI</ThemedText>
+      <SmaranBrand />
     </View>
     <View style={{ gap: 8 }}>
       <ThemedText type="screenTitle">{greeting}</ThemedText>

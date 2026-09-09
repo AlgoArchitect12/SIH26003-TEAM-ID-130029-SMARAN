@@ -16,7 +16,7 @@ const files = directory => fs.readdirSync(path.join(root, directory), { withFile
 
 async function main() {
   const config = json('app.json').expo, pkg = json('package.json'), lock = json('package-lock.json');
-  assert.equal(config.name, 'Smaran AI');
+  assert.equal(config.name, 'SMARAN AI');
   assert.equal(config.slug, 'smaran-ai');
   assert.equal(config.android.package, 'com.smaran.ai');
   assert.equal(config.version, '1.0.0');

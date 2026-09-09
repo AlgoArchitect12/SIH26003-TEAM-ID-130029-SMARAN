@@ -1,6 +1,7 @@
 import type { Language } from '../db/schema.types';
 
 const en = {
+  settingsSaveFailed: 'We could not save your choice. Select it again to retry.',
   navHome: 'Home', navTrain: 'Train', navDay: 'My Day', navMemories: 'Memories', navMenu: 'Menu',
   menuPatient: 'For you', menuSettings: 'Settings', menuSupport: 'Support', myProfile: 'My Profile',
   appearance: 'Appearance', appearanceSystem: 'Use device setting', appearanceLight: 'Light', appearanceDark: 'Dark',
@@ -18,6 +19,7 @@ type Catalog = Record<keyof typeof en, string>;
 export const uxStrings = {
   en,
   hi: {
+    settingsSaveFailed: 'आपकी पसंद सहेजी नहीं जा सकी। फिर से कोशिश करने के लिए उसे दोबारा चुनें।',
     navHome: 'मुख्य पृष्ठ', navTrain: 'अभ्यास', navDay: 'मेरा दिन', navMemories: 'यादें', navMenu: 'मेनू',
     menuPatient: 'आपके लिए', menuSettings: 'सेटिंग्स', menuSupport: 'सहायता', myProfile: 'मेरी प्रोफ़ाइल',
     appearance: 'रंग और रूप', appearanceSystem: 'डिवाइस के अनुसार', appearanceLight: 'हल्का', appearanceDark: 'गहरा',
@@ -32,6 +34,7 @@ export const uxStrings = {
     todayClear: 'आज के लिए कोई याद दिलाना बाकी नहीं है।', settingsIntro: 'जो आरामदायक लगे, वह चुनें। इसे कभी भी बदल सकते हैं।',
   },
   as: {
+    settingsSaveFailed: 'আপোনাৰ পছন্দ সাঁচিব পৰা নগ’ল। পুনৰ চেষ্টা কৰিবলৈ আকৌ বাছক।',
     navHome: 'মূল পৃষ্ঠা', navTrain: 'অনুশীলন', navDay: 'মোৰ দিন', navMemories: 'স্মৃতি', navMenu: 'মেনু',
     menuPatient: 'আপোনাৰ বাবে', menuSettings: 'ছেটিংছ', menuSupport: 'সহায়', myProfile: 'মোৰ প্ৰফাইল',
     appearance: 'ৰং আৰু ৰূপ', appearanceSystem: 'ডিভাইচৰ ছেটিংছ', appearanceLight: 'উজ্বল', appearanceDark: 'গাঢ়',
@@ -46,6 +49,7 @@ export const uxStrings = {
     todayClear: 'আজিৰ বাবে আৰু সোঁৱৰণি বাকী নাই।', settingsIntro: 'আপোনাৰ আৰামদায়ক বিকল্প বাছক। যিকোনো সময়তে সলাব পাৰে।',
   },
   bn: {
+    settingsSaveFailed: 'আপনার পছন্দ সংরক্ষণ করা যায়নি। আবার চেষ্টা করতে সেটি আবার বেছে নিন।',
     navHome: 'মূল পাতা', navTrain: 'অনুশীলন', navDay: 'আমার দিন', navMemories: 'স্মৃতি', navMenu: 'মেনু',
     menuPatient: 'আপনার জন্য', menuSettings: 'সেটিংস', menuSupport: 'সহায়তা', myProfile: 'আমার প্রোফাইল',
     appearance: 'রং ও রূপ', appearanceSystem: 'ডিভাইসের সেটিং', appearanceLight: 'হালকা', appearanceDark: 'গাঢ়',
@@ -60,6 +64,7 @@ export const uxStrings = {
     todayClear: 'আজ আর কোনো মনে করানো বাকি নেই।', settingsIntro: 'আপনার স্বাচ্ছন্দ্য অনুযায়ী বেছে নিন। যেকোনো সময় বদলাতে পারেন।',
   },
   mni: {
+    settingsSaveFailed: 'অদোমগী অপাম্বা থম্বা ঙমদ্রে। অমুক হোৎননবা মদু অমুক খনবিয়ু।',
     navHome: 'য়ুম', navTrain: 'হৈনবী', navDay: 'ঐগী নুমিৎ', navMemories: 'নিংশিংবা', navMenu: 'মেনু',
     menuPatient: 'অদোমগীদমক', menuSettings: 'সেটিংস', menuSupport: 'মতেং', myProfile: 'ঐগী প্রোফাইল',
     appearance: 'মচু অমসুং মওং', appearanceSystem: 'ডিভাইসকী সেটিংস', appearanceLight: 'ঙানবা', appearanceDark: 'অমম্বা',
@@ -74,6 +79,7 @@ export const uxStrings = {
     todayClear: 'ঙসিগীদমক নিংশিংহনবা লেমহৌদ্রে।', settingsIntro: 'অদোম্না নুংঙাইবা খনবিয়ু। মতম অমত্তা হোংবা য়াই।',
   },
   kha: {
+    settingsSaveFailed: 'Ngim shym la lah ban kynshew ia ka jingjied jong phi. Jied biang ban pyrshang biang.',
     navHome: 'Ka iing', navTrain: 'Kilan', navDay: 'Ka sngi', navMemories: 'Jingkynmaw', navMenu: 'Menu',
     menuPatient: 'Na ka bynta jong phi', menuSettings: 'Ki jingpynbeit', menuSupport: 'Jingiarap', myProfile: 'Ka jingtip shaphang jong nga',
     appearance: 'Ka dur bad rong', appearanceSystem: 'Bud ia ka kor', appearanceLight: 'Ka jingshai', appearanceDark: 'Ka jingdum',
@@ -88,6 +94,7 @@ export const uxStrings = {
     todayClear: 'Ym don shuh jingpynkynmaw na ka bynta mynta.', settingsIntro: 'Jied ia kaba phi sngew suk. Phi lah ban kylla ha kano kano ka por.',
   },
   lus: {
+    settingsSaveFailed: 'I thlan chu kan dahtha thei lo. Duhthlanna chu thlang nawn la, han ti leh rawh.',
     navHome: 'In', navTrain: 'Zirna', navDay: 'Ka ni', navMemories: 'Hriatrengna', navMenu: 'Menu',
     menuPatient: 'I tan', menuSettings: 'Siamremna', menuSupport: 'Tanpuina', myProfile: 'Ka chanchin',
     appearance: 'Hmuh dan leh rawng', appearanceSystem: 'Phone siamremna zawm', appearanceLight: 'Eng', appearanceDark: 'Thim',

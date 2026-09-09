@@ -1,4 +1,5 @@
 import { SmaranLoading } from '@components/ui/smaran-loading';
+import { SmaranBrand } from '@components/ui/smaran-brand';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -72,9 +73,7 @@ export default function IndexScreen() {
   return (
     <ScreenWrapper contentContainerStyle={styles.screen} scroll>
       <View style={styles.brand}>
-        <ThemedText accessibilityRole="header" style={styles.title} type="screenTitle">
-          Smaran AI
-        </ThemedText>
+        <SmaranBrand />
         <ThemedText style={styles.tagline}>{t(language, 'appTagline')}</ThemedText>
         <ThemedText style={styles.subtitle} type="secondary">
           {t(language, 'appSubtitle')}
@@ -106,9 +105,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginBottom: Spacing.xl,
     maxWidth: 520,
-  },
-  title: {
-    textAlign: 'center',
   },
   tagline: {
     textAlign: 'center',

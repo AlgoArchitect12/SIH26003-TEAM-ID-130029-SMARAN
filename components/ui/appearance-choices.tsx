@@ -24,10 +24,11 @@ export function AppearanceChoices({ language }: { language: Language }) {
   };
   return <View style={{ gap: 12 }}>
     {AppearanceModes.map(option => <SelectionCard key={option} icon={option.includes('dark') ? 'dark-mode' : option === 'system' ? 'settings-brightness' : 'light-mode'}
+      disabled={status === 'saving'}
       title={t(language, appearanceKeys[option])} selected={mode === option} selectedLabel={t(language, 'selected')}
       onPress={() => void select(option)} />)}
     {status !== 'idle' && <ThemedText accessibilityLiveRegion="polite" accessibilityRole={status === 'failed' ? 'alert' : undefined}>
-      {t(language, status === 'saving' ? 'saving' : status === 'saved' ? 'saved' : 'saveFailed')}
+      {t(language, status === 'saving' ? 'saving' : status === 'saved' ? 'saved' : 'settingsSaveFailed')}
     </ThemedText>}
   </View>;
 }

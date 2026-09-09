@@ -19,7 +19,7 @@ export function PatientPage({ children, title, language, patientId, failed, retr
       style={{ alignSelf: 'flex-start' }} onPress={() => path === '/patient/menu' ? router.dismissTo('/patient/home') : router.canGoBack() ? router.back() : router.dismissTo('/patient/menu')} />
     <ThemedText type="screenTitle">{title}</ThemedText>
     {failed ? <View style={dayStyles.group}>
-      <ThemedText accessibilityRole="alert">{t(language, 'homeLoadFailed')}</ThemedText>
+      <ThemedText accessibilityRole="alert">{t(language, 'errorSafeTitle')}</ThemedText>
       <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={retry} />
     </View> : !patientId ? <SmaranLoading label={t(language, 'loadingSetup')} /> : children}
   </View></ScreenWrapper>;

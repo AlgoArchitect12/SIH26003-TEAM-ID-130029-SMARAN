@@ -1,50 +1,15 @@
-# Welcome to your Expo app 👋
+# SMARAN AI
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Memories that stay close.
 
-## Get started
+Smaran supports cognitive activities, familiar memories and daily routines in seven languages. It does not diagnose conditions or provide medical advice.
 
-1. Install dependencies
+## Development
 
-   ```bash
-   npm install
-   ```
+Validated with Node.js 24.19. Run `npm ci` and `npx expo start`. This project uses Expo SDK 54, Expo Router, local SQLite and SecureStore. Patient flows require a supported native runtime; the web build intentionally shows recovery when native storage is unavailable. The regression scripts use Node's built-in SQLite support.
 
-2. Start the app
+Run `npx tsc --noEmit`, `npx expo lint` and the regression scripts in `scripts/`. See [MVP16 product hardening](docs/MVP16_PRODUCT_HARDENING.md) for validation and remaining device checks, and [the Android test plan](docs/MVP13_NATIVE_ANDROID_TEST_PLAN.md) for native testing.
 
-   ```bash
-   npx expo start
-   ```
+## Brand assets
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The teal lotus extends the existing Home mark: Material Icons `spa`, bundled with `@expo/vector-icons`. Launcher, adaptive, monochrome, splash and favicon PNGs are generated from that same glyph. On Windows, regenerate with `powershell -NoProfile -File scripts/generate-brand-assets.ps1` after installing dependencies. No new runtime dependency is needed.

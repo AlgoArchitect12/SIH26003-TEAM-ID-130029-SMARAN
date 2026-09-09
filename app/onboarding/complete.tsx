@@ -1,4 +1,5 @@
 import { SmaranLoading } from '@components/ui/smaran-loading';
+import { SmaranBrand } from '@components/ui/smaran-brand';
 import { getDateOfBirth } from '@services/profile-details.service';
 import { displayDateOfBirth, ageFromDateOfBirth } from '@/src/utils/date-of-birth';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -115,9 +116,7 @@ export default function CompleteScreen() {
   if (!data) {
     return (
       <ScreenWrapper contentContainerStyle={styles.loadingScreen} scroll>
-        <ThemedText accessibilityRole="header" type="screenTitle">
-          Smaran AI
-        </ThemedText>
+        <SmaranBrand />
         {failed ? (
           <View accessibilityRole="alert" style={styles.loadingContent}>
             <ThemedText>{t(loadingLanguage, 'setupUnavailable')}</ThemedText>
