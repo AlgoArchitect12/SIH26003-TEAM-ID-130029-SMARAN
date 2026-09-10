@@ -35,7 +35,7 @@ function screen(file, overrides, props) {
     if (name === 'react/jsx-runtime') return require(name);
     if (name === 'react-native') return { View: 'View', StyleSheet: { create: s => s } };
     if (name === '@i18n/index') return load('src/i18n/index.ts');
-    if (name === '@constants/layout') return { Spacing: {} };
+    if (name === '@constants/layout') return load('constants/layout.ts', { 'react-native': { Platform: { select: s => s.web } } });
     if (name.startsWith('@components/')) return new Proxy({}, { get: (_, key) => String(key) });
     throw Error('Unexpected boundary: ' + name);
   }, module, module.exports, false);

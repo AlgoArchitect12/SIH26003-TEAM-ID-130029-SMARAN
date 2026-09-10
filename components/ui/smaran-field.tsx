@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 import { ThemedText } from '@components/themed-text';
 import { getScaledTypography } from '@constants/typography';

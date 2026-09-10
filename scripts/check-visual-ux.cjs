@@ -181,11 +181,15 @@ for (const file of critical.filter(file => file.endsWith('.tsx'))) {
 const added = git('diff', '--unified=0', 'b7eb6bd', '--', 'app', 'components').split(/\r?\n/)
   .filter(line => line.startsWith('+') && !line.startsWith('+++')).join('\n');
 assert.doesNotMatch(added, /Rahul Sharma|demoPatient|fakeScore|samplePatient|dementia score|risk gauge|doctor rating/i);
-// A source guard cannot prove copy truthfulness; also keep all data/services/catalogs unchanged.
+// Keep MVP-18's protected paths unchanged across both integrated features.
+const baselinePaths = ['package.json', 'package-lock.json', 'app.json', 'eas.json', 'plugins/with-private-backup.cjs',
+  'src/db/migrations', 'src/db/client.web.ts'];
+assert.equal(git('diff', '--name-only', 'b7eb6bd', '--', ...baselinePaths).trim(), '', 'MVP-18 protected paths unchanged');
+// A source guard cannot prove copy truthfulness; preserve A's data/services/catalogs through B's integration.
 const protectedPaths = ['package.json', 'package-lock.json', 'app.json', 'eas.json', 'plugins/with-private-backup.cjs',
   'src', 'app/onboarding', 'components/onboarding', 'app/patient/profile.tsx', 'app/patient/menu.tsx',
   'hooks/use-reduced-motion.ts', 'components/games/memory-card.tsx', 'components/feedback/encouragement-banner.tsx'];
-assert.equal(git('diff', '--name-only', 'b7eb6bd', '--', ...protectedPaths).trim(), '', 'Protected architecture/data/motion unchanged');
+assert.equal(git('diff', '--name-only', 'f2d6f85', '--', ...protectedPaths).trim(), '', 'MVP-19A architecture/data/motion preserved');
 assert.doesNotMatch(git('ls-files', '--others', '--exclude-standard', '--', ...protectedPaths), /\S/, 'No new protected files');
 
 // Inspect runtime files on disk, including ignored/untracked files, for QA dependencies.
