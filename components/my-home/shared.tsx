@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
+import { PageLayout, Radius } from '@constants/layout';
 import type { Language, Region } from '@db/schema.types';
 import { t, type TranslationKey } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
@@ -69,7 +70,8 @@ export function RegionalImage({ item, language }: { item: RegionalContentItem; l
 }
 
 export const homeStyles = StyleSheet.create({
-  content: { alignSelf: 'center', width: '100%', maxWidth: 640, gap: 24 },
-  group: { gap: 16 },
-  image: { width: '100%', aspectRatio: 4 / 3, borderRadius: 20, borderWidth: 1 },
+  content: PageLayout.content,
+  heading: PageLayout.heading,
+  group: PageLayout.group,
+  image: { width: '100%', aspectRatio: 4 / 3, borderRadius: Radius.card, borderWidth: 1 },
 });

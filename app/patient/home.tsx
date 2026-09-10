@@ -13,6 +13,7 @@ import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { SmaranBrand } from '@components/ui/smaran-brand';
+import { PageLayout, Radius, Spacing } from '@constants/layout';
 import { useMyDayPatient } from '@components/my-day/shared';
 import { myDayRepository } from '@db/repositories/my-day.repository';
 import { memoriesRepository } from '@db/repositories/memories.repository';
@@ -76,12 +77,11 @@ export default function PatientHomeScreen() {
     <View style={styles.brand}>
       <SmaranBrand />
     </View>
-    <View style={{ gap: 8 }}>
+    <View style={PageLayout.heading}>
       <ThemedText type="screenTitle">{greeting}</ThemedText>
       <ThemedText type="secondary">{date}</ThemedText>
-      <ThemedText type="secondary">{t(language, 'appTagline')}</ThemedText>
     </View>
-    <SmaranCard padding={20} style={[styles.group, { borderLeftWidth: 5, borderLeftColor: colors.primary }]}>
+    <SmaranCard style={[styles.group, { borderLeftWidth: 5, borderLeftColor: colors.primary }]}>
       <ThemedText type="cardHeading">{t(language, 'dayToday')}</ThemedText>
       <ThemedText type={reminder ? 'action' : 'body'}>{todayText}</ThemedText>
       {button(t(language, 'homeDayTitle'), () => router.navigate('/patient/my-day'))}
@@ -106,7 +106,7 @@ export default function PatientHomeScreen() {
       <SmaranCard style={styles.group}>
         <Image source={regional.imageAsset} contentFit="cover" transition={0} accessible
           accessibilityLabel={`${getRegionName(language, settings.region)}. ${t(language, regionalCategoryKeys[regional.category])}`}
-          style={{ width: '100%', aspectRatio: 2, borderRadius: 12 }} />
+          style={{ width: '100%', aspectRatio: 2, borderRadius: Radius.card }} />
         <ThemedText type="action">{getRegionName(language, settings.region)}</ThemedText>
         <ThemedText>{t(language, regionalCategoryKeys[regional.category])}</ThemedText>
         {button(t(language, 'memoryOpen'), () => router.navigate({ pathname: '/patient/my-home-memory', params: { id: regional.id } }))}
@@ -120,7 +120,7 @@ export default function PatientHomeScreen() {
   </View></ScreenWrapper>;
 }
 const styles = StyleSheet.create({
-  content: { alignSelf: 'center', width: '100%', maxWidth: 680, gap: 28 },
-  group: { gap: 16 },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  content: PageLayout.content,
+  group: PageLayout.group,
+  brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
 });

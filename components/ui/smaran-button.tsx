@@ -81,8 +81,8 @@ export function SmaranButton({
       color: colors.onActionAccent,
     },
     outline: {
-      backgroundColor: 'transparent',
-      borderColor: colors.primary,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
       color: colors.text,
     },
   } as const;
@@ -110,14 +110,16 @@ export function SmaranButton({
         focused && { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: 3, outlineOffset: 3 },
         {
           backgroundColor: disabled ? colors.disabled : selectedVariant.backgroundColor,
-          borderColor: disabled ? colors.disabled : selectedVariant.borderColor,
-          minHeight: size === 'large' ? Layout.largeButtonHeight : Layout.minTouchTarget,
+          borderColor: accessibilityState?.selected ? colors.primary : disabled ? colors.border : selectedVariant.borderColor,
+          borderStyle: disabled ? 'dashed' : 'solid',
+          minHeight: size === 'large' ? Layout.largeButtonHeight : Layout.buttonHeight,
         },
         pressed && !disabled && styles.pressed,
         pressed && !disabled && !reduceMotion && styles.pressedMotion,
         style,
       ]}>
       <View style={styles.content}>
+        {accessibilityState?.selected && <MaterialIcons name="check-circle" size={24} color={disabled ? colors.onDisabled : selectedVariant.color} accessible={false} aria-hidden />}
         {loading ? (reduceMotion ? <MaterialIcons name="hourglass-empty" size={24} color={disabled ? colors.onDisabled : selectedVariant.color} accessible={false} aria-hidden /> : <ActivityIndicator color={disabled ? colors.onDisabled : selectedVariant.color} />) : icon}
         <Text
           style={[

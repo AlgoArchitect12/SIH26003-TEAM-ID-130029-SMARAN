@@ -5,6 +5,7 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, type ComponentProps, type KeyboardEvent } from 'react';
 import { ThemedText } from '@components/themed-text';
+import { Layout, Spacing } from '@constants/layout';
 import { t, type TranslationKey } from '@i18n/index';
 import { useThemeColors } from '@/hooks/use-theme-color';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
@@ -34,7 +35,8 @@ export function PatientNavigation() {
     router.dismissTo('/patient/home');
     if (target !== '/patient/home') router.navigate(target);
   };
-  return <View accessibilityRole="tablist" style={[styles.bar, { backgroundColor: colors.surface, borderColor: colors.border, paddingBottom: Math.max(insets.bottom, 8) }]}>
+  return <View style={{ backgroundColor: colors.surface, borderTopWidth: 2, borderColor: colors.border, paddingBottom: Math.max(insets.bottom, Spacing.sm) }}>
+    <View accessibilityRole="tablist" style={styles.bar}>
     {destinations.map((item, index) => {
       const selected = current === index;
       return <Pressable key={item.path} accessibilityRole="tab" accessibilityState={{ selected }} aria-selected={selected}
@@ -53,18 +55,19 @@ export function PatientNavigation() {
         } : {})}
         style={({ pressed }) => [styles.item, {
           flex: item.label === 'navMemories' ? 1.6 : 1,
-          backgroundColor: selected || pressed ? colors.surfaceMuted : colors.surface,
+          backgroundColor: selected || pressed ? colors.surfaceSelected : colors.surface,
           borderTopColor: selected ? colors.primary : 'transparent',
         }, focused === item.path && { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: 3 }]}>
         <MaterialIcons name={item.icon} size={26} color={selected ? colors.tabIconSelected : colors.tabIconDefault}
           accessible={false} aria-hidden importantForAccessibility="no-hide-descendants" />
         <ThemedText type="caption" style={{ textAlign: 'center', width: '100%', fontSize: size === 'extra-large' ? 20 : size === 'large' ? 18 : 16,
-          lineHeight: size === 'extra-large' ? 26 : 24, fontWeight: selected ? '700' : '500', color: colors.text }}>{t(language, item.label)}</ThemedText>
+          lineHeight: size === 'extra-large' ? 26 : 24, fontWeight: selected ? '700' : '500', color: selected ? colors.text : colors.textSecondary }}>{t(language, item.label)}</ThemedText>
       </Pressable>;
     })}
+    </View>
   </View>;
 }
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', borderTopWidth: 1, paddingTop: 4, paddingHorizontal: 4, gap: 2 },
+  bar: { alignSelf: 'center', width: '100%', maxWidth: Layout.contentMaxWidth + Layout.pagePadding * 2, flexDirection: 'row', paddingTop: Spacing.sm, paddingHorizontal: Spacing.xs, gap: 2 },
   item: { flex: 1, minWidth: 0, minHeight: 64, alignItems: 'center', gap: 4, paddingHorizontal: 2, paddingVertical: 8, borderTopWidth: 4, borderRadius: 8 },
 });

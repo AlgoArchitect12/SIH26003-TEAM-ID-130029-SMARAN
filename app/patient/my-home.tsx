@@ -17,8 +17,10 @@ export default function MyHomeScreen() {
     <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" onPress={() => router.dismissTo('/patient/home')} />
     <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeRegionTitle')}</ThemedText>
     {status !== 'ready' ? <RegionalRecovery status={status} language={language} retry={retry} /> : state && <>
-      <ThemedText type="cardHeading">{t(language, 'homeRegionContext', { region: getRegionName(language, state) })}</ThemedText>
-      <ThemedText>{t(language, 'regionalIntro')}</ThemedText>
+      <View style={styles.heading}>
+        <ThemedText type="cardHeading">{t(language, 'homeRegionContext', { region: getRegionName(language, state) })}</ThemedText>
+        <ThemedText type="secondary">{t(language, 'regionalIntro')}</ThemedText>
+      </View>
       {language !== 'en' && <ThemedText>{t(language, 'regionalEnglish')}</ThemedText>}
       <ReadScreenButton language={language} speechLanguage="en" text={[
         t('en', 'homeRegionTitle'), t('en', 'homeRegionContext', { region: getRegionName('en', state) }),
@@ -27,9 +29,9 @@ export default function MyHomeScreen() {
       {items.map(item => <SmaranCard key={item.id} style={styles.group}>
         <RegionalImage item={item} language={language} />
         <ThemedText type="cardHeading" accessibilityRole="header" accessibilityLanguage="en">{item.title}</ThemedText>
-        <ThemedText>{t(language, regionalCategoryKeys[item.category])}</ThemedText>
+        <ThemedText type="secondary">{t(language, regionalCategoryKeys[item.category])}</ThemedText>
         <ThemedText accessibilityLanguage="en">{item.shortDescription}</ThemedText>
-        <SmaranButton label={t(language, 'memoryOpen')}
+        <SmaranButton label={t(language, 'memoryOpen')} variant="outline"
           accessibilityLabel={`${item.title}. ${getRegionName(language, item.state)}. ${t(language, regionalCategoryKeys[item.category])}. ${t(language, 'memoryOpen')}.`}
           onPress={() => router.push({ pathname: '/patient/my-home-memory', params: { id: item.id } })} />
       </SmaranCard>)}

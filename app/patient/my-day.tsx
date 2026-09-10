@@ -63,8 +63,10 @@ export default function MyDayScreen() {
     !content.length ? t(language, manage ? 'dayEmpty' : 'careNoRoutine') : ''].join(' ');
   return <ScreenWrapper scroll><View style={styles.content}>
     {button('backHome', () => router.dismissTo('/patient/home'))}
-    <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeDayTitle')}</ThemedText>
-    <ThemedText>{t(language, 'dayIntro')}</ThemedText>
+    <View style={styles.heading}>
+      <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeDayTitle')}</ThemedText>
+      <ThemedText type="secondary">{t(language, 'dayIntro')}</ThemedText>
+    </View>
     {(error || patientFailed) && <View accessibilityRole="alert" style={styles.group}>
       <ThemedText>{t(language, 'dayFailed')}</ThemedText>
       {button('retry', () => { if (patientFailed) retry(); else void act(refresh); })}

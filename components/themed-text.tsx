@@ -34,7 +34,7 @@ export function ThemedText({
           : type;
   const color = useThemeColor(
     { light: lightColor, dark: darkColor },
-    variant === 'link' ? 'link' : variant === 'secondary' || variant === 'caption' ? 'textSecondary' : 'text'
+    rest.accessibilityRole === 'alert' ? 'error' : variant === 'link' ? 'link' : variant === 'secondary' || variant === 'caption' ? 'textSecondary' : 'text'
   );
 
   return (

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, type ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
+import { PageLayout, Radius, Spacing } from '@constants/layout';
 import { t, type TranslationKey } from '@i18n/index';
 import { PatientSelectionRequiredError, resolveActivePatient } from '@services/active-patient.service';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
@@ -64,9 +65,10 @@ export function NotificationNotice({ result, busy, onRetry, onAllow }: {
   </View>;
 }
 export const dayStyles = StyleSheet.create({
-  content: { alignSelf: 'center', width: '100%', maxWidth: 640, gap: 24 },
-  group: { gap: 12 },
-  card: { gap: 16, padding: 20, borderWidth: 2, borderRadius: 24 },
+  content: PageLayout.content,
+  heading: PageLayout.heading,
+  group: PageLayout.group,
+  card: { gap: Spacing.md, padding: Spacing.lg, borderWidth: 2, borderRadius: Radius.card },
   category: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   copy: { flex: 1, minWidth: 0 },
   input: { minHeight: 72, borderWidth: 2, borderRadius: 16, padding: 16, width: '100%' },

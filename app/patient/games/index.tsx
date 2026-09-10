@@ -9,7 +9,7 @@ import { HomeActionCard } from '@components/patient/home-action-card';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useTextSize } from '@/hooks/use-text-size';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
-import { Spacing } from '@constants/layout';
+import { PageLayout } from '@constants/layout';
 import { CognitiveActivityTypes, type CognitiveActivityType } from '@db/schema.types';
 import { t, type TranslationKey } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
@@ -47,8 +47,10 @@ export default function ActivitiesScreen() {
   }, [attempt, router]);
   return <ScreenWrapper scroll><View style={styles.content}>
     <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" onPress={() => router.dismissTo('/patient/home')} />
-    <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeTrainTitle')}</ThemedText>
-    <ThemedText>{t(language, 'activitiesChoose')}</ThemedText>
+    <View style={PageLayout.heading}>
+      <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeTrainTitle')}</ThemedText>
+      <ThemedText type="secondary">{t(language, 'activitiesChoose')}</ThemedText>
+    </View>
     {status === 'loading' && <SmaranLoading label={t(language, 'gameLoading')} />}
     {status === 'failed' && <>
       <ThemedText accessibilityRole="alert">{t(language, 'activityPrepareFailed')}</ThemedText>
@@ -66,5 +68,5 @@ export default function ActivitiesScreen() {
   </View></ScreenWrapper>;
 }
 const styles = StyleSheet.create({
-  content: { alignSelf: 'center', width: '100%', maxWidth: 680, gap: Spacing.lg },
+  content: PageLayout.content,
 });

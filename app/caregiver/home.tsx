@@ -12,7 +12,7 @@ import { category } from '@components/my-day/shared';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
-import { Spacing } from '@constants/layout';
+import { PageLayout, Spacing } from '@constants/layout';
 import { t, type TranslationKey } from '@i18n/index';
 import { PatientSelectionRequiredError, resolveActivePatient } from '@services/active-patient.service';
 import { loadCaregiverDashboard } from '@services/caregiver.service';
@@ -184,9 +184,9 @@ export default function CaregiverHomeScreen() {
   </View></ScreenWrapper>;
 }
 const styles = StyleSheet.create({
-  content: { alignSelf: 'center', width: '100%', maxWidth: 680, gap: Spacing.xl },
+  content: PageLayout.content,
   section: { gap: Spacing.md },
-  group: { gap: Spacing.sm },
+  group: PageLayout.group,
   metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
   metric: { flexGrow: 1, flexBasis: 260, minWidth: 0, maxWidth: '100%' },
 });

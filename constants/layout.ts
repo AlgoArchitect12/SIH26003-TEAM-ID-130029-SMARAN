@@ -10,6 +10,9 @@ export const Spacing = {
 } as const;
 
 export const Layout = {
+  contentMaxWidth: 680,
+  pagePadding: Spacing.md,
+  sectionGap: Spacing.lg,
   minTouchTarget: 56,
   cardMinHeight: 88,
   buttonHeight: 60,
@@ -17,6 +20,12 @@ export const Layout = {
   gameCardMinSize: 56,
   interactiveSeparation: 16,
 } as const;
+
+export const PageLayout = {
+  content: { alignSelf: 'center', width: '100%', maxWidth: Layout.contentMaxWidth, gap: Layout.sectionGap },
+  heading: { gap: Spacing.sm },
+  group: { gap: Spacing.md },
+} as const satisfies Record<string, ViewStyle>;
 
 export const Radius = {
   card: 16,

@@ -36,9 +36,10 @@ export default function MyMemoriesScreen() {
     loaded && !memories.length ? `${t(language, 'memoryEmpty')} ${t(language, 'memoryEmptyHelp')}` : ''].join(' ');
   return <ScreenWrapper scroll><View style={styles.content}>
     <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" onPress={() => router.dismissTo('/patient/home')} />
-    <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeMemoriesTitle')}</ThemedText>
-    <ThemedText>{t(language, 'memoryIntro')}</ThemedText>
-    <ReadScreenButton language={language} text={speech} />
+    <View style={styles.heading}>
+      <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeMemoriesTitle')}</ThemedText>
+      <ThemedText type="secondary">{t(language, 'memoryIntro')}</ThemedText>
+    </View>
     {cleanup === '1' && <ThemedText accessibilityRole="alert">{t(language, 'memoryRemovedCleanup')}</ThemedText>}
     {(failed || patientFailed) ? <View style={styles.group} accessibilityRole="alert">
       <ThemedText>{t(language, 'memoryFailed')}</ThemedText>
@@ -58,5 +59,6 @@ export default function MyMemoriesScreen() {
         <ThemedText type="defaultSemiBold">{t(language, 'memoryOpen')}</ThemedText>
       </View>
     </SmaranCard>)}
+    <ReadScreenButton language={language} text={speech} />
   </View></ScreenWrapper>;
 }

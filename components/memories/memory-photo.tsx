@@ -4,6 +4,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@components/themed-text';
+import { PageLayout, Radius } from '@constants/layout';
 import { t } from '@i18n/index';
 import { memoryMedia } from '@services/memory-media.service';
 import { useThemeColors } from '@/hooks/use-theme-color';
@@ -36,11 +37,12 @@ export function MemoryPhoto({ patientId, path, name, language, selected }: {
   </View>;
 }
 export const memoryStyles = StyleSheet.create({
-  content: { alignSelf: 'center', maxWidth: 640, width: '100%', gap: 24 },
-  group: { gap: 16 },
+  content: PageLayout.content,
+  heading: PageLayout.heading,
+  group: PageLayout.group,
 });
 const styles = StyleSheet.create({
   group: { gap: 12 },
-  photo: { width: '100%', aspectRatio: 4/3, borderRadius: 20, borderWidth: 1, overflow: 'hidden' },
+  photo: { width: '100%', aspectRatio: 4/3, borderRadius: Radius.card, borderWidth: 1, overflow: 'hidden' },
   placeholder: { ...StyleSheet.absoluteFillObject, pointerEvents: 'none', alignItems: 'center', justifyContent: 'center', padding: 16, gap: 12 },
 });

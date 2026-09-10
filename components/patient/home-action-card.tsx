@@ -6,7 +6,7 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { Radius, Spacing } from '@constants/layout';
 import type { TextSizePreference } from '@constants/typography';
-import { useThemeColors } from '@/hooks/use-theme-color';
+import { useAppearance, useThemeColors } from '@/hooks/use-theme-color';
 
 type HomeActionCardProps = {
   accessibilityHint: string;
@@ -32,6 +32,7 @@ export function HomeActionCard({
   title,
 }: HomeActionCardProps) {
   const colors = useThemeColors();
+  const contrast = useAppearance().highContrast || highContrast;
   const foreground = featured ? colors.onActionPrimary : colors.text;
 
   return (
@@ -45,15 +46,15 @@ export function HomeActionCard({
         styles.card,
         featured && styles.featured,
         {
-          backgroundColor: featured ? colors.actionPrimary : colors.surface,
-          borderColor: highContrast ? foreground : featured ? colors.actionPrimary : colors.border,
-          borderWidth: highContrast ? 3 : featured ? 2 : 1,
+          backgroundColor: featured ? colors.actionPrimary : colors.surfaceRaised,
+          borderColor: contrast ? foreground : featured ? colors.actionPrimary : colors.border,
+          borderWidth: contrast ? 3 : 2,
         },
       ]}>
       <View
         style={[
           styles.icon,
-          { backgroundColor: featured ? colors.surface : colors.surfaceMuted },
+          { backgroundColor: featured ? colors.surface : colors.surfaceSelected },
         ]}>
         <MaterialIcons
           accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"

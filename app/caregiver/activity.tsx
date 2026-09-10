@@ -10,7 +10,8 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { SmaranLoading } from '@components/ui/smaran-loading';
-import { Spacing } from '@constants/layout';
+import { PageLayout, Spacing } from '@constants/layout';
+import { useThemeColors } from '@/hooks/use-theme-color';
 import { t } from '@i18n/index';
 import { AnalyticsPatientChanged, loadActiveAnalytics, type AnalyticsDays, type AnalyticsSummary } from '@services/analytics.service';
 import type { AnalyticsCursor } from '@/src/db/repositories/cognitive.repository';
@@ -20,6 +21,7 @@ import { useOnboardingStore } from '@/src/stores/onboarding.store';
 const feedbackKeys = { easy: 'feedbackEasy', comfortable: 'feedbackComfortable', challenging: 'feedbackChallenging' } as const;
 
 export default function ActivityHistoryScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const focused = useIsFocused();
   const language = useOnboardingStore(state => state.language) ?? 'en';
@@ -101,13 +103,15 @@ export default function ActivityHistoryScreen() {
     <Stack.Screen options={{ animation: 'none' }} />
     <SmaranButton label={t(language, 'back')} accessibilityLabel={t(language, 'back')} variant="outline"
       onPress={() => router.dismissTo('/caregiver/home')} />
-    <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'analyticsTitle')}</ThemedText>
-    <ThemedText type="secondary">{t(language, 'careLocal')}</ThemedText>
+    <View style={PageLayout.heading}>
+      <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'analyticsTitle')}</ThemedText>
+      <ThemedText type="secondary">{t(language, 'careLocal')}</ThemedText>
+    </View>
     <View style={styles.group}>
       {([7, 30] as const).map(value => <SmaranButton key={value} label={t(language, value === 7 ? 'analytics7' : 'analytics30')}
         accessibilityLabel={t(language, value === 7 ? 'analytics7' : 'analytics30')} variant={days === value ? 'primary' : 'outline'}
         accessibilityState={{ selected: days === value }}
-        disabled={days === value} onPress={() => { setData(null); setCursor(undefined); setDays(value); }} />)}
+        onPress={() => { if (days === value) return; setData(null); setCursor(undefined); setDays(value); }} />)}
     </View>
     {status === 'loading' && <SmaranLoading label={t(language, 'loadingSetup')} />}
     {status === 'failed' && <View style={styles.group} accessibilityRole="alert">
@@ -129,7 +133,8 @@ export default function ActivityHistoryScreen() {
         <ThemedText type="secondary">{t(language, game.gameType === 'memory_match' ? 'analyticsMemoryAttempts' : 'analyticsSelectionAttempts')}</ThemedText>
         {game.summary ? <>
           <SmaranCard style={styles.group}>
-            {summaryLines(game.summary).map((line, index) => <ThemedText key={index}>{line}</ThemedText>)}
+            {summaryLines(game.summary).map((line, index) => <ThemedText key={index}
+              style={index ? { borderTopWidth: 1, borderColor: colors.divider, paddingTop: Spacing.md } : undefined}>{line}</ThemedText>)}
             <ThemedText>{t(language, 'analyticsParticipation', { count: number(game.summary.participationDays), days: number(days) })}</ThemedText>
             <ThemedText>{t(language, 'carePlayedLevel', { level: number(game.summary.latestDifficulty) })}</ThemedText>
             <ThemedText>{t(language, 'analyticsNext', { level: number(game.summary.recommendedDifficulty) })}</ThemedText>
@@ -181,7 +186,7 @@ export default function ActivityHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { alignSelf: 'center', width: '100%', maxWidth: 680, gap: Spacing.xl, paddingBottom: Spacing.xl },
+  content: { ...PageLayout.content, paddingBottom: Spacing.xl },
   section: { gap: Spacing.md },
-  group: { gap: Spacing.sm },
+  group: PageLayout.group,
 });

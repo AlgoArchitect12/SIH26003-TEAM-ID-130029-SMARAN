@@ -64,9 +64,9 @@ export function SmaranCard({
   const triggerHaptic = useHaptics(hapticsEnabled && !disabled);
   const cardStyle = [
     styles.card,
-    Elevation.card,
+    onPress && !highContrast && Elevation.card,
     {
-      backgroundColor: selected ? colors.surfaceMuted : colors.surfaceRaised,
+      backgroundColor: selected ? colors.surfaceSelected : colors.surfaceRaised,
       borderColor: selected ? colors.primary : colors.border,
       borderWidth: selected || highContrast ? 3 : 1,
       padding,
@@ -105,7 +105,7 @@ export function SmaranCard({
         styles.interactive,
         pressed && !disabled && styles.pressed,
         pressed && !disabled && !reduceMotion && styles.pressedMotion,
-        disabled && styles.disabled,
+        disabled && { backgroundColor: colors.disabled, borderColor: selected ? colors.primary : colors.border, borderStyle: 'dashed' },
       ]}>
       {children}
     </Pressable>
@@ -126,8 +126,5 @@ const styles = StyleSheet.create({
   },
   pressedMotion: {
     transform: [{ scale: 0.99 }],
-  },
-  disabled: {
-    opacity: 0.5,
   },
 });

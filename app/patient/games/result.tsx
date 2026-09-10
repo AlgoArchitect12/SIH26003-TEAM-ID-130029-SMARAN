@@ -13,7 +13,7 @@ import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
-import { Spacing } from '@constants/layout';
+import { PageLayout, Spacing } from '@constants/layout';
 import type { TextSizePreference } from '@constants/typography';
 import type { ActivityFeedbackLabel, PatientSettings } from '@db/schema.types';
 import { t, type TranslationKey } from '@i18n/index';
@@ -113,7 +113,6 @@ export default function CognitiveResultScreen() {
         ) : (
           <View style={styles.actions}>
             <SmaranLoading label={t(loadingLanguage, 'gameLoading')} />
-            <ThemedText>{t(loadingLanguage, 'gameLoading')}</ThemedText>
           </View>
         )}
       </ScreenWrapper>
@@ -176,7 +175,7 @@ export default function CognitiveResultScreen() {
           <ThemedText textSize={textSize} type="secondary">{metrics.gameType === 'memory_match' ? t(language, 'factorAttempts', { value: String(attempts) }) : t(language, 'selectionsAttempts', { count: String(attempts) })}</ThemedText>
           <ThemedText textSize={textSize} type="secondary">{t(language, 'resultHints', { hints: String(hints) })}</ThemedText>
         </SmaranCard>
-        <SmaranCard style={[styles.recommendation, { borderColor: colors.primary, backgroundColor: colors.surfaceMuted }]}>
+        <SmaranCard style={[styles.recommendation, { borderColor: colors.primary, backgroundColor: colors.surfaceSelected }]}>
           <ThemedText textSize={textSize} type="action">{t(language, 'activityNextLevel', { level: String(recommendation.recommendedDifficulty) })}</ThemedText>
           <ThemedText accessibilityLiveRegion="polite" textSize={textSize}>{recommendationText}</ThemedText>
         </SmaranCard>
@@ -237,7 +236,7 @@ export default function CognitiveResultScreen() {
 
 const styles = StyleSheet.create({
   screen: { flexGrow: 1 },
-  content: { alignSelf: 'center', gap: Spacing.lg, maxWidth: 640, width: '100%' },
+  content: PageLayout.content,
   centered: { flexGrow: 1, gap: Spacing.lg, justifyContent: 'center' },
   completion: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   summary: { gap: Spacing.sm },

@@ -68,13 +68,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Layout.contentMaxWidth + Layout.pagePadding * 2,
     justifyContent: 'center',
     minHeight: Layout.minTouchTarget,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Layout.pagePadding,
   },
   content: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Layout.contentMaxWidth + Layout.pagePadding * 2,
     padding: Spacing.lg,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Layout.pagePadding,
     paddingBottom: Spacing.xl,
   },
 });
