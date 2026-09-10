@@ -15,7 +15,7 @@ import { SmaranCard } from '@components/ui/smaran-card';
 import { Spacing } from '@constants/layout';
 import type { PatientProfile, PatientSettings } from '@db/schema.types';
 import { getLanguageName, getRegionName, getTextSizeName, t } from '@i18n/index';
-import { resolveActivePatient } from '@services/active-patient.service';
+import { PatientSelectionRequiredError, resolveActivePatient } from '@services/active-patient.service';
 import { useThemeColors } from '@/hooks/use-theme-color';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
@@ -74,7 +74,8 @@ export default function CompleteScreen() {
       }
     };
 
-    load().catch(() => {
+    load().catch(error => {
+      if (active && error instanceof PatientSelectionRequiredError) { router.replace('/profiles'); return; }
       if (__DEV__) {
         console.error('Completed onboarding could not be loaded');
       }

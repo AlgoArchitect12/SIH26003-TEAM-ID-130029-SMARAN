@@ -1,3 +1,4 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
@@ -61,6 +62,7 @@ export default function CognitiveResultScreen() {
   useEffect(() => {
     if (!focused) return;
     let active = true;
+    const current = capturePatientRequest();
     setStatus('loading');
     if (!pending && !saved) {
       router.dismissTo('/patient/games');
@@ -68,7 +70,7 @@ export default function CognitiveResultScreen() {
     }
     resolveActivePatient()
       .then((resolution) => {
-        if (!active) return;
+        if (!active || !current()) return;
         if (resolution.status !== 'ready') {
           router.replace('/onboarding/role');
           return;
@@ -92,7 +94,7 @@ export default function CognitiveResultScreen() {
       })
       .catch(() => {
         if (__DEV__) console.error('Activity result could not be prepared');
-        if (active) setStatus('failed');
+        if (active && current()) setStatus('failed');
       });
     return () => {
       active = false;
@@ -131,12 +133,15 @@ export default function CognitiveResultScreen() {
   const recommendationText = t(language, recommendationKey(recommendation.direction));
 
   const submit = async (feedback: ActivityFeedbackLabel | null) => {
+    const current = capturePatientRequest();
+    if (!current()) return;
     if (!pending || submissionLocked.current) return;
     submissionLocked.current = true;
     setSaving(true);
     setSaveFailed(false);
     try {
-      setSaved(await saveCognitiveResult(pending, feedback));
+      const result = await saveCognitiveResult(pending, feedback);
+      if (current()) setSaved(result);
     } catch {
       if (__DEV__) console.error('Completed activity could not be saved');
       setSaveFailed(true);

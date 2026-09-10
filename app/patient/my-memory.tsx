@@ -1,3 +1,4 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -37,10 +38,13 @@ export default function MemoryDetailScreen() {
     return () => { active = false; };
   }, [focused, id, patientId, attempt]);
   const remove = async () => {
+    const current = capturePatientRequest();
+    if (!current()) return;
     if (!memory || !patientId || locked.current) return;
     locked.current = true; setBusy(true);
     try {
       const result = await memoriesService.remove(patientId, memory.id);
+      if (!current()) return;
       router.dismissTo({ pathname: '/patient/my-memories', params: { cleanup: result.cleanupFailed ? '1' : '0' } });
     } catch (error) { setFailed(true); if (error instanceof MemoryError && error.code === 'missing') setMissing(true); }
     finally { locked.current = false; setBusy(false); }

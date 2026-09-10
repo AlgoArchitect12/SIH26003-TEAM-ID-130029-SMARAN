@@ -9,7 +9,7 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { Spacing } from '@constants/layout';
 import { t } from '@i18n/index';
-import { resolveActivePatient } from '@services/active-patient.service';
+import { PatientSelectionRequiredError, resolveActivePatient } from '@services/active-patient.service';
 import { SecureStorageKeys, setSecureValue } from '@services/secure-storage.service';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
@@ -20,6 +20,7 @@ export default function IndexScreen() {
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
   const language = useOnboardingStore((state) => state.language) ?? 'en';
   const setLanguage = useOnboardingStore((state) => state.setLanguage);
+  const setRegion = useOnboardingStore((state) => state.setRegion);
   const setAccessibility = useOnboardingStore((state) => state.setAccessibilityPreferences);
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<LaunchStatus>('loading');
@@ -30,9 +31,11 @@ export default function IndexScreen() {
 
     const resolveLaunchRoute = async () => {
       const resolution = await resolveActivePatient();
+      if (!active) return;
 
       if (resolution.status === 'ready') {
         setLanguage(resolution.settings.language);
+        setRegion(resolution.settings.region);
         setAccessibility({
           highContrast: resolution.settings.highContrast,
           reducedMotion: resolution.settings.reducedMotion,
@@ -53,7 +56,8 @@ export default function IndexScreen() {
       }
     };
 
-    resolveLaunchRoute().catch(() => {
+    resolveLaunchRoute().catch(error => {
+      if (active && error instanceof PatientSelectionRequiredError) { router.replace('/profiles'); return; }
       if (__DEV__) {
         console.error('Onboarding route resolution failed');
       }
@@ -65,7 +69,7 @@ export default function IndexScreen() {
     return () => {
       active = false;
     };
-  }, [attempt, resetOnboarding, router, setAccessibility, setLanguage]);
+  }, [attempt, resetOnboarding, router, setAccessibility, setLanguage, setRegion]);
 
   return (
     <ScreenWrapper contentContainerStyle={styles.screen} scroll>

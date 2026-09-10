@@ -1,3 +1,4 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -87,20 +88,21 @@ export default function MemoryMatchScreen() {
 
   useEffect(() => {
     let active = true;
+    const current = capturePatientRequest();
     setLoadStatus('loading');
     clearSession();
 
     resolveActivePatient()
       .then(async (resolution) => {
         if (resolution.status !== 'ready') {
-          if (active) router.replace('/onboarding/role');
+          if (active && current()) router.replace('/onboarding/role');
           return;
         }
         const [history, savedModel] = await Promise.all([
           cognitiveRepository.getRecentSessions(resolution.profile.id, 5, 'memory_match'),
           cognitiveRepository.getAdaptiveModel(resolution.profile.id, 'memory_match'),
         ]);
-        if (!active) return;
+        if (!active || !current()) return;
         setLanguage(resolution.settings.language);
         setAccessibility({
           highContrast: resolution.settings.highContrast,
@@ -121,7 +123,7 @@ export default function MemoryMatchScreen() {
       })
       .catch(() => {
         if (__DEV__) console.error('Memory Match could not be prepared');
-        if (active) setLoadStatus('failed');
+        if (active && current()) setLoadStatus('failed');
       });
 
     return () => {

@@ -1,4 +1,6 @@
+import { capturePatientRequest, usePatientSessionStore } from '@/src/stores/patient-session.store';
 import { useIsFocused } from '@react-navigation/native';
+import { CurrentPerson } from '@components/patient/current-person';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, ScrollView, StyleSheet, View } from 'react-native';
@@ -21,7 +23,7 @@ export default function ActivityHistoryScreen() {
   const router = useRouter();
   const focused = useIsFocused();
   const language = useOnboardingStore(state => state.language) ?? 'en';
-  const savedProfileId = useOnboardingStore(state => state.savedProfileId);
+  const savedProfileId = usePatientSessionStore(state => state.revision);
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
   const [days, setDays] = useState<AnalyticsDays>(7);
   const [expandedGame, setExpandedGame] = useState<string | null>(null);
@@ -44,10 +46,11 @@ export default function ActivityHistoryScreen() {
 
   useEffect(() => {
     const ticket = ++request.current;
+    const current = capturePatientRequest();
     setData(null); setStatus('loading');
     if (!focused || !foreground) return;
     void loadActiveAnalytics(days, cursor).then(result => {
-      if (request.current !== ticket) return;
+      if (request.current !== ticket || !current()) return;
       if (result) {
         const store = useOnboardingStore.getState();
         store.setLanguage(result.settings.language);
@@ -57,7 +60,7 @@ export default function ActivityHistoryScreen() {
       setLoadedProfileId(savedProfileId); setData(result); setStatus(result ? 'ready' : 'missing');
       scroll.current?.scrollTo({ y: 0, animated: false });
     }).catch(error => {
-      if (request.current !== ticket) return;
+      if (request.current !== ticket || !current()) return;
       setData(null);
       if (error instanceof AnalyticsPatientChanged && cursor) setCursor(undefined);
       else setStatus('failed');
@@ -117,7 +120,7 @@ export default function ActivityHistoryScreen() {
         onPress={() => router.replace('/onboarding/role')} />
     </View>}
     {visible && <>
-      <ThemedText type="cardHeading" accessibilityRole="header">{visible.patient.name}</ThemedText>
+      <CurrentPerson name={visible.patient.name} language={language} caregiver />
       <ThemedText>{period}</ThemedText>
       <ThemedText type="secondary">{t(language, 'analyticsAsOf', { date: date(visible.summary.window.asOf) })}</ThemedText>
       <ReadScreenButton language={language} text={readSummary} labelKey="careReadSummary" />

@@ -1,3 +1,4 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, type ComponentProps } from 'react';
@@ -5,7 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { t, type TranslationKey } from '@i18n/index';
-import { resolveActivePatient } from '@services/active-patient.service';
+import { PatientSelectionRequiredError, resolveActivePatient } from '@services/active-patient.service';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import type { ReminderType } from '@/src/my-day/types';
 import type { NotificationResult } from '@services/my-day.service';
@@ -19,24 +20,33 @@ export function useMyDayPatient() {
   const router = useRouter();
   const language = useOnboardingStore(s => s.language) ?? 'en';
   const [patientId, setPatientId] = useState<string | null>(null);
+  const [patientName, setPatientName] = useState<string | undefined>();
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const retry = useCallback(() => setAttempt(n => n + 1), []);
   useEffect(() => {
     let active = true;
+    const current = capturePatientRequest();
     setFailed(false);
+    setPatientId(null); setPatientName(undefined);
     void resolveActivePatient().then(result => {
-      if (!active) return;
+      if (!active || !current()) return;
       if (result.status !== 'ready') { router.replace('/onboarding/role'); return; }
       const store = useOnboardingStore.getState();
       store.setLanguage(result.settings.language);
+      store.setRegion(result.settings.region);
       store.setAccessibilityPreferences({ highContrast: result.settings.highContrast, reducedMotion: result.settings.reducedMotion,
         textSize: result.settings.textSize, voiceGuidance: result.settings.voiceGuidance });
       setPatientId(result.profile.id);
-    }).catch(() => { if (active) setFailed(true); });
+      setPatientName(result.profile.preferredName);
+    }).catch(error => {
+      if (!active || !current()) return;
+      if (error instanceof PatientSelectionRequiredError) router.replace('/profiles');
+      else setFailed(true);
+    });
     return () => { active = false; };
   }, [attempt, router]);
-  return { patientId, language, failed, retry };
+  return { patientId, patientName, language, failed, retry };
 }
 export { Field } from '@components/ui/smaran-field';
 export function NotificationNotice({ result, busy, onRetry, onAllow }: {

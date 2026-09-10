@@ -10,7 +10,8 @@ export function Field({ label, ...props }: TextInputProps & { label: string }) {
   const [focused, setFocused] = useState(false);
   return <View style={{ gap: 8 }}>
     <ThemedText type="defaultSemiBold">{label}</ThemedText>
-    <TextInput {...props} accessibilityLabel={label} placeholderTextColor={colors.textSecondary}
+    <TextInput autoComplete="off" textContentType="none" importantForAutofill="no" autoCorrect={false} {...props}
+      accessibilityLabel={label} placeholderTextColor={colors.textSecondary}
       onFocus={event => { setFocused(true); props.onFocus?.(event); }} onBlur={event => { setFocused(false); props.onBlur?.(event); }}
       style={[styles.input, getScaledTypography('body', size), { color: colors.text, backgroundColor: colors.surface,
         borderColor: focused ? colors.focus : colors.border }, focused && { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: 2, outlineOffset: 2 }, props.style]} />

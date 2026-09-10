@@ -1,4 +1,5 @@
 import { uxStrings } from './ux-strings';
+import { profileStrings } from './profile-strings';
 import { cognitiveStrings } from './cognitive-strings';
 import { careStrings } from './care-strings';
 import { analyticsStrings } from './analytics-strings';
@@ -11,6 +12,7 @@ import type { TranslationCatalog } from './strings';
 
 const bengali = {
   ...uxStrings.bn,
+  ...profileStrings.bn,
   ...myHomeStrings.bn,
   ...careStrings.bn,
   ...analyticsStrings.bn,
@@ -164,6 +166,7 @@ const bengali = {
 
 const meitei = {
   ...uxStrings.mni,
+  ...profileStrings.mni,
   ...myHomeStrings.mni,
   ...careStrings.mni,
   ...analyticsStrings.mni,
@@ -317,6 +320,7 @@ const meitei = {
 
 const khasi = {
   ...uxStrings.kha,
+  ...profileStrings.kha,
   ...myHomeStrings.kha,
   ...careStrings.kha,
   ...analyticsStrings.kha,
@@ -470,6 +474,7 @@ const khasi = {
 
 const mizo = {
   ...uxStrings.lus,
+  ...profileStrings.lus,
   ...myHomeStrings.lus,
   ...careStrings.lus,
   ...analyticsStrings.lus,

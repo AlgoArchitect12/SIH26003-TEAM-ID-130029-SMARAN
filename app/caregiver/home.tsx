@@ -1,4 +1,6 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { SmaranLoading } from '@components/ui/smaran-loading';
+import { CurrentPerson } from '@components/patient/current-person';
 import { useIsFocused } from '@react-navigation/native';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { Stack, useRouter } from 'expo-router';
@@ -12,7 +14,7 @@ import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { Spacing } from '@constants/layout';
 import { t, type TranslationKey } from '@i18n/index';
-import { resolveActivePatient } from '@services/active-patient.service';
+import { PatientSelectionRequiredError, resolveActivePatient } from '@services/active-patient.service';
 import { loadCaregiverDashboard } from '@services/caregiver.service';
 import type { CareActivity, CaregiverDashboard, UpcomingReminder } from '@/src/caregiver/types';
 import { activityFacts, activityTitleKeys } from '@/src/games/presentation';
@@ -48,10 +50,11 @@ export default function CaregiverHomeScreen() {
   useEffect(() => {
     if (!focused) return;
     let active = true;
+    const current = capturePatientRequest();
     setStatus('loading'); setData(null);
     void (async () => {
       const resolution = await resolveActivePatient();
-      if (!active) return;
+      if (!active || !current()) return;
       if (resolution.status !== 'ready') { setStatus('missing'); return; }
       const store = useOnboardingStore.getState();
       store.setLanguage(resolution.settings.language);
@@ -60,10 +63,14 @@ export default function CaregiverHomeScreen() {
         reducedMotion: resolution.settings.reducedMotion, voiceGuidance: resolution.settings.voiceGuidance,
       });
       const dashboard = await loadCaregiverDashboard(resolution.profile.id);
-      if (active) { setData(dashboard); setStatus(dashboard ? 'ready' : 'missing'); }
-    })().catch(() => { if (active) setStatus('failed'); });
+      if (active && current()) { setData(dashboard); setStatus(dashboard ? 'ready' : 'missing'); }
+    })().catch(error => {
+      if (!active || !current()) return;
+      if (error instanceof PatientSelectionRequiredError) router.replace({ pathname: '/profiles', params: { view: 'caregiver' } });
+      else setStatus('failed');
+    });
     return () => { active = false; };
-  }, [focused, attempt]);
+  }, [focused, attempt, router]);
 
   const back = () => data ? router.dismissTo('/patient/home') : router.canGoBack() ? router.back() : router.replace('/onboarding/role');
   const number = (value: number) => new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(value);
@@ -89,7 +96,7 @@ export default function CaregiverHomeScreen() {
     <View style={styles.group}>
       <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeCareTitle')}</ThemedText>
       <ThemedText type="secondary">{t(language, 'careLocal')}</ThemedText>
-      {data && <ThemedText type="cardHeading" accessibilityRole="header">{data.patient.preferredName}</ThemedText>}
+      <CurrentPerson name={data?.patient.preferredName} language={language} caregiver />
     </View>
     {status === 'loading' && <SmaranLoading label={t(language, 'loadingSetup')} />}
     {status === 'failed' && <View style={styles.group} accessibilityRole="alert">

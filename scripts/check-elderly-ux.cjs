@@ -13,7 +13,7 @@ function load(file, overrides = {}, cache = new Map()) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
   new Function('require', 'module', 'exports', '__DEV__', code)(
-    (name) => overrides[name] ?? load(path.resolve(path.dirname(file), name + '.ts'), overrides, cache),
+    (name) => overrides[name] ?? (name === 'zustand' ? require(name) : load(path.resolve(path.dirname(file), name + '.ts'), overrides, cache)),
     module, module.exports, false
   );
   return module.exports;

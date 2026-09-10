@@ -1,3 +1,4 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -53,11 +54,14 @@ export default function MemoryEditorScreen() {
     finally { locked.current = false; setBusy(false); }
   };
   const save = async () => {
+    const current = capturePatientRequest();
+    if (!current()) return;
     if (!patientId || locked.current) return;
     setError(null); locked.current = true; setBusy(true);
     try {
       const input = validateMemory({ name, relationship, description });
       const result = await memoriesService.save(patientId, input, photo, id);
+      if (!current()) return;
       router.dismissTo({ pathname: '/patient/my-memory', params: { id: result.memory.id, cleanup: result.cleanupFailed ? '1' : '0' } });
     } catch (reason) { setError(reason instanceof MemoryError ? reason.code === 'invalid' ? 'memoryInvalid' : reason.code === 'photo' ? 'memoryPhotoFailed' : reason.code === 'cleanup' ? 'memorySaveCleanup' : reason.code === 'missing' ? 'memoryMissing' : 'memoryFailed' : 'memoryFailed'); }
     finally { locked.current = false; setBusy(false); }

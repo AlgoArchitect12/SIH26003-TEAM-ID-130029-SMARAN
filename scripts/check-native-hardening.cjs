@@ -227,7 +227,7 @@ async function checkActivePatient() {
   } });
   const { resolveActivePatient } = load('src/services/active-patient.service.ts', {
     './secure-storage.service': secure,
-    '@db/repositories/patient.repository': { patientRepository: { getProfile: async () => null, getProfileById: async () => null, getSettings: async () => null } },
+    '@db/repositories/patient.repository': { patientRepository: { listProfiles: async () => [], getProfile: async () => null, getProfileById: async () => null, getSettings: async () => null } },
     '@/src/utils/validation': load('src/utils/validation.ts'),
   });
   assert.equal((await resolveActivePatient()).status, 'fresh');

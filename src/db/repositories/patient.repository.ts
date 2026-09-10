@@ -193,6 +193,27 @@ async function getProfileById(id: string) {
   return getProfileByIdFrom(await getDatabase(), id);
 }
 
+async function listProfiles() {
+  const database = await getDatabase();
+  return (await database.getAllAsync<PatientProfileRow>(
+    'SELECT * FROM patient_profiles ORDER BY created_at, id'
+  )).map(mapProfile);
+}
+
+async function createAdditionalProfileWithSettings(
+  input: CreatePatientProfileInput & { id: string }, settingsInput: UpdatePatientSettingsInput
+) {
+  const database = await getDatabase();
+  await database.withExclusiveTransactionAsync(async transaction => {
+    if (!await transaction.getFirstAsync('SELECT id FROM patient_profiles LIMIT 1')) {
+      throw new Error('Use first-time onboarding for the first patient.');
+    }
+    if (await getProfileByIdFrom(transaction, input.id)) throw new Error('Patient already created.');
+    const profile = await upsertProfileIn(transaction, input);
+    await upsertSettingsIn(transaction, profile.id, settingsInput);
+  });
+}
+
 async function upsertProfile(input: CreatePatientProfileInput) {
   return upsertProfileIn(await getDatabase(), input);
 }
@@ -260,6 +281,9 @@ async function upsertProfileWithSettings(
 }
 
 export const patientRepository = {
+  listProfiles,
+  createAdditionalProfileWithSettings,
+  newProfileId: async () => generateRecordId(await getDatabase()),
   getProfile,
   getProfileById,
   getSettings,

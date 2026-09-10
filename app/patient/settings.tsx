@@ -1,3 +1,4 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
@@ -23,10 +24,13 @@ export default function SettingsScreen() {
   const title = t(language, section === 'language' ? 'languageLabel' : section === 'appearance' ? 'appearance'
     : section === 'voice' ? 'voiceGuidance' : 'accessibility');
   const save = async (input: UpdatePatientSettingsInput) => {
+    const current = capturePatientRequest();
+    if (!current()) return;
     if (locked.current || !patient.patientId) return;
     locked.current = true; setStatus('saving');
     try {
       const saved = await patientRepository.updateSettings(patient.patientId, input);
+      if (!current()) return;
       const store = useOnboardingStore.getState();
       store.setLanguage(saved.language); store.setAccessibilityPreferences({ textSize: saved.textSize,
         reducedMotion: saved.reducedMotion, highContrast: saved.highContrast, voiceGuidance: saved.voiceGuidance });

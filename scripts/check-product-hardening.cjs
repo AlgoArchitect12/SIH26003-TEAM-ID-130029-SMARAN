@@ -26,6 +26,7 @@ function harness(file, overrides = {}, slots = []) {
   const module = { exports: {} };
   new Function('require', 'module', 'exports', code)(name => {
     if (name in overrides) return overrides[name];
+    if (name === '@/src/stores/patient-session.store') return load('src/stores/patient-session.store.ts');
     if (name === 'react') return react;
     if (name === 'react/jsx-runtime') return require(name);
     if (name === 'react-native') return { View: 'View', StyleSheet: { create: s => s } };

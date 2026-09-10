@@ -1,6 +1,7 @@
 import { cognitiveRepository, type AnalyticsAggregate, type AnalyticsCursor } from '../db/repositories/cognitive.repository';
 import { CognitiveActivityTypes } from '../db/schema.types';
 import { resolveActivePatient } from './active-patient.service';
+import { capturePatientRequest } from '../stores/patient-session.store';
 
 export type AnalyticsDays = 1 | 7 | 30;
 
@@ -44,6 +45,7 @@ export class AnalyticsPatientChanged extends Error {}
 // Local shared-device context, not remote authentication. No URL patient ID is accepted.
 // Recheck after asynchronous reads so a switched profile cannot receive an old response.
 export async function loadActiveAnalytics(days: AnalyticsDays, cursor?: AnalyticsCursor) {
+  const isCurrent = capturePatientRequest();
   const active = await resolveActivePatient();
   if (active.status !== 'ready') return null;
   if (cursor && cursor.patientId !== active.profile.id) throw new AnalyticsPatientChanged();
@@ -52,7 +54,7 @@ export async function loadActiveAnalytics(days: AnalyticsDays, cursor?: Analytic
     loadAnalyticsHistory(active.profile.id, cursor),
   ]);
   const current = await resolveActivePatient();
-  if (current.status !== 'ready' || current.profile.id !== active.profile.id) throw new AnalyticsPatientChanged();
+  if (!isCurrent() || current.status !== 'ready' || current.profile.id !== active.profile.id) throw new AnalyticsPatientChanged();
   return { patient: { id: active.profile.id, name: active.profile.preferredName }, settings: active.settings, summary, history };
 }
 

@@ -8,13 +8,13 @@ const ts = require('typescript');
 const { load } = require('./check-elderly-ux.cjs');
 
 // Execute the actual screens with native/UI boundaries replaced, as in product-hardening checks.
-function screen(file, overrides) {
+function screen(file, overrides, props) {
   let cursor = 0;
   const slots = [], effects = [];
   const react = {
     useState: initial => {
       const i = cursor++;
-      if (!(i in slots)) slots[i] = initial;
+      if (!(i in slots)) slots[i] = typeof initial === 'function' ? initial() : initial;
       return [slots[i], value => { slots[i] = typeof value === 'function' ? value(slots[i]) : value; }];
     },
     useRef: initial => slots[cursor++] ??= { current: initial },
@@ -41,7 +41,7 @@ function screen(file, overrides) {
   }, module, module.exports, false);
   return () => {
     cursor = 0;
-    const tree = Object.values(module.exports).find(value => typeof value === 'function')();
+    const tree = Object.values(module.exports).find(value => typeof value === 'function')(props);
     effects.splice(0).forEach(fn => fn());
     return tree;
   };
@@ -317,4 +317,5 @@ async function main() {
   await checkBackup();
 }
 
-main().catch(error => { console.error(error); process.exitCode = 1; });
+module.exports = { screen, nodes };
+if (require.main === module) main().catch(error => { console.error(error); process.exitCode = 1; });

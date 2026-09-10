@@ -79,11 +79,12 @@ export async function speakScreenText(
   }
 }
 
-export async function stopSpeech() {
+export async function stopSpeech(required = false) {
   speechRequest += 1;
   try {
     await Speech.stop();
   } catch {
+    if (required) throw new Error('Screen reading could not be stopped.');
     // Speech is optional assistance; there is nothing else to clean up when unavailable.
   }
 }

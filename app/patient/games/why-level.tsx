@@ -1,3 +1,4 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -50,6 +51,7 @@ export default function WhyLevelScreen() {
   useEffect(() => {
     if (!focused) return;
     let active = true;
+    const current = capturePatientRequest();
     setFailed(false);
     if (!sessionId) {
       router.dismissTo('/patient/games');
@@ -59,7 +61,7 @@ export default function WhyLevelScreen() {
     resolveActivePatient()
       .then(async (resolution) => {
         const session = resolution.status === 'ready' ? await cognitiveRepository.getSessionById(resolution.profile.id, sessionId) : null;
-        if (!active) return;
+        if (!active || !current()) return;
         if (resolution.status !== 'ready' || !session || session.patientId !== resolution.profile.id) {
           router.dismissTo('/patient/games');
           return;
@@ -68,7 +70,7 @@ export default function WhyLevelScreen() {
           cognitiveRepository.getRecentSessions(session.patientId, 5, session.gameType, session.completedAt),
           cognitiveRepository.getAdaptiveModel(session.patientId, session.gameType),
         ]);
-        if (!active) return;
+        if (!active || !current()) return;
         setLanguage(resolution.settings.language);
         setAccessibility({
           highContrast: resolution.settings.highContrast,
@@ -108,7 +110,7 @@ export default function WhyLevelScreen() {
       })
       .catch(() => {
         if (__DEV__) console.error('Activity explanation could not be prepared');
-        if (active) setFailed(true);
+        if (active && current()) setFailed(true);
       });
 
     return () => {

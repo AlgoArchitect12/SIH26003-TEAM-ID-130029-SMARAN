@@ -3,6 +3,7 @@ import { useRouter, type Href } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { View } from 'react-native';
 import { PatientPage } from '@components/patient/patient-page';
+import { CurrentPerson } from '@components/patient/current-person';
 import { useMyDayPatient } from '@components/my-day/shared';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { ThemedText } from '@components/themed-text';
@@ -35,6 +36,7 @@ export default function MenuScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   return <PatientPage {...patient} title={t(patient.language, 'navMenu')}>
+    <CurrentPerson name={patient.patientName} language={patient.language} />
     {groups.map(group => <View key={group.title} style={{ gap: 12 }}>
       <ThemedText type="cardHeading">{t(patient.language, group.title)}</ThemedText>
       {group.entries.map(item => <SmaranCard key={item.label} accessibilityLabel={t(patient.language, item.label)}

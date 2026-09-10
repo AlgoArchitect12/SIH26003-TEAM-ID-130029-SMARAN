@@ -1,3 +1,4 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -66,18 +67,19 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
 
   useEffect(() => {
     let active = true;
+    const isCurrent = capturePatientRequest();
     setFailed(false); setData(null); setSelection(null); current.current = null; completed.current = false;
     useCognitiveSessionStore.getState().clear();
     void (async () => {
       const resolution = await resolveActivePatient();
-      if (!active) return;
+      if (!active || !isCurrent()) return;
       if (resolution.status !== 'ready') { router.replace('/onboarding/role'); return; }
       const { profile, settings } = resolution;
       const [history, stored] = await Promise.all([
         cognitiveRepository.getRecentSessions(profile.id, 5, gameType),
         cognitiveRepository.getAdaptiveModel(profile.id, gameType),
       ]);
-      if (!active) return;
+      if (!active || !isCurrent()) return;
       const level = history[0]?.recommendedDifficulty ?? 1;
       const patterns = gameType === 'pattern_recognition' ? preparePatterns(level) : null;
       const preparedRoutine = gameType === 'routine_recall' ? prepareRoutine(level) : null;
@@ -92,7 +94,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
       });
       setData({ patientId: profile.id, settings, level, history, model: stored ?? createInitialAdaptiveModel(profile.id, gameType),
         tasks, patterns, routine: preparedRoutine?.routine ?? null });
-    })().catch(() => { if (active) setFailed(true); });
+    })().catch(() => { if (active && isCurrent()) setFailed(true); });
     return () => { active = false; };
   }, [attempt, gameType, router]);
 

@@ -1,3 +1,4 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -31,16 +32,17 @@ export default function ActivitiesScreen() {
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true;
+    const current = capturePatientRequest();
     setStatus('loading');
     void resolveActivePatient().then(resolution => {
-      if (!active) return;
+      if (!active || !current()) return;
       if (resolution.status !== 'ready') { router.replace('/onboarding/role'); return; }
       const store = useOnboardingStore.getState(), settings = resolution.settings;
       store.setLanguage(settings.language);
       store.setAccessibilityPreferences({ textSize: settings.textSize, highContrast: settings.highContrast,
         reducedMotion: settings.reducedMotion, voiceGuidance: settings.voiceGuidance });
       setStatus('ready');
-    }).catch(() => { if (active) setStatus('failed'); });
+    }).catch(() => { if (active && current()) setStatus('failed'); });
     return () => { active = false; };
   }, [attempt, router]);
   return <ScreenWrapper scroll><View style={styles.content}>

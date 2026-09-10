@@ -60,7 +60,7 @@ export default function ProfileScreen() {
           value={profile.emergencyName} onChangeText={emergencyName => setProfileDraft({ emergencyName })}
           placeholder={t(language, 'emergencyNamePlaceholder')} />
         {errors.emergencyName && <ThemedText accessibilityRole="alert">{errors.emergencyName}</ThemedText>}
-        <Field label={`${t(language, 'emergencyPhone')} (${t(language, 'optional')})`} keyboardType="phone-pad" autoComplete="tel" maxLength={24}
+        <Field label={`${t(language, 'emergencyPhone')} (${t(language, 'optional')})`} keyboardType="phone-pad" maxLength={24}
           value={profile.emergencyPhone} onChangeText={emergencyPhone => setProfileDraft({ emergencyPhone })}
           placeholder={t(language, 'emergencyPhonePlaceholder')} />
         {errors.emergencyPhone && <ThemedText accessibilityRole="alert">{errors.emergencyPhone}</ThemedText>}

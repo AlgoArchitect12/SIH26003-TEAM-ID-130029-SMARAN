@@ -173,7 +173,7 @@ async function main() {
     assert.doesNotMatch(source, /dementia score|clinical score|medicine taken|adherence|\b(improving|worsening|deterioration|severity|progression|decline)\b/iu);
   }
   const screen = fs.readFileSync(path.join(__dirname, '../app/caregiver/home.tsx'), 'utf8');
-  assert.match(screen, /useIsFocused/u); assert.match(screen, /\[focused, attempt\]/u);
+  assert.match(screen, /useIsFocused/u); assert.match(screen, /\[focused, attempt, router\]/u);
   assert.match(screen, /MemoryPhoto/u); assert.doesNotMatch(screen, /numberOfLines|ellipsizeMode/u);
   assert.deepEqual(fs.readdirSync(path.join(__dirname, '../src/db/migrations')).filter(file => /^\d/u.test(file)).sort(),
     ['001_core_bootstrap.ts','002_cognitive_adaptation.ts','003_multilingual_expansion.ts','004_my_day.ts','005_my_memories.ts','006_cognitive_expansion.ts']);

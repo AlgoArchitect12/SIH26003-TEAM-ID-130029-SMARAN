@@ -1,3 +1,4 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -47,6 +48,8 @@ export default function ReminderEditor() {
     return () => { active = false; };
   }, [patientId, id, attempt]);
   const save = async () => {
+    const current = capturePatientRequest();
+    if (!current()) return;
     if (!patientId || locked.current) return;
     setError(null);
     try {
@@ -56,7 +59,7 @@ export default function ReminderEditor() {
       if (input.repeatRule === 'once' && localDateTime(input.scheduledDate!, input.timeOfDay).getTime() <= Date.now()) throw new MyDayError('past');
       locked.current = true; setBusy(true);
       await myDayService.save(patientId, input, id);
-      router.dismissTo('/patient/my-day');
+      if (current()) router.dismissTo('/patient/my-day');
     } catch (reason) { setError(reason instanceof MyDayError ? reason.code === 'limit' ? 'dayLimit' : reason.code === 'past' ? 'dayPast' : reason.code === 'invalid' ? 'dayInvalid' : 'dayFailed' : 'dayFailed'); }
     finally { locked.current = false; setBusy(false); }
   };

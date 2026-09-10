@@ -5,6 +5,7 @@ export const SecureStorageKeys = {
   activeProfileId: 'smaran.active-profile-id',
   authToken: 'smaran.auth-token',
   appearance: 'smaran.appearance',
+  pendingPersonId: 'smaran.pending-person-id',
 } as const;
 
 export type SecureStorageKey = (typeof SecureStorageKeys)[keyof typeof SecureStorageKeys] | `smaran.dob.${string}`;

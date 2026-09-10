@@ -1,3 +1,4 @@
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { Image } from 'expo-image';
 import { useIsFocused } from '@react-navigation/native';
 import { SmaranLoading } from '@components/ui/smaran-loading';
@@ -27,9 +28,10 @@ export function useMyHomePatient() {
   useEffect(() => {
     if (!focused) return;
     let active = true;
+    const current = capturePatientRequest();
     setStatus('loading'); setState(null);
     void resolveActivePatient().then(result => {
-      if (!active) return;
+      if (!active || !current()) return;
       if (result.status !== 'ready') { setStatus('invalid'); return; }
       const store = useOnboardingStore.getState();
       store.setLanguage(result.settings.language);
@@ -37,7 +39,7 @@ export function useMyHomePatient() {
         textSize: result.settings.textSize, voiceGuidance: result.settings.voiceGuidance });
       if (!isRegionalState(result.settings.region)) { setStatus('invalid'); return; }
       setState(result.settings.region); setStatus('ready');
-    }).catch(() => { if (active) setStatus('failed'); });
+    }).catch(() => { if (active && current()) setStatus('failed'); });
     return () => { active = false; };
   }, [attempt, focused]);
   return { state, status, language, retry: () => setAttempt(n => n + 1) };

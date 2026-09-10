@@ -43,7 +43,7 @@ export default function RoleScreen() {
         accessibilityLabel={t(language, role === 'caregiver' ? 'careOpen' : 'continue')}
         disabled={!role}
         label={t(language, role === 'caregiver' ? 'careOpen' : 'continue')}
-        onPress={() => router.push(role === 'caregiver' ? '/caregiver/home' : '/onboarding/language')}
+        onPress={() => router.push(role === 'caregiver' ? { pathname: '/profiles', params: { view: 'caregiver' } } : '/onboarding/language')}
         size="large"
       />
     </OnboardingScreen>
