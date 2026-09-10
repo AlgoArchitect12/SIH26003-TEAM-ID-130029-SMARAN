@@ -3,14 +3,12 @@ import type { PatientProfile, PatientSettings } from '@db/schema.types';
 import { validateUpdatePatientSettings } from '@/src/utils/validation';
 
 import {
-  deleteSecureValue,
   getSecureValue,
   SecureStorageKeys,
 } from './secure-storage.service';
 
 export type ActivePatientResolution =
   | { status: 'fresh' }
-  | { status: 'inconsistent' }
   | {
       completionConfirmed: boolean;
       profile: PatientProfile;
@@ -24,36 +22,27 @@ export async function resolveActivePatient(): Promise<ActivePatientResolution> {
     getSecureValue(SecureStorageKeys.activeProfileId),
   ]);
 
-  if (!activeProfileId) {
-    return completionFlag === 'true' ? { status: 'inconsistent' } : { status: 'fresh' };
+  if (completionFlag !== null && completionFlag !== 'true' && completionFlag !== 'false') {
+    throw new Error('Invalid saved setup state.');
   }
-
-  const [profile, settings] = await Promise.all([
-    patientRepository.getProfileById(activeProfileId),
-    patientRepository.getSettings(activeProfileId),
-  ]);
+  // A committed profile can outlive its routing flags after an interrupted setup.
+  // Only a sole local profile is safe to recover; never guess between patients.
+  const profile = activeProfileId === null
+    ? await patientRepository.getProfile()
+    : await patientRepository.getProfileById(activeProfileId);
+  if (!profile && activeProfileId === null && completionFlag !== 'true') return { status: 'fresh' };
+  const settings = profile ? await patientRepository.getSettings(profile.id) : null;
 
   if (!profile || !settings) {
-    return { status: 'inconsistent' };
+    throw new Error('Saved patient setup could not be loaded.');
   }
 
-  try {
-    validateUpdatePatientSettings(settings);
-  } catch {
-    return { status: 'inconsistent' };
-  }
+  validateUpdatePatientSettings(settings);
 
   return {
-    completionConfirmed: completionFlag === 'true',
+    completionConfirmed: completionFlag === 'true' && activeProfileId !== null,
     profile,
     settings,
     status: 'ready',
   };
-}
-
-export async function clearActivePatientFlags() {
-  await Promise.all([
-    deleteSecureValue(SecureStorageKeys.activeProfileId),
-    deleteSecureValue(SecureStorageKeys.onboardingCompleted),
-  ]);
 }

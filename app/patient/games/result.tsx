@@ -90,8 +90,8 @@ export default function CognitiveResultScreen() {
         setSettings(resolution.settings);
         setStatus('ready');
       })
-      .catch((error: unknown) => {
-        if (__DEV__) console.error('Activity result could not be prepared', error);
+      .catch(() => {
+        if (__DEV__) console.error('Activity result could not be prepared');
         if (active) setStatus('failed');
       });
     return () => {
@@ -137,8 +137,8 @@ export default function CognitiveResultScreen() {
     setSaveFailed(false);
     try {
       setSaved(await saveCognitiveResult(pending, feedback));
-    } catch (error) {
-      if (__DEV__) console.error('Completed activity could not be saved', error);
+    } catch {
+      if (__DEV__) console.error('Completed activity could not be saved');
       setSaveFailed(true);
       submissionLocked.current = false;
     } finally {

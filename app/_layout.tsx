@@ -36,9 +36,9 @@ function DatabaseBootstrap() {
           setStatus('ready');
         }
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (__DEV__) {
-          console.error('Database initialization failed', error);
+          console.error('Local setup initialization failed');
         }
         if (active) {
           setStatus('failed');

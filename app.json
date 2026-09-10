@@ -15,6 +15,7 @@
     "android": {
       "package": "com.smaran.ai",
       "versionCode": 1,
+      "allowBackup": false,
       "blockedPermissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
@@ -60,7 +61,11 @@
           }
         }
       ],
-      "expo-secure-store",
+      [
+        "expo-secure-store",
+        { "configureAndroidBackup": false }
+      ],
+      "./plugins/with-private-backup.cjs",
       "expo-notifications",
       [
         "expo-image-picker",

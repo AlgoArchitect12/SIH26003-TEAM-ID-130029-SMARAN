@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Component, useState, type ErrorInfo, type PropsWithChildren } from 'react';
+import { Component, useState, type PropsWithChildren } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { Colors } from '@constants/colors';
@@ -43,8 +43,8 @@ export class ErrorBoundary extends Component<PropsWithChildren, State> {
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    if (__DEV__) console.error('Unhandled application error', error, info.componentStack);
+  componentDidCatch() {
+    if (__DEV__) console.error('Unhandled application error');
   }
 
   private returnHome = () => {

@@ -1,6 +1,11 @@
 import type { Language } from '../db/schema.types';
 
 const en = {
+  privacyTitle: 'Privacy on this device',
+  privacyLocal: 'Your records and personal photos are stored on this device in this prototype.',
+  privacyLoss: 'Uninstalling Smaran or losing this device may mean losing your information. There is no cloud sync.',
+  privacySharing: 'Anyone using this unlocked device can open My Care. It has no separate sign-in.',
+  profileSaveFailed: 'Some details may already be saved. Try Save again. If you reopen Smaran, check My Profile.',
   settingsSaveFailed: 'We could not save your choice. Select it again to retry.',
   navHome: 'Home', navTrain: 'Train', navDay: 'My Day', navMemories: 'Memories', navMenu: 'Menu',
   menuPatient: 'For you', menuSettings: 'Settings', menuSupport: 'Support', myProfile: 'My Profile',
@@ -19,6 +24,11 @@ type Catalog = Record<keyof typeof en, string>;
 export const uxStrings = {
   en,
   hi: {
+    privacyTitle: 'इस डिवाइस पर गोपनीयता',
+    privacyLocal: 'इस प्रोटोटाइप में आपके रिकॉर्ड और निजी तस्वीरें इसी डिवाइस पर सहेजे जाते हैं।',
+    privacyLoss: 'स्मरण हटाने या डिवाइस खोने पर आपकी जानकारी खो सकती है। क्लाउड सिंक उपलब्ध नहीं है।',
+    privacySharing: 'इस अनलॉक डिवाइस का उपयोग करने वाला कोई भी व्यक्ति मेरी देखभाल खोल सकता है। इसके लिए अलग साइन-इन नहीं है।',
+    profileSaveFailed: 'कुछ जानकारी सहेजी जा चुकी हो सकती है। फिर से सहेजें दबाएँ। स्मरण दोबारा खोलने पर मेरी प्रोफ़ाइल जाँचें।',
     settingsSaveFailed: 'आपकी पसंद सहेजी नहीं जा सकी। फिर से कोशिश करने के लिए उसे दोबारा चुनें।',
     navHome: 'मुख्य पृष्ठ', navTrain: 'अभ्यास', navDay: 'मेरा दिन', navMemories: 'यादें', navMenu: 'मेनू',
     menuPatient: 'आपके लिए', menuSettings: 'सेटिंग्स', menuSupport: 'सहायता', myProfile: 'मेरी प्रोफ़ाइल',
@@ -34,6 +44,11 @@ export const uxStrings = {
     todayClear: 'आज के लिए कोई याद दिलाना बाकी नहीं है।', settingsIntro: 'जो आरामदायक लगे, वह चुनें। इसे कभी भी बदल सकते हैं।',
   },
   as: {
+    privacyTitle: 'এই ডিভাইচত গোপনীয়তা',
+    privacyLocal: 'এই প্ৰটোটাইপত আপোনাৰ তথ্য আৰু ব্যক্তিগত ফটো এই ডিভাইচত সাঁচি ৰখা হয়।',
+    privacyLoss: 'স্মৰণ আঁতৰালে বা ডিভাইচ হেৰালে আপোনাৰ তথ্য হেৰাব পাৰে। ক্লাউড ছিংক উপলব্ধ নহয়।',
+    privacySharing: 'এই আনলক ডিভাইচ ব্যৱহাৰ কৰা যিকোনো ব্যক্তিয়ে মোৰ যত্ন খুলিব পাৰে। ইয়াৰ বাবে পৃথক ছাইন-ইন নাই।',
+    profileSaveFailed: 'কিছুমান তথ্য ইতিমধ্যে সাঁচি থোৱা হ’ব পাৰে। আকৌ সাঁচিবলৈ চেষ্টা কৰক। স্মৰণ পুনৰ খুলিলে মোৰ প্ৰফাইল চাওক।',
     settingsSaveFailed: 'আপোনাৰ পছন্দ সাঁচিব পৰা নগ’ল। পুনৰ চেষ্টা কৰিবলৈ আকৌ বাছক।',
     navHome: 'মূল পৃষ্ঠা', navTrain: 'অনুশীলন', navDay: 'মোৰ দিন', navMemories: 'স্মৃতি', navMenu: 'মেনু',
     menuPatient: 'আপোনাৰ বাবে', menuSettings: 'ছেটিংছ', menuSupport: 'সহায়', myProfile: 'মোৰ প্ৰফাইল',
@@ -49,6 +64,11 @@ export const uxStrings = {
     todayClear: 'আজিৰ বাবে আৰু সোঁৱৰণি বাকী নাই।', settingsIntro: 'আপোনাৰ আৰামদায়ক বিকল্প বাছক। যিকোনো সময়তে সলাব পাৰে।',
   },
   bn: {
+    privacyTitle: 'এই ডিভাইসে গোপনীয়তা',
+    privacyLocal: 'এই প্রোটোটাইপে আপনার তথ্য ও ব্যক্তিগত ছবি এই ডিভাইসে সংরক্ষিত থাকে।',
+    privacyLoss: 'স্মরণ মুছে ফেললে বা ডিভাইস হারালে আপনার তথ্য হারিয়ে যেতে পারে। ক্লাউড সিঙ্ক নেই।',
+    privacySharing: 'এই আনলক ডিভাইস ব্যবহারকারী যে কেউ আমার যত্ন খুলতে পারেন। এর জন্য আলাদা সাইন-ইন নেই।',
+    profileSaveFailed: 'কিছু তথ্য ইতিমধ্যে সংরক্ষিত হয়ে থাকতে পারে। আবার সংরক্ষণ করুন। স্মরণ আবার খুললে আমার প্রোফাইল দেখুন।',
     settingsSaveFailed: 'আপনার পছন্দ সংরক্ষণ করা যায়নি। আবার চেষ্টা করতে সেটি আবার বেছে নিন।',
     navHome: 'মূল পাতা', navTrain: 'অনুশীলন', navDay: 'আমার দিন', navMemories: 'স্মৃতি', navMenu: 'মেনু',
     menuPatient: 'আপনার জন্য', menuSettings: 'সেটিংস', menuSupport: 'সহায়তা', myProfile: 'আমার প্রোফাইল',
@@ -64,6 +84,11 @@ export const uxStrings = {
     todayClear: 'আজ আর কোনো মনে করানো বাকি নেই।', settingsIntro: 'আপনার স্বাচ্ছন্দ্য অনুযায়ী বেছে নিন। যেকোনো সময় বদলাতে পারেন।',
   },
   mni: {
+    privacyTitle: 'ডিভাইস অসিদা প্রাইভেসি',
+    privacyLocal: 'প্রোটোটাইপ অসিদা অদোমগী রেকোর্দ অমসুং লনাইগী ফোতোশিং ডিভাইস অসিদা থম্মি।',
+    privacyLoss: 'স্মরণ লৌথোকপা নত্রগা ডিভাইস মাংখ্রবদি অদোমগী ৱারোল মাংবা য়াই। ক্লাউড সিঙ্ক লৈতে।',
+    privacySharing: 'আনলক তৌরবা ডিভাইস অসি শিজিন্নবা মী খুদিংনা ঐগী চেকশিনবা হাংবা য়াই। তোঙানবা সাইন-ইন লৈতে।',
+    profileSaveFailed: 'ৱারোল খরা হান্না থম্লবা য়াই। অমুক থম্বা হোৎনবিয়ু। স্মরণ অমুক হাংবদা ঐগী প্রোফাইল য়েংবিয়ু।',
     settingsSaveFailed: 'অদোমগী অপাম্বা থম্বা ঙমদ্রে। অমুক হোৎননবা মদু অমুক খনবিয়ু।',
     navHome: 'য়ুম', navTrain: 'হৈনবী', navDay: 'ঐগী নুমিৎ', navMemories: 'নিংশিংবা', navMenu: 'মেনু',
     menuPatient: 'অদোমগীদমক', menuSettings: 'সেটিংস', menuSupport: 'মতেং', myProfile: 'ঐগী প্রোফাইল',
@@ -79,6 +104,11 @@ export const uxStrings = {
     todayClear: 'ঙসিগীদমক নিংশিংহনবা লেমহৌদ্রে।', settingsIntro: 'অদোম্না নুংঙাইবা খনবিয়ু। মতম অমত্তা হোংবা য়াই।',
   },
   kha: {
+    privacyTitle: 'Ka jinglong kyrpang ha kane ka kor',
+    privacyLocal: 'Ha kane ka rukom pyrshang, ki jingthoh bad ki dur shimet jong phi ki sah ha kane ka kor.',
+    privacyLoss: 'Lada weng ia Smaran ne duh ia kane ka kor, phi lah ban duh ia ki jingtip. Ym don cloud sync.',
+    privacySharing: 'Uwei pa uwei ba pyndonkam ia kane ka kor ba la plie lah ban plie ka jingsumar jong nga. Ym don sign-in ba kyrpang.',
+    profileSaveFailed: 'Lah ban la kynshew katto katne ki jingtip. Pyrshang kynshew biang. Lada plie biang ia Smaran, peit ia ka jingtip shaphang jong nga.',
     settingsSaveFailed: 'Ngim shym la lah ban kynshew ia ka jingjied jong phi. Jied biang ban pyrshang biang.',
     navHome: 'Ka iing', navTrain: 'Kilan', navDay: 'Ka sngi', navMemories: 'Jingkynmaw', navMenu: 'Menu',
     menuPatient: 'Na ka bynta jong phi', menuSettings: 'Ki jingpynbeit', menuSupport: 'Jingiarap', myProfile: 'Ka jingtip shaphang jong nga',
@@ -94,6 +124,11 @@ export const uxStrings = {
     todayClear: 'Ym don shuh jingpynkynmaw na ka bynta mynta.', settingsIntro: 'Jied ia kaba phi sngew suk. Phi lah ban kylla ha kano kano ka por.',
   },
   lus: {
+    privacyTitle: 'He phone a mimal himna',
+    privacyLocal: 'He prototype ah i chanchin leh mimal thlalakte he phone ah dah a ni.',
+    privacyLoss: 'Smaran paih emaw he phone bo emaw chuan i chanchin a bo thei. Cloud sync a awm lo.',
+    privacySharing: 'He phone unlock sa hmang tu tupawhin Ka enkawlna a hawng thei. Sign-in hran a awm lo.',
+    profileSaveFailed: 'Chanchin thenkhat dahthat a ni tawh thei. Dahthat han ti leh rawh. Smaran i hawn leh chuan Ka chanchin en rawh.',
     settingsSaveFailed: 'I thlan chu kan dahtha thei lo. Duhthlanna chu thlang nawn la, han ti leh rawh.',
     navHome: 'In', navTrain: 'Zirna', navDay: 'Ka ni', navMemories: 'Hriatrengna', navMenu: 'Menu',
     menuPatient: 'I tan', menuSettings: 'Siamremna', menuSupport: 'Tanpuina', myProfile: 'Ka chanchin',

@@ -26,7 +26,7 @@ export async function isSecureStorageAvailable() {
 
 export async function getSecureValue(key: SecureStorageKey) {
   if (!(await isSecureStorageAvailable())) {
-    return null;
+    throw new SecureStorageUnavailableError();
   }
   return SecureStore.getItemAsync(key);
 }
@@ -40,7 +40,7 @@ export async function setSecureValue(key: SecureStorageKey, value: string) {
 
 export async function deleteSecureValue(key: SecureStorageKey) {
   if (!(await isSecureStorageAvailable())) {
-    return false;
+    throw new SecureStorageUnavailableError();
   }
   await SecureStore.deleteItemAsync(key);
   return true;

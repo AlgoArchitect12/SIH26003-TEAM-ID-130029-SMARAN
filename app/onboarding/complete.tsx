@@ -13,14 +13,9 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { Spacing } from '@constants/layout';
-import { patientRepository } from '@db/repositories/patient.repository';
 import type { PatientProfile, PatientSettings } from '@db/schema.types';
 import { getLanguageName, getRegionName, getTextSizeName, t } from '@i18n/index';
-import {
-  deleteSecureValue,
-  getSecureValue,
-  SecureStorageKeys,
-} from '@services/secure-storage.service';
+import { resolveActivePatient } from '@services/active-patient.service';
 import { useThemeColors } from '@/hooks/use-theme-color';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
@@ -55,36 +50,16 @@ export default function CompleteScreen() {
     setFailed(false);
 
     const load = async () => {
-      const [activeProfileId, completionFlag] = await Promise.all([
-        getSecureValue(SecureStorageKeys.activeProfileId),
-        getSecureValue(SecureStorageKeys.onboardingCompleted),
-      ]);
-
-      if (!activeProfileId || completionFlag !== 'true') {
-        resetOnboarding();
-        if (active) {
-          router.replace('/onboarding/role');
-        }
+      const resolution = await resolveActivePatient();
+      if (resolution.status === 'fresh') {
+        if (active) router.replace('/');
         return;
       }
-
-      const [profile, settings] = await Promise.all([
-        patientRepository.getProfileById(activeProfileId),
-        patientRepository.getSettings(activeProfileId),
-      ]);
-
-      if (!profile || !settings) {
-        await Promise.all([
-          deleteSecureValue(SecureStorageKeys.activeProfileId),
-          deleteSecureValue(SecureStorageKeys.onboardingCompleted),
-        ]);
-        resetOnboarding();
-        if (active) {
-          router.replace('/onboarding/role');
-        }
+      if (!resolution.completionConfirmed) {
+        if (active) router.replace('/');
         return;
       }
-
+      const { profile, settings } = resolution;
       const dateOfBirth = await getDateOfBirth(profile.id);
       if (active) {
         resetOnboarding();
@@ -99,9 +74,9 @@ export default function CompleteScreen() {
       }
     };
 
-    load().catch((error: unknown) => {
+    load().catch(() => {
       if (__DEV__) {
-        console.error('Completed onboarding could not be loaded', error);
+        console.error('Completed onboarding could not be loaded');
       }
       if (active) {
         setFailed(true);

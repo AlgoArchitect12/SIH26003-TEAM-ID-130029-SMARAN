@@ -7,7 +7,8 @@ export const useAppearanceStore = create<{ mode: AppearanceMode | null }>(() => 
 
 export async function loadAppearance() {
   const value = await getSecureValue(SecureStorageKeys.appearance);
-  if (AppearanceModes.includes(value as AppearanceMode)) useAppearanceStore.setState({ mode: value as AppearanceMode });
+  if (value !== null && !AppearanceModes.includes(value as AppearanceMode)) throw new Error('Invalid saved appearance.');
+  useAppearanceStore.setState({ mode: value as AppearanceMode | null });
 }
 
 export async function saveAppearance(mode: AppearanceMode) {

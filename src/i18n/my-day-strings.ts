@@ -1,6 +1,8 @@
 import type { Language } from '../db/schema.types';
 
 const en = {
+  "dayNotificationTitle": "Smaran reminder",
+  "dayNotificationBody": "Open Smaran to see your reminder.",
   "dayOpenHint": "Opens your reminders.",
   "dayIntro": "Here is what is planned for today.",
   "dayEmpty": "Nothing is planned yet.",
@@ -52,6 +54,8 @@ const en = {
   "daySafety": "Use the medicine instructions given by your healthcare professional. Smaran only reminds you."
 } as const;
 const hi = {
+  "dayNotificationTitle": "स्मरण अनुस्मारक",
+  "dayNotificationBody": "अपना अनुस्मारक देखने के लिए स्मरण खोलें।",
   "dayOpenHint": "आपके अनुस्मारक खोलता है।",
   "dayIntro": "आज के लिए यह योजना है।",
   "dayEmpty": "अभी कोई योजना नहीं है।",
@@ -103,6 +107,8 @@ const hi = {
   "daySafety": "दवा के लिए अपने स्वास्थ्य विशेषज्ञ के निर्देश मानें। स्मरण केवल याद दिलाता है।"
 } satisfies Record<keyof typeof en, string>;
 const as = {
+  "dayNotificationTitle": "স্মৰণৰ সোঁৱৰণি",
+  "dayNotificationBody": "আপোনাৰ সোঁৱৰণি চাবলৈ স্মৰণ খোলক।",
   "dayOpenHint": "আপোনাৰ সোঁৱৰণিসমূহ খোলে।",
   "dayIntro": "আজিৰ বাবে এইখিনি পৰিকল্পনা আছে।",
   "dayEmpty": "এতিয়ালৈকে একো পৰিকল্পনা নাই।",
@@ -154,6 +160,8 @@ const as = {
   "daySafety": "ঔষধৰ বাবে আপোনাৰ স্বাস্থ্য বিশেষজ্ঞৰ নিৰ্দেশ মানক। স্মৰণে কেৱল সোঁৱৰাই দিয়ে।"
 } satisfies Record<keyof typeof en, string>;
 const bn = {
+  "dayNotificationTitle": "স্মরণ-এর স্মারক",
+  "dayNotificationBody": "আপনার স্মারক দেখতে স্মরণ খুলুন।",
   "dayOpenHint": "আপনার স্মারকগুলি খোলে।",
   "dayIntro": "আজকের জন্য এই পরিকল্পনা আছে।",
   "dayEmpty": "এখনও কোনো পরিকল্পনা নেই।",
@@ -205,6 +213,8 @@ const bn = {
   "daySafety": "ওষুধের জন্য আপনার স্বাস্থ্য বিশেষজ্ঞের নির্দেশ মানুন। স্মরণ শুধু মনে করিয়ে দেয়।"
 } satisfies Record<keyof typeof en, string>;
 const mni = {
+  "dayNotificationTitle": "Smarangi ningsinghanba",
+  "dayNotificationBody": "Nanggi ningsinghanba yengnaba Smaran hangbiyu.",
   "dayOpenHint": "Nanggi ningsinghanbasing hang-i.",
   "dayIntro": "Ngasigi thourang asi lei.",
   "dayEmpty": "Houjik phaoba thourang leitre.",
@@ -256,6 +266,8 @@ const mni = {
   "daySafety": "Hidakki maramda nanggi hakchang yengsinlibagi lamjing matung innu. Smaranna ningsinghanba khaktani."
 } satisfies Record<keyof typeof en, string>;
 const kha = {
+  "dayNotificationTitle": "Ka jingpynkynmaw Smaran",
+  "dayNotificationBody": "Plie ia Smaran ban peit ia ka jingpynkynmaw jong phi.",
   "dayOpenHint": "Plie ia ki jingpynkynmaw jong phi.",
   "dayIntro": "Kane ka dei ka jingthmu na ka bynta mynta ka sngi.",
   "dayEmpty": "Ym pat don jingthmu.",
@@ -307,6 +319,8 @@ const kha = {
   "daySafety": "Bud ia ka jingbthah dawai jong u nongsumar jong phi. Smaran ka shu pynkynmaw."
 } satisfies Record<keyof typeof en, string>;
 const lus = {
+  "dayNotificationTitle": "Smaran hriattirna",
+  "dayNotificationBody": "I hriattirna en turin Smaran hawng rawh.",
   "dayOpenHint": "I hriattirnate a hawng.",
   "dayIntro": "Hei hi vawiina tih tur ruahman a ni.",
   "dayEmpty": "Engmah ruahman a la awm lo.",

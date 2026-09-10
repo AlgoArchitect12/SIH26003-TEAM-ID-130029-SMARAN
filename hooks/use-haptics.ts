@@ -9,9 +9,9 @@ export function useHaptics(enabled = true) {
 
     try {
       await Haptics.selectionAsync();
-    } catch (error) {
+    } catch {
       if (__DEV__) {
-        console.warn('Haptic feedback unavailable', error);
+        console.warn('Haptic feedback unavailable');
       }
     }
   }, [enabled]);

@@ -145,8 +145,10 @@ async function main() {
       './secure-storage.service': { SecureStorageKeys: { activeProfileId: 'active', onboardingCompleted: 'complete' }, getSecureValue: async key => flags[key] },
     });
     assert.equal((await resolver.resolveActivePatient()).profile.id, patient);
-    flags.active = ''; flags.complete = ''; assert.equal((await resolver.resolveActivePatient()).status, 'fresh');
-    flags.active = 'missing'; assert.equal((await resolver.resolveActivePatient()).status, 'inconsistent');
+    flags.active = null; flags.complete = null;
+    await assert.rejects(resolver.resolveActivePatient(), /More than one local patient/, 'Missing flags cannot pick between patients');
+    flags.active = 'missing'; await assert.rejects(resolver.resolveActivePatient(), /Saved patient setup/);
+    assert.equal(flags.active, 'missing', 'Recovery must preserve flags');
     assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 6);
     assert.equal(w.end.getHours(), 0); assert.equal(w.last7.getHours(), 0);
     assert.equal(localDay(w.last7), '2026-03-02'); assert.equal(localDay(w.previous7), '2026-02-23');

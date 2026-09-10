@@ -9,7 +9,7 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { Spacing } from '@constants/layout';
 import { t } from '@i18n/index';
-import { clearActivePatientFlags, resolveActivePatient } from '@services/active-patient.service';
+import { resolveActivePatient } from '@services/active-patient.service';
 import { SecureStorageKeys, setSecureValue } from '@services/secure-storage.service';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
@@ -40,14 +40,11 @@ export default function IndexScreen() {
           voiceGuidance: resolution.settings.voiceGuidance,
         });
         if (!resolution.completionConfirmed) {
+          await setSecureValue(SecureStorageKeys.activeProfileId, resolution.profile.id);
           await setSecureValue(SecureStorageKeys.onboardingCompleted, 'true');
         }
         if (active) router.replace('/patient/home');
         return;
-      }
-
-      if (resolution.status === 'inconsistent') {
-        await clearActivePatientFlags();
       }
 
       resetOnboarding();
@@ -56,9 +53,9 @@ export default function IndexScreen() {
       }
     };
 
-    resolveLaunchRoute().catch((error: unknown) => {
+    resolveLaunchRoute().catch(() => {
       if (__DEV__) {
-        console.error('Onboarding route resolution failed', error);
+        console.error('Onboarding route resolution failed');
       }
       if (active) {
         setStatus('failed');

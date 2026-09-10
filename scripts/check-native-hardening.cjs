@@ -203,10 +203,12 @@ async function checkPermissionBoundary() {
     getPermissionsAsync: async () => { calls.push('read'); return { status, granted: status === 'granted' }; },
     requestPermissionsAsync: async () => { calls.push('request'); return { status, granted: status === 'granted' }; },
     getAllScheduledNotificationsAsync: async () => [],
+    getPresentedNotificationsAsync: async () => [],
   };
   const service = load('src/services/my-day.service.ts', {
     'expo-notifications': notifications, 'react-native': { Platform: { OS: 'android' } },
     '../db/repositories/my-day.repository': { myDayRepository: { list: async () => [], currentCompletions: async () => [] } },
+    '../db/repositories/patient.repository': { patientRepository: { getSettings: async () => null } },
   });
   assert.deepEqual(await service.myDayService.sync('fixture'), { permission: 'denied', failed: false });
   assert.deepEqual(calls, ['channel', 'read']);
@@ -223,18 +225,18 @@ async function checkActivePatient() {
     isAvailableAsync: async () => true, getItemAsync: async key => flags.get(key) ?? null,
     setItemAsync: async (key, value) => flags.set(key, value), deleteItemAsync: async key => flags.delete(key),
   } });
-  const { resolveActivePatient, clearActivePatientFlags } = load('src/services/active-patient.service.ts', {
+  const { resolveActivePatient } = load('src/services/active-patient.service.ts', {
     './secure-storage.service': secure,
-    '@db/repositories/patient.repository': { patientRepository: { getProfileById: async () => null, getSettings: async () => null } },
+    '@db/repositories/patient.repository': { patientRepository: { getProfile: async () => null, getProfileById: async () => null, getSettings: async () => null } },
     '@/src/utils/validation': load('src/utils/validation.ts'),
   });
   assert.equal((await resolveActivePatient()).status, 'fresh');
   flags.set(secure.SecureStorageKeys.onboardingCompleted, 'true');
-  assert.equal((await resolveActivePatient()).status, 'inconsistent');
+  await assert.rejects(resolveActivePatient(), /Saved patient setup/);
   flags.set(secure.SecureStorageKeys.activeProfileId, 'missing-patient');
-  assert.equal((await resolveActivePatient()).status, 'inconsistent');
-  await clearActivePatientFlags();
-  assert.equal((await resolveActivePatient()).status, 'fresh');
+  await assert.rejects(resolveActivePatient(), /Saved patient setup/);
+  assert.equal(flags.get(secure.SecureStorageKeys.activeProfileId), 'missing-patient');
+  assert.equal(flags.get(secure.SecureStorageKeys.onboardingCompleted), 'true');
 }
 
 main().catch(error => { console.error(error); process.exitCode = 1; });

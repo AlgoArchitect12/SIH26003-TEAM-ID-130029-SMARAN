@@ -26,6 +26,7 @@ export default function ProfileScreen() {
     void attempt;
     if (patientId) {
       setLoadFailed(false);
+      setProfile(null);
       void Promise.all([patientRepository.getProfileById(patientId), getDateOfBirth(patientId)]).then(([saved, dob]) => {
         if (!saved) throw new Error('Missing profile.');
         if (active) setProfile({ preferredName: saved.preferredName, emergencyName: saved.emergencyName ?? '',
@@ -47,7 +48,7 @@ export default function ProfileScreen() {
       await patientRepository.updateProfile(patientId, input);
       await saveDateOfBirth(patientId, dob);
       setMessage(t(language, 'saved'));
-    } catch { setMessage(t(language, 'saveFailed')); }
+    } catch { setMessage(t(language, 'profileSaveFailed')); }
     finally { locked.current = false; setBusy(false); }
   };
   return <PatientPage {...patient} title={t(language, 'myProfile')} failed={patient.failed || loadFailed}

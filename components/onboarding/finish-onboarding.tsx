@@ -37,7 +37,7 @@ export function FinishOnboarding() {
     finally { locked.current = false; setBusy(false); }
   };
   return <View style={{ gap: 16 }}>
-    {failed && <ThemedText accessibilityRole="alert">{t(language, 'saveFailed')}</ThemedText>}
+    {failed && <ThemedText accessibilityRole="alert">{t(language, 'profileSaveFailed')}</ThemedText>}
     <SmaranButton label={t(language, busy ? 'saving' : failed ? 'retrySave' : 'saveFinish')}
       accessibilityLabel={t(language, 'saveFinish')} disabled={busy} loading={busy} onPress={() => void save()} size="large" />
   </View>;

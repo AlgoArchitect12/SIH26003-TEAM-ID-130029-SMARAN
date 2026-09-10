@@ -106,8 +106,8 @@ export default function WhyLevelScreen() {
           settings: resolution.settings,
         });
       })
-      .catch((error: unknown) => {
-        if (__DEV__) console.error('Activity explanation could not be prepared', error);
+      .catch(() => {
+        if (__DEV__) console.error('Activity explanation could not be prepared');
         if (active) setFailed(true);
       });
 

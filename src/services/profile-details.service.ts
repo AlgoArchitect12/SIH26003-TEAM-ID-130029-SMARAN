@@ -6,7 +6,7 @@ const key = (patientId: string) => `smaran.dob.${validateRecordId(patientId)}` a
 
 export async function getDateOfBirth(patientId: string) {
   const value = await getSecureValue(key(patientId));
-  if (value && !parseDateOfBirth(displayDateOfBirth(value))) throw new Error('Invalid saved date of birth.');
+  if (value !== null && parseDateOfBirth(displayDateOfBirth(value)) !== value) throw new Error('Invalid saved date of birth.');
   return value;
 }
 

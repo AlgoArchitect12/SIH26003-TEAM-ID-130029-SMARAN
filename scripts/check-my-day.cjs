@@ -29,6 +29,8 @@ async function main() {
   const patient = 'patient-qa-one', other = 'patient-qa-two';
   const overrides = { '../client': { getDatabase: async () => db } };
   const repo = load('src/db/repositories/my-day.repository.ts', overrides).myDayRepository;
+  const patientRepo = load('src/db/repositories/patient.repository.ts', overrides).patientRepository;
+  const { t, strings } = load('src/i18n/index.ts');
   const { localDay, localDateTime, validateReminder, timeLabel } = load('src/my-day/types.ts');
   const base = { type: 'medicine', title: 'User reminder', note: '', timeOfDay: '08:00', scheduledDate: null, repeatRule: 'daily' };
   assert.equal(timeLabel('en','00:00'),'00:00');
@@ -157,18 +159,21 @@ async function main() {
     assert.ok((await repo.list(patient,true)).some(r=>r.id===removed.id));
 
     // Only the OS notification boundary is replaced; all service and repository code runs against real SQLite.
-    let permission = 'undetermined', requests = 0, schedulingFails = false, cancellationFails = false;
-    const pending = new Map(), canceled = [];
+    let permission = 'undetermined', requests = 0, schedulingFails = false, cancellationFails = false, dismissalFails = false;
+    const pending = new Map(), presented = new Map(), canceled = [];
     const native = {
       AndroidImportance:{DEFAULT:3}, IosAuthorizationStatus:{PROVISIONAL:3,EPHEMERAL:4}, SchedulableTriggerInputTypes:{DAILY:'daily',DATE:'date'},
       setNotificationHandler:()=>{}, setNotificationChannelAsync:async()=>{},
       getPermissionsAsync:async()=>({status:permission,granted:permission==='granted'}),
       requestPermissionsAsync:async()=>{requests++; return {status:permission,granted:permission==='granted'};},
       getAllScheduledNotificationsAsync:async()=>[...pending.values()],
+      getPresentedNotificationsAsync:async()=>[...presented.values()].map(request=>({request})),
+      dismissNotificationAsync:async id=>{if(dismissalFails)throw Error('dismiss');presented.delete(id);},
       cancelScheduledNotificationAsync:async id=>{if(cancellationFails)throw Error('cancel');canceled.push(id);pending.delete(id);},
       scheduleNotificationAsync:async input=>{if(schedulingFails)throw Error('schedule');pending.set(input.identifier,input);return input.identifier;},
     };
     const service = load('src/services/my-day.service.ts',{
+      ...overrides,
       'expo-notifications':native,'react-native':{Platform:{OS:'android'}},'../db/repositories/my-day.repository':{myDayRepository:repo},
     }).myDayService;
     for(const p of ['undetermined','denied']) {permission=p;assert.equal((await service.sync(patient)).permission,p);assert.equal(pending.size,0);}
@@ -177,6 +182,20 @@ async function main() {
     const count=pending.size; assert.equal(count,5);
     await service.sync(patient);assert.equal(pending.size,count);
     const target=reminders[1], identifier='smaran-my-day-'+target.id;
+    const privateContent={title:t('as','dayNotificationTitle'),body:t('as','dayNotificationBody'),sound:'default',data:{reminderId:target.id}};
+    assert.deepEqual(pending.get(identifier).content,privateContent);
+    // Matching revisions must not preserve an old sensitive payload, even during a warm sync.
+    pending.get(identifier).content={title:'Synthetic medicine name',body:'Synthetic appointment notes'};
+    presented.set(identifier,{identifier,content:{title:'Old private title',body:'Old private note'}});
+    presented.set('other-feature',{identifier:'other-feature',content:{title:'Unrelated'}});
+    presented.set('smaran-my-day-generic',{identifier:'smaran-my-day-generic',content:privateContent});
+    dismissalFails=true;
+    assert.equal((await service.sync(patient)).failed,true);
+    assert.deepEqual(pending.get(identifier).content,privateContent,'Scheduling still completes when dismissal fails');
+    assert.ok(presented.has(identifier));
+    dismissalFails=false; assert.equal((await service.sync(patient)).failed,false);
+    assert.ok(!presented.has(identifier));
+    assert.ok(presented.has('other-feature') && presented.has('smaran-my-day-generic'));
     await service.save(patient,{...base,type:'hydration',timeOfDay:'17:30'},target.id);
     assert.ok(canceled.includes(identifier));assert.equal(pending.get(identifier).trigger.hour,17);
     assert.equal(pending.get(identifier).trigger.minute,30);
@@ -197,7 +216,10 @@ async function main() {
     await db.runAsync('UPDATE reminders SET notification_id=NULL,notification_revision=0 WHERE id=?',recovered.id);
     const oldCount=pending.size; await service.sync(patient); assert.equal(pending.size,oldCount);
     await Promise.all([service.save(patient,{...base,title:'Concurrent one'},recovered.id),service.save(patient,{...base,title:'Concurrent two'},recovered.id)]);
-    assert.equal(pending.get('smaran-my-day-'+recovered.id).content.title,'Concurrent two');
+    assert.equal((await repo.get(patient,recovered.id)).title,'Concurrent two');
+    assert.deepEqual(pending.get('smaran-my-day-'+recovered.id).content, {
+      ...privateContent, data:{reminderId:recovered.id},
+    });
     await service.remove(patient,once.id); assert.ok(!pending.has('smaran-my-day-'+once.id));
     // Deterministic early-Done investigation. This checks requested triggers, not OS delivery.
     const RealDate = Date;
@@ -235,8 +257,54 @@ async function main() {
       assert.equal([...pending.values()].filter(n=>n.identifier===dailyId).length,1);
       assert.ok(!pending.has(onceId));
     } finally { global.Date=RealDate; }
+    // Saved patient settings drive both trigger kinds, including warm language changes at matching revisions.
+    const languages = ['en','hi','as','bn','mni','kha','lus'];
+    assert.deepEqual(Object.keys(strings).sort(), [...languages].sort());
+    const localizedDaily = await repo.save(patient,{...base,title:'Synthetic medicine name',note:'Synthetic private instructions'});
+    const localizedOnce = await repo.save(patient,{...base,type:'appointment',title:'Synthetic appointment title',note:'Synthetic appointment notes',repeatRule:'once',scheduledDate:future});
+    for (const language of languages) {
+      await db.runAsync('UPDATE patient_settings SET language=? WHERE patient_id=?',language,patient);
+      assert.deepEqual(await service.sync(patient),{permission:'granted',failed:false});
+      for (const record of [localizedDaily,localizedOnce]) {
+        const notification=pending.get('smaran-my-day-'+record.id);
+        assert.deepEqual(notification.content,{title:t(language,'dayNotificationTitle'),body:t(language,'dayNotificationBody'),sound:'default',data:{reminderId:record.id}});
+        assert.equal(notification.trigger.type,record.repeatRule==='daily'?'daily':'date');
+        assert.ok(!JSON.stringify(notification.content).includes('Synthetic'));
+        assert.equal((await repo.get(patient,record.id)).revision,record.revision);
+      }
+      for (const key of ['dayNotificationTitle','dayNotificationBody']) {
+        assert.ok(strings[language][key].trim());
+        assert.ok(!/[{}]/u.test(strings[language][key]));
+        if(language!=='en') assert.notEqual(strings[language][key],strings.en[key]);
+      }
+      presented.set('smaran-my-day-generic-'+language,{identifier:'smaran-my-day-generic-'+language,
+        content:{title:t(language,'dayNotificationTitle'),body:t(language,'dayNotificationBody')}});
+    }
+    await db.runAsync('UPDATE patient_settings SET language=? WHERE patient_id=?','as',patient);
+    await service.sync(patient);
+    assert.ok(languages.every(language=>presented.has('smaran-my-day-generic-'+language)),'Retain safe presented content in every language');
+    const ownSchedules=JSON.stringify([...pending.values()]);
+    const otherReminder=await repo.save(other,{...base,title:'Other patient private title'});
+    const otherId='smaran-my-day-'+otherReminder.id;
+    assert.deepEqual(await service.sync(other),{permission:'granted',failed:false}); // Missing settings: safe English, no borrowed language.
+    assert.equal(pending.get(otherId).content.title,t('en','dayNotificationTitle'));
+    assert.equal(JSON.stringify([...pending.values()].filter(n=>n.identifier!==otherId)),ownSchedules);
+    await service.remove(other,otherReminder.id);
+    const fallback=load('src/services/my-day.service.ts',{
+      'expo-notifications':native,'react-native':{Platform:{OS:'android'}},
+      '../db/repositories/my-day.repository':{myDayRepository:repo},
+      '../db/repositories/patient.repository':{patientRepository:{...patientRepo,getSettings:async()=>{throw Error('Injected language read failure');}}},
+    }).myDayService;
+    const fallbackSaved=await fallback.save(patient,{...base,title:'Saved despite language read failure',note:'Private free text'});
+    assert.deepEqual(fallbackSaved.notifications,{permission:'granted',failed:false});
+    assert.equal((await repo.get(patient,fallbackSaved.reminder.id)).note,'Private free text');
+    assert.deepEqual(pending.get('smaran-my-day-'+fallbackSaved.reminder.id).content,
+      {title:t('en','dayNotificationTitle'),body:t('en','dayNotificationBody'),sound:'default',data:{reminderId:fallbackSaved.reminder.id}});
+    await service.sync(patient);
+    assert.equal(pending.get('smaran-my-day-'+fallbackSaved.reminder.id).content.title,t('as','dayNotificationTitle'));
+    assert.equal(t('unsupported','dayNotificationBody'),t('en','dayNotificationBody'));
     permission='denied'; await service.sync(patient); assert.equal(pending.size,0);
-    const web=load('src/services/my-day.service.ts',{'expo-notifications':{},'react-native':{Platform:{OS:'web'}},'../db/repositories/my-day.repository':{myDayRepository:repo}}).myDayService;
+    const web=load('src/services/my-day.service.ts',{...overrides,'expo-notifications':{},'react-native':{Platform:{OS:'web'}},'../db/repositories/my-day.repository':{myDayRepository:repo}}).myDayService;
     assert.deepEqual(await web.sync(patient),{permission:'unavailable',failed:false});
     assert.deepEqual(await snapshot(),before);
     for (let i=0;i<50;i++) await repo.save(other,{...base,title:'Capacity '+i});
@@ -269,6 +337,7 @@ async function main() {
     assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length,6);
     assert.deepEqual(await repo.list(patient),[]);
     console.log('PASS: migrations 001–006 and idempotence, existing data, constraints/FKs, patient isolation, five categories, file reopen persistence, append-only/duplicate Done, local dates, CRUD, notification permission/failure/retry/cancel/reschedule/queue and web fallback; explicit completion ownership/status, binding audit, early-Done and tomorrow schedule preservation');
+    console.log('PASS: seven-language daily/once notification content, warm language rescheduling, safe presented messages, patient isolation and missing/failed language lookup fallback without losing saved reminders');
   } finally { sqlite.close(); assert.ok(path.resolve(directory).startsWith(path.resolve(os.tmpdir()) + path.sep) && path.basename(directory).startsWith('smaran-my-day-')); fs.rmSync(directory,{recursive:true,force:true}); }
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

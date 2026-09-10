@@ -11,12 +11,15 @@ export default function SupportScreen() {
   const about = section === 'about';
   const title = t(patient.language, about ? 'about' : 'help');
   const body = t(patient.language, about ? 'aboutBody' : 'helpBody');
+  const privacy = ['privacyLocal', 'privacyLoss', 'privacySharing'] as const;
   return <PatientPage {...patient} title={title}>
     {about && <>
       <SmaranBrand />
       <ThemedText>{t(patient.language, 'appTagline')}</ThemedText>
     </>}
     <ThemedText>{body}</ThemedText>
-    <ReadScreenButton language={patient.language} text={`${title}. ${body}`} />
+    <ThemedText type="cardHeading" accessibilityRole="header">{t(patient.language, 'privacyTitle')}</ThemedText>
+    {privacy.map(key => <ThemedText key={key}>{t(patient.language, key)}</ThemedText>)}
+    <ReadScreenButton language={patient.language} text={[title, body, t(patient.language, 'privacyTitle'), ...privacy.map(key => t(patient.language, key))].join('. ')} />
   </PatientPage>;
 }

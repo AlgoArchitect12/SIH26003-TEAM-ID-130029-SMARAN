@@ -119,8 +119,8 @@ export default function MemoryMatchScreen() {
         });
         setLoadStatus('ready');
       })
-      .catch((error: unknown) => {
-        if (__DEV__) console.error('Memory Match could not be prepared', error);
+      .catch(() => {
+        if (__DEV__) console.error('Memory Match could not be prepared');
         if (active) setLoadStatus('failed');
       });
 

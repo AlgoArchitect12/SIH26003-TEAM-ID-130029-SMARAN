@@ -55,13 +55,13 @@ export async function speakScreenText(
     Speech.speak(spokenText, {
       language: voice.language,
       onDone: callbacks.onDone,
-      onError: (error) => {
+      onError: () => {
         if (request !== speechRequest) {
           callbacks.onDone?.();
           return;
         }
         if (__DEV__) {
-          console.warn('Screen reading stopped unexpectedly', error);
+          console.warn('Screen reading stopped unexpectedly');
         }
         callbacks.onError?.();
       },
@@ -71,9 +71,9 @@ export async function speakScreenText(
       voice: voice.identifier,
     });
     return 'started';
-  } catch (error) {
+  } catch {
     if (__DEV__) {
-      console.warn('Screen reading is unavailable', error);
+      console.warn('Screen reading is unavailable');
     }
     return 'failed';
   }

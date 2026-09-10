@@ -109,9 +109,9 @@ async function main() {
     }
     await assert.rejects(patient.updateSettings(flags.active, { region: 'invalid' }));
     await db.runAsync('DELETE FROM patient_settings WHERE patient_id = ?', flags.active);
-    assert.equal((await resolver.resolveActivePatient()).status, 'inconsistent');
+    await assert.rejects(resolver.resolveActivePatient(), /Saved patient setup/);
     flags.active = null;
-    assert.equal((await resolver.resolveActivePatient()).status, 'inconsistent');
+    await assert.rejects(resolver.resolveActivePatient(), /Saved patient setup/);
     assert.deepEqual(await db.getAllAsync('PRAGMA foreign_key_check'), []);
   } finally { sqlite.close(); }
 

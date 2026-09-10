@@ -180,12 +180,13 @@ async function upsertSettingsIn(
 }
 
 async function getProfile() {
+  // Recovery without a selection requires one profile; explicit active IDs use getProfileById.
   const database = await getDatabase();
-  // MVP-2 supports one active local patient. Profile selection is deferred to onboarding.
-  const row = await database.getFirstAsync<PatientProfileRow>(
-    'SELECT * FROM patient_profiles ORDER BY created_at ASC LIMIT 1'
+  const rows = await database.getAllAsync<PatientProfileRow>(
+    'SELECT * FROM patient_profiles LIMIT 2'
   );
-  return row ? mapProfile(row) : null;
+  if (rows.length > 1) throw new Error('More than one local patient needs recovery.');
+  return rows[0] ? mapProfile(rows[0]) : null;
 }
 
 async function getProfileById(id: string) {
@@ -242,6 +243,11 @@ async function upsertProfileWithSettings(
   };
 
   await database.withExclusiveTransactionAsync(async (transaction) => {
+    // A lost onboarding draft must not create another patient after a committed save.
+    // Future explicit "Add another person" needs a dedicated flow, not this onboarding guard's removal.
+    if (profileInput.id === undefined && await transaction.getFirstAsync('SELECT id FROM patient_profiles LIMIT 1')) {
+      throw new Error('A local patient already exists. Reopen Smaran to recover.');
+    }
     const profile = await upsertProfileIn(transaction, profileInput);
     const settings = await upsertSettingsIn(transaction, profile.id, settingsInput);
     saved.current = { profile, settings };
