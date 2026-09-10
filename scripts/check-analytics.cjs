@@ -154,7 +154,7 @@ async function main() {
     activeId = 'two'; await assert.rejects(loadActiveAnalytics(7, first.next), service.AnalyticsPatientChanged);
     assert.equal((await loadActiveAnalytics(7)).patient.id, 'two');
     activeId = 'empty'; assert.deepEqual((await loadActiveAnalytics(7)).history.sessions, []);
-    activeId = 'missing'; assert.equal(await loadActiveAnalytics(7), null);
+    activeId = 'missing'; await assert.rejects(loadActiveAnalytics(7), /Saved patient setup could not be loaded\./);
     activeId = 'one'; switchAfterRead = true;
     await assert.rejects(loadActiveAnalytics(7), service.AnalyticsPatientChanged);
     switchAfterRead = false;
