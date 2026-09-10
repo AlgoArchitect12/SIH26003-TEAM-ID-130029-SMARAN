@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type AccessibilityState,
   type GestureResponderEvent,
   type StyleProp,
   type TextStyle,
@@ -26,6 +27,7 @@ export type SmaranButtonSize = 'normal' | 'large';
 export type SmaranButtonProps = {
   accessibilityHint?: string;
   accessibilityLabel: string;
+  accessibilityState?: AccessibilityState;
   disabled?: boolean;
   hapticsEnabled?: boolean;
   icon?: ReactNode;
@@ -43,6 +45,7 @@ export type SmaranButtonProps = {
 export function SmaranButton({
   accessibilityHint,
   accessibilityLabel,
+  accessibilityState,
   disabled = false,
   hapticsEnabled = true,
   icon,
@@ -97,7 +100,7 @@ export function SmaranButton({
       accessibilityHint={accessibilityHint}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
-      accessibilityState={{ busy: loading, disabled }}
+      accessibilityState={{ ...accessibilityState, busy: loading, disabled }}
       aria-busy={loading} aria-disabled={disabled}
       disabled={disabled}
       onPress={handlePress}

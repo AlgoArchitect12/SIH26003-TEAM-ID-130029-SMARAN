@@ -1,6 +1,7 @@
 import { uxStrings } from './ux-strings';
 import { cognitiveStrings } from './cognitive-strings';
 import { careStrings } from './care-strings';
+import { analyticsStrings } from './analytics-strings';
 import { myHomeStrings } from './my-home-strings';
 import { memoryStrings } from './memory-strings';
 import { myDayStrings } from './my-day-strings';
@@ -12,6 +13,7 @@ const english = {
   ...uxStrings.en,
   ...myHomeStrings.en,
   ...careStrings.en,
+  ...analyticsStrings.en,
   ...cognitiveStrings.en,
   ...memoryStrings.en,
   ...myDayStrings.en,
@@ -288,6 +290,7 @@ const hindi = {
   ...uxStrings.hi,
   ...myHomeStrings.hi,
   ...careStrings.hi,
+  ...analyticsStrings.hi,
   ...cognitiveStrings.hi,
   ...memoryStrings.hi,
   ...myDayStrings.hi,
@@ -388,6 +391,7 @@ const assamese = {
   ...uxStrings.as,
   ...myHomeStrings.as,
   ...careStrings.as,
+  ...analyticsStrings.as,
   ...cognitiveStrings.as,
   ...memoryStrings.as,
   ...myDayStrings.as,

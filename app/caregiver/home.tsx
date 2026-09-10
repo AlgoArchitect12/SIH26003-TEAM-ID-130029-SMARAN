@@ -111,6 +111,8 @@ export default function CaregiverHomeScreen() {
         </View>
       </Section>
       <Section title={t(language, 'careCognitive')}>
+        <SmaranButton label={t(language, 'analyticsTitle')} accessibilityLabel={t(language, 'analyticsTitle')}
+          onPress={() => router.push('/caregiver/activity')} variant="outline" />
         <View style={styles.metrics}>
           <Metric label={t(language, 'careLast7')} value={t(language, 'careCount', { count: number(data.cognitive.last7) })} />
           <Metric label={t(language, 'carePrevious7')} value={t(language, 'careCount', { count: number(data.cognitive.previous7) })} />

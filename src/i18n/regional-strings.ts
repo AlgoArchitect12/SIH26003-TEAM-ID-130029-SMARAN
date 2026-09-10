@@ -1,6 +1,7 @@
 import { uxStrings } from './ux-strings';
 import { cognitiveStrings } from './cognitive-strings';
 import { careStrings } from './care-strings';
+import { analyticsStrings } from './analytics-strings';
 import { myHomeStrings } from './my-home-strings';
 import { memoryStrings } from './memory-strings';
 import { myDayStrings } from './my-day-strings';
@@ -12,6 +13,7 @@ const bengali = {
   ...uxStrings.bn,
   ...myHomeStrings.bn,
   ...careStrings.bn,
+  ...analyticsStrings.bn,
   ...cognitiveStrings.bn,
   ...memoryStrings.bn,
   ...myDayStrings.bn,
@@ -164,6 +166,7 @@ const meitei = {
   ...uxStrings.mni,
   ...myHomeStrings.mni,
   ...careStrings.mni,
+  ...analyticsStrings.mni,
   ...cognitiveStrings.mni,
   ...memoryStrings.mni,
   ...myDayStrings.mni,
@@ -316,6 +319,7 @@ const khasi = {
   ...uxStrings.kha,
   ...myHomeStrings.kha,
   ...careStrings.kha,
+  ...analyticsStrings.kha,
   ...cognitiveStrings.kha,
   ...memoryStrings.kha,
   ...myDayStrings.kha,
@@ -468,6 +472,7 @@ const mizo = {
   ...uxStrings.lus,
   ...myHomeStrings.lus,
   ...careStrings.lus,
+  ...analyticsStrings.lus,
   ...cognitiveStrings.lus,
   ...memoryStrings.lus,
   ...myDayStrings.lus,

@@ -319,9 +319,118 @@ async function saveCompletedSession(input: CompletedSessionInput, model?: Adapti
 }
 
 export const cognitiveRepository = {
+  getAnalyticsSummary,
+  getAnalyticsHistory,
   countSessions,
   getAdaptiveModel,
   getRecentSessions,
   getSessionById,
   saveCompletedSession,
 } as const;
+
+export type AnalyticsAggregate = {
+  gameType: CognitiveActivityType;
+  difficulty: DifficultyLevel | null;
+  sessions: number;
+  participationDays: number;
+  correct: number | null;
+  attempts: number | null;
+  hints: number | null;
+  repeatedErrors: number | null;
+  responseTotalMs: number | null;
+  responseAttempts: number | null;
+  elapsedTotalMs: number | null;
+  elapsedSessions: number;
+  latestAt: string;
+  latestDifficulty: DifficultyLevel;
+  recommendedDifficulty: DifficultyLevel;
+};
+
+export type AnalyticsHistoryRow = {
+  id: string;
+  gameType: CognitiveActivityType;
+  completedAt: string;
+  difficulty: DifficultyLevel;
+  recommendedDifficulty: DifficultyLevel;
+  attempts: number | null;
+  correct: number | null;
+  hints: number | null;
+  repeatedErrors: number | null;
+  accuracy: number | null;
+  averageResponseMs: number | null;
+  elapsedMs: number | null;
+  feedback: ActivityFeedbackLabel | null;
+  ceiling: number;
+};
+
+export type AnalyticsCursor = { patientId: string; completedAt: string; id: string; ceiling: number };
+
+// Invalid/missing timestamps stay unknown; this is wall-clock elapsed time, not active play.
+const elapsedSQL = `CASE WHEN julianday(completed_at) >= julianday(started_at)
+  THEN ROUND((julianday(completed_at) - julianday(started_at)) * 86400000) END`;
+const correctSQL = `CASE WHEN game_type = 'memory_match' THEN matches ELSE correct_selections END`;
+const repeatedSQL = `CASE WHEN game_type = 'memory_match' THEN repeated_mistakes ELSE repeated_errors END`;
+
+async function getAnalyticsSummary(patientId: string, boundaries: readonly string[]): Promise<AnalyticsAggregate[]> {
+  patientId = validateRecordId(patientId, 'Patient ID');
+  if (![2, 8, 31].includes(boundaries.length) || boundaries.some((value, index) =>
+    !Number.isFinite(Date.parse(value)) || new Date(value).toISOString() !== value || (index > 0 && value <= boundaries[index - 1]))) {
+    throw new Error('Invalid analytics calendar boundaries.');
+  }
+  // One SELECT gives every game/level and its denominators the same SQLite snapshot.
+  // Calendar bins are made in JS, avoiding SQLite/host timezone differences.
+  return (await getDatabase()).getAllAsync<AnalyticsAggregate>(
+    `WITH days(start, end) AS (VALUES ${boundaries.slice(1).map(() => '(?, ?)').join(', ')}),
+    facts AS (
+      SELECT c.*, days.start AS day, ${correctSQL} AS correct, ${repeatedSQL} AS repeated,
+        ${elapsedSQL} AS elapsed
+      FROM cognitive_sessions c JOIN days ON completed_at >= days.start AND completed_at < days.end
+      WHERE patient_id = ? AND ${supportedTypesSQL} AND is_demo_seed = 0
+        AND completed_at >= ? AND completed_at < ?
+    ), expanded AS (
+      SELECT *, difficulty AS grouped_level FROM facts
+      UNION ALL SELECT *, NULL AS grouped_level FROM facts
+    ), ranked AS (
+      SELECT *, ROW_NUMBER() OVER (PARTITION BY game_type, grouped_level ORDER BY completed_at DESC, id DESC) AS recent
+      FROM expanded
+    )
+    SELECT game_type AS gameType, grouped_level AS difficulty, COUNT(*) AS sessions,
+      COUNT(DISTINCT day) AS participationDays,
+      SUM(correct) AS correct, SUM(attempts) AS attempts, SUM(hints_used) AS hints,
+      SUM(repeated) AS repeatedErrors,
+      SUM(avg_response_ms * attempts) AS responseTotalMs,
+      SUM(CASE WHEN avg_response_ms IS NOT NULL THEN attempts END) AS responseAttempts,
+      SUM(elapsed) AS elapsedTotalMs, COUNT(elapsed) AS elapsedSessions,
+      MAX(CASE WHEN recent = 1 THEN completed_at END) AS latestAt,
+      MAX(CASE WHEN recent = 1 THEN difficulty END) AS latestDifficulty,
+      MAX(CASE WHEN recent = 1 THEN recommended_difficulty END) AS recommendedDifficulty
+    FROM ranked GROUP BY game_type, grouped_level ORDER BY game_type, grouped_level`,
+    ...boundaries.slice(1).flatMap((end, index) => [boundaries[index], end]),
+    patientId, ...CognitiveActivityTypes, boundaries[0], boundaries[boundaries.length - 1]
+  );
+}
+
+async function getAnalyticsHistory(patientId: string, cursor?: AnalyticsCursor, limit = 20): Promise<AnalyticsHistoryRow[]> {
+  patientId = validateRecordId(patientId, 'Patient ID');
+  if (!Number.isInteger(limit) || limit < 1 || limit > 50) throw new Error('Invalid analytics page size.');
+  if (cursor && (cursor.patientId !== patientId || !Number.isSafeInteger(cursor.ceiling) || cursor.ceiling < 1 ||
+    !Number.isFinite(Date.parse(cursor.completedAt)) || !validateRecordId(cursor.id, 'Session ID'))) {
+    throw new Error('Invalid analytics cursor.');
+  }
+  return (await getDatabase()).getAllAsync<AnalyticsHistoryRow>(
+    `WITH boundary AS (
+      SELECT COALESCE(?, MAX(rowid)) AS ceiling FROM cognitive_sessions
+      WHERE patient_id = ? AND ${supportedTypesSQL} AND is_demo_seed = 0
+    )
+    SELECT id, game_type AS gameType, completed_at AS completedAt, difficulty,
+      recommended_difficulty AS recommendedDifficulty, attempts, ${correctSQL} AS correct,
+      hints_used AS hints, ${repeatedSQL} AS repeatedErrors, 1.0 * (${correctSQL}) / NULLIF(attempts, 0) AS accuracy,
+      avg_response_ms AS averageResponseMs, ${elapsedSQL} AS elapsedMs, feedback_label AS feedback, ceiling
+    FROM cognitive_sessions CROSS JOIN boundary
+    WHERE patient_id = ? AND ${supportedTypesSQL} AND is_demo_seed = 0 AND rowid <= ceiling
+      ${cursor ? 'AND (completed_at < ? OR (completed_at = ? AND id < ?))' : ''}
+    ORDER BY completed_at DESC, id DESC LIMIT ?`,
+    cursor?.ceiling ?? null, patientId, ...CognitiveActivityTypes, patientId, ...CognitiveActivityTypes,
+    ...(cursor ? [cursor.completedAt, cursor.completedAt, cursor.id] : []), limit + 1
+  );
+}
