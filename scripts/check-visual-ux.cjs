@@ -181,16 +181,27 @@ for (const file of critical.filter(file => file.endsWith('.tsx'))) {
 const added = git('diff', '--unified=0', 'b7eb6bd', '--', 'app', 'components').split(/\r?\n/)
   .filter(line => line.startsWith('+') && !line.startsWith('+++')).join('\n');
 assert.doesNotMatch(added, /Rahul Sharma|demoPatient|fakeScore|samplePatient|dementia score|risk gauge|doctor rating/i);
-// Keep MVP-18's protected paths unchanged across both integrated features.
+// MVP-20 explicitly authorizes these cognitive files and migration 007's registry entry.
+// Keep every other protected path guarded, including historical migrations 001–006.
+const cognitiveAIPaths = new Set([
+  'components/games/memory-card.tsx',
+  'src/db/migrations/index.ts', 'src/db/migrations/007_cognitive_ai_expansion.ts',
+  'src/db/schema.types.ts', 'src/db/repositories/cognitive.repository.ts',
+  'src/ai/feature-extractor.ts', 'src/ai/cognitive-coach.ts', 'src/services/cognitive.service.ts',
+  'src/games/pattern-recognition.ts', 'src/games/selection-engine.ts', 'src/games/telemetry.ts',
+  'src/games/presentation.ts', 'src/games/recall-activities.ts',
+  'src/i18n/cognitive-strings.ts', 'src/i18n/cognitive-ai-strings.ts',
+]);
+const outsideCognitiveAI = output => output.trim().split(/\r?\n/).filter(file => file && !cognitiveAIPaths.has(file));
 const baselinePaths = ['package.json', 'package-lock.json', 'app.json', 'eas.json', 'plugins/with-private-backup.cjs',
   'src/db/migrations', 'src/db/client.web.ts'];
-assert.equal(git('diff', '--name-only', 'b7eb6bd', '--', ...baselinePaths).trim(), '', 'MVP-18 protected paths unchanged');
+assert.deepEqual(outsideCognitiveAI(git('diff', '--name-only', 'b7eb6bd', '--', ...baselinePaths)), [], 'Protected paths outside authorized 007 unchanged');
 // A source guard cannot prove copy truthfulness; preserve A's data/services/catalogs through B's integration.
 const protectedPaths = ['package.json', 'package-lock.json', 'app.json', 'eas.json', 'plugins/with-private-backup.cjs',
   'src', 'app/onboarding', 'components/onboarding', 'app/patient/profile.tsx', 'app/patient/menu.tsx',
   'hooks/use-reduced-motion.ts', 'components/games/memory-card.tsx', 'components/feedback/encouragement-banner.tsx'];
-assert.equal(git('diff', '--name-only', 'f2d6f85', '--', ...protectedPaths).trim(), '', 'MVP-19A architecture/data/motion preserved');
-assert.doesNotMatch(git('ls-files', '--others', '--exclude-standard', '--', ...protectedPaths), /\S/, 'No new protected files');
+assert.deepEqual(outsideCognitiveAI(git('diff', '--name-only', 'f2d6f85', '--', ...protectedPaths)), [], 'MVP-19A architecture/data/motion outside authorized cognitive changes preserved');
+assert.deepEqual(outsideCognitiveAI(git('ls-files', '--others', '--exclude-standard', '--', ...protectedPaths)), [], 'No unapproved protected files');
 
 // Inspect runtime files on disk, including ignored/untracked files, for QA dependencies.
 const runtimeFiles = directory => fs.readdirSync(path.join(root, directory), { withFileTypes: true }).flatMap(entry => {

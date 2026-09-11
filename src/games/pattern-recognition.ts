@@ -4,6 +4,8 @@ import type { SelectionTask } from './selection-engine';
 export const PatternShapes = ['circle', 'triangle', 'square', 'star'] as const;
 export type PatternShape = (typeof PatternShapes)[number];
 export type PatternChallenge = SelectionTask & {
+  kind: 'match' | 'next' | 'missing';
+  missingIndex: number | null;
   answer: PatternShape;
   choices: readonly PatternShape[];
   group: readonly PatternShape[];
@@ -12,8 +14,8 @@ export type PatternChallenge = SelectionTask & {
 
 // Repeated groups are also shown to the patient, so the intended continuation is explicit.
 const groups: Record<DifficultyLevel, readonly (readonly number[])[]> = {
-  1: [[0, 1]],
-  2: [[0, 1], [0, 0, 1]],
+  1: [[0, 0]],
+  2: [[0, 1]],
   3: [[0, 1, 2], [0, 0, 1, 1]],
   4: [[0, 1, 2, 0], [0, 0, 1, 2]],
   5: [[0, 1, 0, 2, 3], [0, 0, 1, 2, 3]],
@@ -28,8 +30,12 @@ export function preparePatterns(level: DifficultyLevel): readonly PatternChallen
     const group = groups[level][index % groups[level].length].map(symbol => symbols[symbol]);
     const shown = group.length * 2 + index % group.length;
     const sequence = Array.from({ length: shown }, (_, position) => group[position % group.length]);
+    const kind = level === 1 ? 'match' : level >= 4 ? 'missing' : 'next';
+    const missingIndex = kind === 'missing' ? group.length + index % group.length : null;
     return {
-      id: 'pattern-' + level + '-' + index, group, sequence, answer: group[shown % group.length],
+      id: 'pattern-' + level + '-' + index, kind, missingIndex, group,
+      sequence: kind === 'match' ? [group[0]] : sequence,
+      answer: missingIndex === null ? group[shown % group.length] : sequence[missingIndex],
       choices: [...symbols.slice(index % count), ...symbols.slice(0, index % count)],
     };
   });

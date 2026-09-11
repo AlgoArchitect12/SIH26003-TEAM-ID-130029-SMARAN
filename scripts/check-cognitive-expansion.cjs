@@ -112,7 +112,7 @@ async function architectureChecks() {
       patientId: 'one', gameType, difficulty: 1, recommendedDifficulty: 2, startedAt: now, completedAt: now,
       attempts: 5, accuracy: .6, hintsUsed: 1, averageResponseMs: 1000, feedbackLabel: null,
       ...(gameType === 'memory_match' ? { totalPairs: 3, matches: 3, repeatedMistakes: 1 } :
-        gameType === 'pattern_recognition' ? { challengesCompleted: 3, correctSelections: 3, repeatedErrors: 1 } :
+        ['pattern_recognition','familiar_object','picture_recall'].includes(gameType) ? { challengesCompleted: 3, correctSelections: 3, repeatedErrors: 1 } :
         { stepsCompleted: 3, correctSelections: 3, repeatedErrors: 1 }),
     });
     const modelsBefore = table('adaptive_model_state');
@@ -175,8 +175,10 @@ async function architectureChecks() {
     assert.deepEqual([table('cognitive_sessions'),table('adaptive_model_state')], beforeReopen, 'file reopen persistence');
     const { loadCaregiverDashboard } = load('src/services/caregiver.service.ts',overrides,cache);
     const dashboard = await loadCaregiverDashboard('one', new Date('2026-09-07T12:00:00'));
-    assert.equal(dashboard.cognitive.today, 3, 'all three genuine games; old one-patient rows are demo');
-    assert.deepEqual(new Set(dashboard.cognitive.recent.map(row=>row.gameType)), new Set(CognitiveActivityTypes));
+    assert.equal(dashboard.cognitive.today, 6, 'all six genuine games; old one-patient rows are demo');
+    assert.equal(dashboard.cognitive.recent.length, 3, 'dashboard keeps its latest-three limit');
+    assert.ok(dashboard.cognitive.recent.every(row => CognitiveActivityTypes.includes(row.gameType)));
+    assert.deepEqual(new Set((await repo.getRecentSessions('one', 50)).map(row=>row.gameType)), new Set(CognitiveActivityTypes));
     assert.equal((await loadCaregiverDashboard('two',new Date('2026-09-07T12:00:00'))).cognitive.today,4);
     queries.length = 0;
     for (const game of CognitiveActivityTypes) {
@@ -191,13 +193,13 @@ async function architectureChecks() {
     console.log('PASS: 001–005 populated upgrade, exact rows/models, rollback after rebuild, runner idempotence, FK/index integrity, types/constraints, atomic saves, patient/activity isolation, factual caregiver counts and reopen persistence');
 
     function tableNames() { return sqlite.prepare("SELECT name FROM sqlite_schema WHERE type='table'").all().map(row=>row.name); }
-    // Separate fresh database runs the real registry 001→006.
+    // Separate fresh database runs the real registry 001→007.
     sqlite.close(); sqlite = new DatabaseSync(':memory:'); sqlite.exec('PRAGMA foreign_keys = ON');
     await runner(db); await runner(db);
-    assert.equal(table('schema_migrations').length, 6);
+    assert.equal(table('schema_migrations').length, 7);
     assert.equal(table('cognitive_sessions').length, 0); assert.equal(table('adaptive_model_state').length, 0);
     assert.deepEqual(await db.getAllAsync('PRAGMA foreign_key_check'), []);
-    console.log('PASS: fresh 001–006 chain, idempotence, no seeded activities/models');
+    console.log('PASS: fresh 001–007 chain, idempotence, no seeded activities/models');
   } finally {
     sqlite.close();
     fs.rmSync(root, { recursive: true, force: true });
@@ -212,7 +214,7 @@ function gameChecks() {
   const { createInitialAdaptiveModel, recommendDifficulty } = load('src/ai/adaptive-engine.ts');
   const { chooseExplanationTemplate } = load('src/ai/explanation.ts');
   const { activitySummary, activityFacts, activityTitleKeys } = load('src/games/presentation.ts');
-  const { completedSessionInput } = load('src/services/cognitive.service.ts', { '../client': {} });
+  const { completedSessionInput } = load('src/services/cognitive.service.ts', { '../client': {}, './active-patient.service': {} });
   const { t, strings } = load('src/i18n/index.ts');
   for (const bad of [0,6,-1,1.5,NaN]) {
     assert.throws(() => preparePatterns(bad)); assert.throws(() => prepareRoutine(bad));
@@ -225,7 +227,7 @@ function gameChecks() {
       assert.ok(task.group.length >= 2 && task.group.length <= 5);
       assert.equal(new Set(task.choices).size, task.choices.length);
       assert.equal(task.choices.filter(choice => choice === task.answer).length, 1);
-      assert.equal(task.answer, task.group[task.sequence.length % task.group.length]);
+      assert.equal(task.answer, task.missingIndex === null ? task.group[task.sequence.length % task.group.length] : task.sequence[task.missingIndex]);
       assert.ok(task.sequence.every((shape,index)=>PatternShapes.includes(shape) && shape === task.group[index % task.group.length]));
       assert.equal(task.choices.length, level === 1 ? 2 : level < 4 ? 3 : 4);
     }
@@ -251,7 +253,8 @@ function gameChecks() {
           state = engine.chooseSelection(state,tasks,mistake,now+=1000);
           assert.equal(state.repeatedErrors,1);
           state = engine.hintSelection(state);
-          assert.equal(engine.hintSelection(state),state,'one hint per question');
+          assert.equal(state.hintLevel,2,'second wrong offers first hint; manual request advances support');
+          assert.equal(engine.hintSelection({...state,hintLevel:3}).hintLevel,3,'hint support capped at reveal');
           const resumed = engine.resumeSelection(state,now+60000);
           state = resumed; now += 60000;
         }
@@ -268,7 +271,7 @@ function gameChecks() {
       const result = engine.finalizeSelection(state,gameType);
       assert.equal(result.attempts,tasks.length+2);
       assert.equal(result.accuracy,tasks.length/(tasks.length+2));
-      assert.equal(result.hintsUsed,1); assert.equal(result.repeatedErrors,1);
+      assert.equal(result.hintsUsed,2); assert.equal(result.repeatedErrors,1);
       assert.equal(result.averageResponseMs,1000,'background/Continue waiting excluded');
       assert.equal(result.correctSelections,tasks.length);
       assert.equal(result[gameType === 'pattern_recognition' ? 'challengesCompleted':'stepsCompleted'],tasks.length);

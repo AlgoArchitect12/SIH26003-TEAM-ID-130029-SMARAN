@@ -6,6 +6,7 @@ import { multilingualExpansionMigration } from './003_multilingual_expansion';
 import { myDayMigration } from './004_my_day';
 import { myMemoriesMigration } from './005_my_memories';
 import { cognitiveExpansionMigration } from './006_cognitive_expansion';
+import { cognitiveAIExpansionMigration } from './007_cognitive_ai_expansion';
 
 const migrations = [
   coreBootstrapMigration,
@@ -14,6 +15,7 @@ const migrations = [
   myDayMigration,
   myMemoriesMigration,
   cognitiveExpansionMigration,
+  cognitiveAIExpansionMigration,
 ] as const;
 
 type AppliedMigrationRow = { version: number };

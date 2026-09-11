@@ -11,13 +11,17 @@ type SelectionTelemetryEnvelope = {
 };
 export type CompletedPatternTelemetry = SelectionTelemetryEnvelope & Extract<CognitiveSessionMetrics, { gameType: 'pattern_recognition' }>;
 export type CompletedRoutineTelemetry = SelectionTelemetryEnvelope & Extract<CognitiveSessionMetrics, { gameType: 'routine_recall' }>;
-export type CompletedCognitiveTelemetry = CompletedMemoryTelemetry | CompletedPatternTelemetry | CompletedRoutineTelemetry;
+export type CompletedSelectionTelemetry = SelectionTelemetryEnvelope & Exclude<CognitiveSessionMetrics, { gameType: 'memory_match' }>;
+export type CompletedCognitiveTelemetry = CompletedMemoryTelemetry | CompletedSelectionTelemetry;
 
 export function activityMetrics(value: CognitiveSessionMetrics): CognitiveSessionMetrics {
   switch (value.gameType) {
     case 'memory_match': return { gameType: value.gameType, totalPairs: value.totalPairs, matches: value.matches, repeatedMistakes: value.repeatedMistakes };
-    case 'pattern_recognition': return { gameType: value.gameType, challengesCompleted: value.challengesCompleted, correctSelections: value.correctSelections, repeatedErrors: value.repeatedErrors };
-    case 'routine_recall': return { gameType: value.gameType, stepsCompleted: value.stepsCompleted, correctSelections: value.correctSelections, repeatedErrors: value.repeatedErrors };
+    case 'pattern_recognition':
+    case 'familiar_object':
+    case 'picture_recall': return { gameType: value.gameType, challengesCompleted: value.challengesCompleted, correctSelections: value.correctSelections, repeatedErrors: value.repeatedErrors };
+    case 'routine_recall':
+    case 'sequence_memory': return { gameType: value.gameType, stepsCompleted: value.stepsCompleted, correctSelections: value.correctSelections, repeatedErrors: value.repeatedErrors };
   }
 }
 

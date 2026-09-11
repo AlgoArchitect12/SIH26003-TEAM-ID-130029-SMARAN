@@ -42,7 +42,7 @@ async function main() {
   const stamp = (offset, hour = 9) => new Date(2026, 2, 8 + offset, hour).toISOString();
   const add = async (owner, gameType, at, attempts = 4, ms = 1000, difficulty = 2) => {
     const metrics = gameType === 'memory_match' ? { totalPairs: 2, matches: 2, repeatedMistakes: 1 }
-      : gameType === 'pattern_recognition' ? { challengesCompleted: 2, correctSelections: 2, repeatedErrors: 1 }
+      : ['pattern_recognition','familiar_object','picture_recall'].includes(gameType) ? { challengesCompleted: 2, correctSelections: 2, repeatedErrors: 1 }
         : { stepsCompleted: 2, correctSelections: 2, repeatedErrors: 1 };
     return repo.saveCompletedSession({ patientId: owner, gameType, ...metrics, difficulty,
       startedAt: new Date(Date.parse(at) - 5000).toISOString(), completedAt: at,
@@ -110,7 +110,7 @@ async function main() {
     sqlite.prepare('UPDATE cognitive_sessions SET started_at = ? WHERE id = ?').run(stamp(1), negative.id);
     const paused = await add('weighted', 'memory_match', stamp(-5));
     sqlite.prepare('UPDATE cognitive_sessions SET started_at = ? WHERE id = ?').run(new Date(Date.parse(stamp(-5)) - 3600000).toISOString(), paused.id);
-    const rawHistory = (await history('weighted')).sessions;
+    const rawHistory = (await history('weighted', undefined, 50)).sessions;
     assert.equal(rawHistory.find(row => row.id === unknown.id).elapsedMs, null);
     assert.equal(rawHistory.find(row => row.id === unknown.id).feedback, null);
     assert.equal(rawHistory.find(row => row.id === negative.id).elapsedMs, null);
@@ -135,7 +135,7 @@ async function main() {
       if (cursor) await assert.rejects(history('two', cursor, 17), /cursor/);
     } while (cursor);
     assert.deepEqual(seen, expected, '>50 rows with identical timestamps: no loss, no duplicates, correct order');
-    assert.equal(new Set(seen).size, 183);
+    assert.equal(new Set(seen).size, 366);
     const first = await history('one', undefined, 50);
     assert.equal(first.sessions.length, 50); assert.ok(first.next);
     await assert.rejects(history('one', undefined, 51)); await assert.rejects(history('one', undefined, 0));
@@ -174,7 +174,7 @@ async function main() {
     const allAfter = []; cursor = undefined;
     do { const page = await history('one', cursor, 50); allAfter.push(...page.sessions.map(row => row.id)); cursor = page.next; } while (cursor);
     assert.ok(allAfter.includes(inserted.id), 'new traversal includes new completions');
-    console.log(`PASS analytics (${process.env.TZ || 'device local'}): real SQLite/migrations/repository/service; all games; empty, two patients, active switch and in-flight switch; 1/7/30 calendar days; midnight/DST; weighted game/level metrics; 183 tied sessions; pagination; unknown timing/feedback; demo exclusion; read-only; failure/retry.`);
+    console.log(`PASS analytics (${process.env.TZ || 'device local'}): real SQLite/migrations/repository/service; all six games; empty, two patients, active switch and in-flight switch; 1/7/30 calendar days; midnight/DST; weighted game/level metrics; 366 tied sessions; pagination; unknown timing/feedback; demo exclusion; read-only; failure/retry.`);
   } finally { sqlite.close(); }
 
   const { analyticsStrings } = load('src/i18n/analytics-strings.ts');

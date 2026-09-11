@@ -12,6 +12,7 @@ import { Radius } from '@constants/layout';
 import { useHaptics } from '@/hooks/use-haptics';
 import { useThemeColors } from '@/hooks/use-theme-color';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
+import { ThemedText } from '@components/themed-text';
 
 import type { MemorySymbol } from '@/src/games/memory-match/assets';
 import type { MemoryCardState } from '@/src/games/memory-match/types';
@@ -22,6 +23,7 @@ type MemoryCardProps = {
   highContrast: boolean;
   hinted: boolean;
   onPress: () => void;
+  positionLabel: string;
   reducedMotion: boolean;
   size: number;
   state: MemoryCardState;
@@ -34,6 +36,7 @@ export function MemoryCard({
   highContrast,
   hinted,
   onPress,
+  positionLabel,
   reducedMotion,
   size,
   state,
@@ -86,11 +89,12 @@ export function MemoryCard({
           },
           frontStyle,
         ]}>
+        <ThemedText accessible={false} type="secondary" style={{ color: colors.onActionPrimary }}>{positionLabel}</ThemedText>
         <MaterialIcons
           accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
           color={colors.onActionPrimary}
           name="help-outline"
-          size={Math.min(52, size * 0.44)}
+          size={Math.min(52, size * 0.34)}
         />
       </Animated.View>
       <Animated.View
@@ -104,11 +108,12 @@ export function MemoryCard({
           },
           backStyle,
         ]}>
+        <ThemedText accessible={false} type="secondary">{positionLabel}</ThemedText>
         <MaterialIcons
           accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
           color={colors.primary}
           name={symbol.icon}
-          size={Math.min(64, size * 0.5)}
+          size={Math.min(64, size * 0.4)}
         />
         {state === 'matched' ? (
           <MaterialIcons

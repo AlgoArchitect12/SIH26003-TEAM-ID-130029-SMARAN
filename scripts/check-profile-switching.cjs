@@ -297,6 +297,22 @@ async function main() {
     assert.equal(cognitiveStore.getState().saved, null, 'A late cognitive save cannot refill B session state');
     assert.equal(cognitiveStore.getState().pending, null);
 
+    await switching.selectActivePatient(a);
+    cognitiveStore.setState({ pending: { patientId: a, telemetry: fixtures[a].completed, initialRecommendation: recommendation }, saved: null });
+    let staleSubmissions = 0;
+    const idleResult = screen('app/patient/games/result.tsx', { ...common,
+      '@/hooks/use-theme-color': { useThemeColors: () => ({}) }, '@expo/vector-icons': { MaterialIcons: 'MaterialIcons' },
+      '@/src/games/presentation': module('src/games/presentation.ts'),
+      '@services/cognitive.service': { saveCognitiveResult: async () => { staleSubmissions++; return { session: fixtures[a].completed }; } },
+    });
+    idleResult(); await tick();
+    const staleSubmit = find(idleResult, t('en', 'skip')).props.onPress;
+    await switching.selectActivePatient(b); await switching.selectActivePatient(a);
+    staleSubmit(); await tick();
+    assert.equal(staleSubmissions, 0, 'A queued submit from before A-B-A cannot save cleared pending work');
+    assert.equal(cognitiveStore.getState().saved, null);
+    await switching.selectActivePatient(b);
+
     // Actual Add Person route: own blank draft, explicit choices, save once, return without switching.
     const add = screen('app/add-person.tsx', common); add(); await tick();
     assert.ok(find(add, t('en', 'continue')).props.disabled);

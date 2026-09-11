@@ -1,7 +1,7 @@
 import type { AdaptiveSessionInput, FeatureExtraction } from './types';
 import type { CognitiveSession } from '../db/schema.types';
 import type { CompletedMemoryTelemetry } from '../games/memory-match/telemetry';
-import type { CompletedPatternTelemetry, CompletedRoutineTelemetry } from '../games/telemetry';
+import type { CompletedPatternTelemetry, CompletedRoutineTelemetry, CompletedSelectionTelemetry } from '../games/telemetry';
 
 function clamp01(value: number) {
   if (!Number.isFinite(value)) return 0.5;
@@ -21,7 +21,23 @@ export function extractAdaptiveFeatures(input: AdaptiveSessionInput): FeatureExt
     case 'memory_match': return extractMemoryFeatures({ ...input, telemetry: input.telemetry });
     case 'pattern_recognition': return extractPatternFeatures({ ...input, telemetry: input.telemetry });
     case 'routine_recall': return extractRoutineFeatures({ ...input, telemetry: input.telemetry });
+    case 'familiar_object':
+    case 'sequence_memory':
+    case 'picture_recall': return extractSelectionFeatures({ ...input, telemetry: input.telemetry });
   }
+}
+
+function extractSelectionFeatures(input: Omit<AdaptiveSessionInput, 'telemetry'> & { telemetry: CompletedSelectionTelemetry }): FeatureExtraction {
+  const baseline = selectionBaseline(input), value = input.telemetry;
+  return {
+    hasPersonalBaseline: baseline.hasPersonalBaseline, personalPaceBaselineMs: baseline.personalPaceBaselineMs,
+    features: {
+      accuracy: clamp01(value.accuracy), relativePace: baseline.relativePace,
+      workingMemory: value.attempts ? clamp01(1 - value.repeatedErrors / value.attempts) : 0.5,
+      independence: value.correctSelections ? clamp01(1 - value.hintsUsed / value.correctSelections) : 0.5,
+      stability: baseline.stability,
+    },
+  };
 }
 
 function extractMemoryFeatures(input: Omit<AdaptiveSessionInput, 'telemetry'> & { telemetry: CompletedMemoryTelemetry }): FeatureExtraction {

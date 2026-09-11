@@ -20,6 +20,9 @@ const activities = {
   memory_match: { subtitle: 'memorySubtitle', route: '/patient/games/memory-match', icon: 'grid-view' },
   pattern_recognition: { subtitle: 'patternSubtitle', route: '/patient/games/pattern-recognition', icon: 'category' },
   routine_recall: { subtitle: 'routineSubtitle', route: '/patient/games/routine-recall', icon: 'format-list-numbered' },
+  familiar_object: { subtitle: 'familiarSubtitle', route: '/patient/games/familiar-object', icon: 'search' },
+  sequence_memory: { subtitle: 'sequenceSubtitle', route: '/patient/games/sequence-memory', icon: 'view-list' },
+  picture_recall: { subtitle: 'pictureSubtitle', route: '/patient/games/picture-recall', icon: 'photo-library' },
 } as const satisfies Record<CognitiveActivityType, { subtitle: TranslationKey; route: string; icon: string }>;
 
 export default function ActivitiesScreen() {

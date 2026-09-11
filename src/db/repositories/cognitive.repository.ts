@@ -53,7 +53,7 @@ function mapSession(row: CognitiveSessionRow): CognitiveSession {
   validateGameType(row.game_type);
   const metrics = row.game_type === 'memory_match'
     ? { gameType: row.game_type, totalPairs: requiredMetric(row.total_pairs), matches: requiredMetric(row.matches), repeatedMistakes: requiredMetric(row.repeated_mistakes) }
-    : row.game_type === 'pattern_recognition'
+    : row.game_type === 'pattern_recognition' || row.game_type === 'familiar_object' || row.game_type === 'picture_recall'
       ? { gameType: row.game_type, challengesCompleted: requiredMetric(row.challenges_completed), correctSelections: requiredMetric(row.correct_selections), repeatedErrors: requiredMetric(row.repeated_errors) }
       : { gameType: row.game_type, stepsCompleted: requiredMetric(row.steps_completed), correctSelections: requiredMetric(row.correct_selections), repeatedErrors: requiredMetric(row.repeated_errors) };
   return {
@@ -128,7 +128,7 @@ function validateSession(input: CompletedSessionInput) {
   }
   if (!Number.isFinite(Date.parse(input.startedAt)) || !Number.isFinite(Date.parse(input.completedAt)) ||
     Math.abs(input.recommendedDifficulty - input.difficulty) > 1) throw new Error('Invalid activity timing or level change.');
-  const completed = input.gameType === 'memory_match' ? input.totalPairs : input.gameType === 'pattern_recognition' ? input.challengesCompleted : input.stepsCompleted;
+  const completed = input.gameType === 'memory_match' ? input.totalPairs : 'challengesCompleted' in input ? input.challengesCompleted : input.stepsCompleted;
   const correct = input.gameType === 'memory_match' ? input.matches : input.correctSelections;
   const repeated = input.gameType === 'memory_match' ? input.repeatedMistakes : input.repeatedErrors;
   [completed, input.attempts, correct, input.hintsUsed, repeated].forEach(
@@ -144,7 +144,8 @@ function validateSession(input: CompletedSessionInput) {
     input.attempts < 1 ||
     correct !== completed ||
     repeated > input.attempts - correct ||
-    (input.gameType === 'routine_recall' && (completed < 2 || completed > 5))
+    (input.gameType === 'routine_recall' && (completed < 2 || completed > 5)) ||
+    (input.gameType === 'sequence_memory' && (completed < 2 || completed > 6))
   ) {
     throw new Error('Completed activity counts are inconsistent.');
   }
@@ -212,8 +213,8 @@ async function insertSession(database: SQLiteDatabase, input: CompletedSessionIn
     session.feedbackLabel,
     session.recommendedDifficulty,
     createdAt,
-    session.gameType === 'pattern_recognition' ? session.challengesCompleted : null,
-    session.gameType === 'routine_recall' ? session.stepsCompleted : null,
+    'challengesCompleted' in session ? session.challengesCompleted : null,
+    'stepsCompleted' in session ? session.stepsCompleted : null,
     session.gameType === 'memory_match' ? null : session.correctSelections,
     session.gameType === 'memory_match' ? null : session.repeatedErrors
   );
@@ -294,7 +295,9 @@ async function countSessions(patientId: string, start: Date, end: Date) {
   return row?.count ?? 0;
 }
 
-async function saveCompletedSession(input: CompletedSessionInput, model?: AdaptiveModelState) {
+async function saveCompletedSession(input: CompletedSessionInput, model?: AdaptiveModelState, isCurrent?: () => boolean) {
+  const checkCurrent = () => { if (isCurrent && !isCurrent()) throw new Error('Activity patient changed before saving.'); };
+  checkCurrent();
   if (model && (model.patientId !== input.patientId || model.gameType !== input.gameType)) {
     throw new Error('Activity session and model must belong to the same patient and activity.');
   }
@@ -302,9 +305,11 @@ async function saveCompletedSession(input: CompletedSessionInput, model?: Adapti
   const database = await getDatabase();
   let saved: CognitiveSession | null = null;
   await database.withExclusiveTransactionAsync(async (transaction) => {
+    checkCurrent();
     // Expo opens a separate transaction connection. Check ownership even when its FK pragma is off.
     const patient = await transaction.getFirstAsync('SELECT id FROM patient_profiles WHERE id = ?', validateRecordId(input.patientId, 'Patient ID'));
     if (!patient) throw new Error('Activity patient does not exist.');
+    checkCurrent();
     const sessionId = await insertSession(transaction, input);
     if (model) await upsertModel(transaction, model);
     const row = await transaction.getFirstAsync<CognitiveSessionRow>(
@@ -312,6 +317,7 @@ async function saveCompletedSession(input: CompletedSessionInput, model?: Adapti
     );
     if (!row) throw new Error('Completed activity could not be read after saving.');
     saved = mapSession(row);
+    checkCurrent(); // A switch during an awaited write rolls back both session and model.
   });
 
   if (!saved) throw new Error('Completed activity could not be saved.');

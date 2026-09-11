@@ -1,4 +1,5 @@
 import type { Language } from '../db/schema.types';
+import { cognitiveAIStrings } from './cognitive-ai-strings';
 
 // UI translations await native-speaker review. Routine bodies explicitly use English.
 const en = {
@@ -310,4 +311,8 @@ const lus = {
   "activityPrepareFailed": "He tih tur hi kan buatsaih thei lo."
 };
 
-export const cognitiveStrings = { en, hi, as, bn, mni, kha, lus } satisfies Record<Language, Record<keyof typeof en, string>>;
+export const cognitiveStrings = {
+  en: { ...en, ...cognitiveAIStrings.en }, hi: { ...hi, ...cognitiveAIStrings.hi },
+  as: { ...as, ...cognitiveAIStrings.as }, bn: { ...bn, ...cognitiveAIStrings.bn },
+  mni: { ...mni, ...cognitiveAIStrings.mni }, kha: { ...kha, ...cognitiveAIStrings.kha }, lus: { ...lus, ...cognitiveAIStrings.lus },
+} satisfies Record<Language, Record<keyof typeof en | keyof typeof cognitiveAIStrings.en, string>>;

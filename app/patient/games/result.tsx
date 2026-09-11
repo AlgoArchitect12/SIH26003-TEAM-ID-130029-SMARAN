@@ -134,7 +134,7 @@ export default function CognitiveResultScreen() {
   const submit = async (feedback: ActivityFeedbackLabel | null) => {
     const current = capturePatientRequest();
     if (!current()) return;
-    if (!pending || submissionLocked.current) return;
+    if (!pending || useCognitiveSessionStore.getState().pending !== pending || submissionLocked.current) return;
     submissionLocked.current = true;
     setSaving(true);
     setSaveFailed(false);
@@ -143,10 +143,9 @@ export default function CognitiveResultScreen() {
       if (current()) setSaved(result);
     } catch {
       if (__DEV__) console.error('Completed activity could not be saved');
-      setSaveFailed(true);
-      submissionLocked.current = false;
+      if (current()) { setSaveFailed(true); submissionLocked.current = false; }
     } finally {
-      setSaving(false);
+      if (current()) setSaving(false);
     }
   };
 
