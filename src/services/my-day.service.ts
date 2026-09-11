@@ -4,6 +4,8 @@ import { myDayRepository as repository } from '../db/repositories/my-day.reposit
 import { patientRepository } from '../db/repositories/patient.repository';
 import { strings, t } from '../i18n/index';
 import { localDateTime, localDay, type ReminderInput } from '../my-day/types';
+import { capturePatientRequest } from '../stores/patient-session.store';
+import { resolveActivePatient } from './active-patient.service';
 
 export type ReminderPermission = 'granted' | 'denied' | 'undetermined' | 'unavailable';
 export type NotificationResult = { permission: ReminderPermission; failed: boolean };
@@ -93,21 +95,33 @@ function serialized<T>(work: () => Promise<T>): Promise<T> {
   queue = result.catch(() => {});
   return result;
 }
+function mutate<T>(patientId: string, work: (isCurrent: () => boolean) => Promise<T>): Promise<T> {
+  // Capture before entering the queue: returning to the same patient still invalidates old work.
+  const isCurrent = capturePatientRequest();
+  return serialized(async () => {
+    if (!isCurrent()) throw new Error('Reminder patient changed before saving.');
+    const active = await resolveActivePatient();
+    if (!isCurrent() || active.status !== 'ready' || active.profile.id !== patientId) {
+      throw new Error('Reminder patient changed before saving.');
+    }
+    return work(isCurrent);
+  });
+}
 export const myDayService = {
   sync: (patientId: string, request = false) => serialized(() => reconcile(patientId, request)),
-  save: (patientId: string, input: ReminderInput, id?: string) => serialized(async () => {
-    const reminder = await repository.save(patientId, input, id);
+  save: (patientId: string, input: ReminderInput, id?: string) => mutate(patientId, async isCurrent => {
+    const reminder = await repository.save(patientId, input, id, isCurrent);
     return { reminder, notifications: await reconcile(patientId) };
   }),
-  setEnabled: (patientId: string, id: string, enabled: boolean) => serialized(async () => {
-    await repository.setEnabled(patientId, id, enabled);
+  setEnabled: (patientId: string, id: string, enabled: boolean) => mutate(patientId, async isCurrent => {
+    await repository.setEnabled(patientId, id, enabled, isCurrent);
     return reconcile(patientId);
   }),
-  remove: (patientId: string, id: string) => serialized(async () => {
-    await repository.remove(patientId, id);
+  remove: (patientId: string, id: string) => mutate(patientId, async isCurrent => {
+    await repository.remove(patientId, id, isCurrent);
     return reconcile(patientId);
   }),
-  complete: (patientId: string, id: string, day = localDay()) => serialized(async () => {
-    await repository.complete(patientId, id, day);
+  complete: (patientId: string, id: string, day = localDay()) => mutate(patientId, async isCurrent => {
+    await repository.complete(patientId, id, day, isCurrent);
   }),
 };

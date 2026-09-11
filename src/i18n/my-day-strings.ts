@@ -1,6 +1,18 @@
 import type { Language } from '../db/schema.types';
 
 const en = {
+  "dayMeal": "Meal",
+  "dayDrankWater": "Drank water",
+  "dayWaterTapOnly": "This records your tap. It does not verify water intake.",
+  "dayMarkedAt": "Marked completed at {time}",
+  "voiceLanguages": "Language and voice availability",
+  "voiceInputUnavailable": "Speech input is not available in this app. Use the touch controls.",
+  "voiceDeviceHelp": "Device voices may need a download or network. Text and touch controls remain available.",
+  "voiceChecking": "Checking device voices…",
+  "voiceUiAvailable": "Screen text: available",
+  "voiceTtsAvailable": "Read-aloud: a matching device voice was found",
+  "voiceTtsUnknown": "Read-aloud: could not check device voices",
+  "voiceCheckAgain": "Check voices again",
   "dayNotificationTitle": "Smaran reminder",
   "dayNotificationBody": "Open Smaran to see your reminder.",
   "dayOpenHint": "Opens your reminders.",
@@ -54,6 +66,18 @@ const en = {
   "daySafety": "Use the medicine instructions given by your healthcare professional. Smaran only reminds you."
 } as const;
 const hi = {
+  "dayMeal": "भोजन",
+  "dayDrankWater": "पानी पिया",
+  "dayWaterTapOnly": "यह आपके टैप को दर्ज करता है। इससे पानी पीने की पुष्टि नहीं होती।",
+  "dayMarkedAt": "{time} पर पूरा चिह्नित किया गया",
+  "voiceLanguages": "भाषा और आवाज़ की उपलब्धता",
+  "voiceInputUnavailable": "इस ऐप में बोलकर निर्देश देना उपलब्ध नहीं है। स्क्रीन के बटन इस्तेमाल करें।",
+  "voiceDeviceHelp": "डिवाइस की आवाज़ के लिए डाउनलोड या नेटवर्क की ज़रूरत हो सकती है। लिखे शब्द और स्क्रीन के बटन उपलब्ध रहते हैं।",
+  "voiceChecking": "डिवाइस की आवाज़ें जाँची जा रही हैं…",
+  "voiceUiAvailable": "स्क्रीन का पाठ: उपलब्ध",
+  "voiceTtsAvailable": "पढ़कर सुनाना: इस भाषा की डिवाइस आवाज़ मिली",
+  "voiceTtsUnknown": "पढ़कर सुनाना: डिवाइस की आवाज़ें जाँची नहीं जा सकीं",
+  "voiceCheckAgain": "आवाज़ें फिर जाँचें",
   "dayNotificationTitle": "स्मरण अनुस्मारक",
   "dayNotificationBody": "अपना अनुस्मारक देखने के लिए स्मरण खोलें।",
   "dayOpenHint": "आपके अनुस्मारक खोलता है।",
@@ -107,6 +131,18 @@ const hi = {
   "daySafety": "दवा के लिए अपने स्वास्थ्य विशेषज्ञ के निर्देश मानें। स्मरण केवल याद दिलाता है।"
 } satisfies Record<keyof typeof en, string>;
 const as = {
+  "dayMeal": "আহাৰ",
+  "dayDrankWater": "পানী খালোঁ",
+  "dayWaterTapOnly": "ই কেৱল আপোনাৰ টেপটো লিখি ৰাখে। পানী খোৱা নিশ্চিত নকৰে।",
+  "dayMarkedAt": "{time} বজাত সম্পূৰ্ণ বুলি চিহ্নিত কৰা হৈছে",
+  "voiceLanguages": "ভাষা আৰু কণ্ঠৰ উপলব্ধতা",
+  "voiceInputUnavailable": "এই এপত কথা কৈ নিৰ্দেশ দিয়া উপলব্ধ নহয়। পৰ্দাৰ বুটাম ব্যৱহাৰ কৰক।",
+  "voiceDeviceHelp": "ডিভাইচৰ কণ্ঠৰ বাবে ডাউনলোড বা নেটৱৰ্ক লাগিব পাৰে। লিখা আৰু পৰ্দাৰ বুটাম উপলব্ধ থাকে।",
+  "voiceChecking": "ডিভাইচৰ কণ্ঠ পৰীক্ষা কৰি থকা হৈছে…",
+  "voiceUiAvailable": "পৰ্দাৰ লিখা: উপলব্ধ",
+  "voiceTtsAvailable": "পঢ়ি শুনোৱা: মিল থকা ডিভাইচৰ কণ্ঠ পোৱা গৈছে",
+  "voiceTtsUnknown": "পঢ়ি শুনোৱা: ডিভাইচৰ কণ্ঠ পৰীক্ষা কৰিব পৰা নগ’ল",
+  "voiceCheckAgain": "কণ্ঠ পুনৰ পৰীক্ষা কৰক",
   "dayNotificationTitle": "স্মৰণৰ সোঁৱৰণি",
   "dayNotificationBody": "আপোনাৰ সোঁৱৰণি চাবলৈ স্মৰণ খোলক।",
   "dayOpenHint": "আপোনাৰ সোঁৱৰণিসমূহ খোলে।",
@@ -160,6 +196,18 @@ const as = {
   "daySafety": "ঔষধৰ বাবে আপোনাৰ স্বাস্থ্য বিশেষজ্ঞৰ নিৰ্দেশ মানক। স্মৰণে কেৱল সোঁৱৰাই দিয়ে।"
 } satisfies Record<keyof typeof en, string>;
 const bn = {
+  "dayMeal": "খাবার",
+  "dayDrankWater": "জল খেয়েছি",
+  "dayWaterTapOnly": "এটি আপনার ট্যাপটি নথিভুক্ত করে। জল খাওয়া নিশ্চিত করে না।",
+  "dayMarkedAt": "{time}-এ সম্পূর্ণ বলে চিহ্নিত করা হয়েছে",
+  "voiceLanguages": "ভাষা ও কণ্ঠের উপলব্ধতা",
+  "voiceInputUnavailable": "এই অ্যাপে কথা বলে নির্দেশ দেওয়া উপলব্ধ নয়। পর্দার বোতাম ব্যবহার করুন।",
+  "voiceDeviceHelp": "ডিভাইসের কণ্ঠের জন্য ডাউনলোড বা নেটওয়ার্ক লাগতে পারে। লেখা ও পর্দার বোতাম উপলব্ধ থাকে।",
+  "voiceChecking": "ডিভাইসের কণ্ঠ পরীক্ষা করা হচ্ছে…",
+  "voiceUiAvailable": "পর্দার লেখা: উপলব্ধ",
+  "voiceTtsAvailable": "পড়ে শোনানো: মিল আছে এমন ডিভাইসের কণ্ঠ পাওয়া গেছে",
+  "voiceTtsUnknown": "পড়ে শোনানো: ডিভাইসের কণ্ঠ পরীক্ষা করা যায়নি",
+  "voiceCheckAgain": "কণ্ঠ আবার পরীক্ষা করুন",
   "dayNotificationTitle": "স্মরণ-এর স্মারক",
   "dayNotificationBody": "আপনার স্মারক দেখতে স্মরণ খুলুন।",
   "dayOpenHint": "আপনার স্মারকগুলি খোলে।",
@@ -213,6 +261,18 @@ const bn = {
   "daySafety": "ওষুধের জন্য আপনার স্বাস্থ্য বিশেষজ্ঞের নির্দেশ মানুন। স্মরণ শুধু মনে করিয়ে দেয়।"
 } satisfies Record<keyof typeof en, string>;
 const mni = {
+  "dayMeal": "Chak",
+  "dayDrankWater": "Ising thakle",
+  "dayWaterTapOnly": "Asina nangna nambadu khakta tungsin-i. Ising thakpa adu achumba haina khanghande.",
+  "dayMarkedAt": "{time} da loire haina khanghanle",
+  "voiceLanguages": "Lon amadi khonjel phangba",
+  "voiceInputUnavailable": "App asida ngangduna yathang piba phangde. Screen-gi button-sing sijinnabiyu.",
+  "voiceDeviceHelp": "Device-ki khonjelda download nattraga network mathou taba yai. Iba wa amadi screen-gi button-sing sijinnaba yai.",
+  "voiceChecking": "Device-ki khonjel yengsilli…",
+  "voiceUiAvailable": "Screen-gi iba wa: phang-i",
+  "voiceTtsAvailable": "Pari: channaba device-ki khonjel phangle",
+  "voiceTtsUnknown": "Pari: device-ki khonjel yengsinba ngamdre",
+  "voiceCheckAgain": "Khonjel amuk yengsillu",
   "dayNotificationTitle": "Smarangi ningsinghanba",
   "dayNotificationBody": "Nanggi ningsinghanba yengnaba Smaran hangbiyu.",
   "dayOpenHint": "Nanggi ningsinghanbasing hang-i.",
@@ -266,6 +326,18 @@ const mni = {
   "daySafety": "Hidakki maramda nanggi hakchang yengsinlibagi lamjing matung innu. Smaranna ningsinghanba khaktani."
 } satisfies Record<keyof typeof en, string>;
 const kha = {
+  "dayMeal": "Jingbam",
+  "dayDrankWater": "La dih um",
+  "dayWaterTapOnly": "Kane ka buh jingthoh tang ia ka jingñion jong phi. Kam pynshisha ba la dih um.",
+  "dayMarkedAt": "La buh dak ba la dep ha {time}",
+  "voiceLanguages": "Ka jingdon jong ka ktien bad ka sur",
+  "voiceInputUnavailable": "Ym lah ai hukum da ka sur ha kane ka app. Pyndonkam ia ki budam ha ka screen.",
+  "voiceDeviceHelp": "Ki sur jong ka kor ki lah ban donkam download ne network. Ka jingthoh bad ki budam ki dang treikam.",
+  "voiceChecking": "Dang peit ia ki sur jong ka kor…",
+  "voiceUiAvailable": "Jingthoh ha ka screen: ka don",
+  "voiceTtsAvailable": "Pule da ka sur: la shem ka sur ba iahap ha ka kor",
+  "voiceTtsUnknown": "Pule da ka sur: ym lah peit ia ki sur jong ka kor",
+  "voiceCheckAgain": "Peit biang ia ki sur",
   "dayNotificationTitle": "Ka jingpynkynmaw Smaran",
   "dayNotificationBody": "Plie ia Smaran ban peit ia ka jingpynkynmaw jong phi.",
   "dayOpenHint": "Plie ia ki jingpynkynmaw jong phi.",
@@ -319,6 +391,18 @@ const kha = {
   "daySafety": "Bud ia ka jingbthah dawai jong u nongsumar jong phi. Smaran ka shu pynkynmaw."
 } satisfies Record<keyof typeof en, string>;
 const lus = {
+  "dayMeal": "Chaw",
+  "dayDrankWater": "Tui ka in tawh",
+  "dayWaterTapOnly": "Hei hian i hmeh kha chauh a chhinchhiah. Tui in a nihzia a nemnghet lo.",
+  "dayMarkedAt": "{time} ah tih zawh tia chhinchhiah a ni",
+  "voiceLanguages": "Tawng leh aw awm dan",
+  "voiceInputUnavailable": "He app-ah hian tawng hmanga thupek a la awm lo. Screen-a button-te hmang rawh.",
+  "voiceDeviceHelp": "Device aw tan download emaw network emaw a ngai thei. Thuziak leh screen-a button-te chu hman theih reng a ni.",
+  "voiceChecking": "Device aw-te kan en mek…",
+  "voiceUiAvailable": "Screen-a thuziak: a awm",
+  "voiceTtsAvailable": "Chhiar chhuah: device-ah aw inmil a awm",
+  "voiceTtsUnknown": "Chhiar chhuah: device aw-te kan en thei lo",
+  "voiceCheckAgain": "Aw-te en leh rawh",
   "dayNotificationTitle": "Smaran hriattirna",
   "dayNotificationBody": "I hriattirna en turin Smaran hawng rawh.",
   "dayOpenHint": "I hriattirnate a hawng.",

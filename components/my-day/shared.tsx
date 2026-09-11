@@ -1,22 +1,16 @@
 import { capturePatientRequest } from '@/src/stores/patient-session.store';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, type ComponentProps } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { PageLayout, Radius, Spacing } from '@constants/layout';
-import { t, type TranslationKey } from '@i18n/index';
+import { t } from '@i18n/index';
 import { PatientSelectionRequiredError, resolveActivePatient } from '@services/active-patient.service';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
-import type { ReminderType } from '@/src/my-day/types';
 import type { NotificationResult } from '@services/my-day.service';
 
-export const category: Record<ReminderType, { key: TranslationKey; icon: ComponentProps<typeof MaterialIcons>['name'] }> = {
-  medicine: { key: 'dayMedicine', icon: 'medication' }, hydration: { key: 'dayWater', icon: 'water-drop' },
-  activity: { key: 'dayActivity', icon: 'directions-walk' }, appointment: { key: 'dayAppointment', icon: 'event' },
-  custom: { key: 'dayOther', icon: 'notifications-none' },
-};
+export { category } from '@/src/my-day/presets';
 export function useMyDayPatient() {
   const router = useRouter();
   const language = useOnboardingStore(s => s.language) ?? 'en';

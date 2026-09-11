@@ -27,7 +27,9 @@ async function main() {
     },
   };
   const patient = 'patient-qa-one', other = 'patient-qa-two';
-  const overrides = { '../client': { getDatabase: async () => db } };
+  let selectedPatient = patient;
+  const activeBoundary = { resolveActivePatient: async () => ({ status: 'ready', profile: { id: selectedPatient } }) };
+  const overrides = { '../client': { getDatabase: async () => db }, './active-patient.service': activeBoundary };
   const repo = load('src/db/repositories/my-day.repository.ts', overrides).myDayRepository;
   const patientRepo = load('src/db/repositories/patient.repository.ts', overrides).patientRepository;
   const { t, strings } = load('src/i18n/index.ts');
@@ -289,8 +291,11 @@ async function main() {
     assert.deepEqual(await service.sync(other),{permission:'granted',failed:false}); // Missing settings: safe English, no borrowed language.
     assert.equal(pending.get(otherId).content.title,t('en','dayNotificationTitle'));
     assert.equal(JSON.stringify([...pending.values()].filter(n=>n.identifier!==otherId)),ownSchedules);
+    selectedPatient = other;
     await service.remove(other,otherReminder.id);
+    selectedPatient = patient;
     const fallback=load('src/services/my-day.service.ts',{
+      './active-patient.service': activeBoundary,
       'expo-notifications':native,'react-native':{Platform:{OS:'android'}},
       '../db/repositories/my-day.repository':{myDayRepository:repo},
       '../db/repositories/patient.repository':{patientRepository:{...patientRepo,getSettings:async()=>{throw Error('Injected language read failure');}}},

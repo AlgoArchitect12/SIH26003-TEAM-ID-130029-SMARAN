@@ -9,6 +9,7 @@ import { SelectionCard } from '@components/onboarding/selection-card';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { AppearanceChoices } from '@components/ui/appearance-choices';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
+import { VoiceCapabilities } from '@components/accessibility/voice-capabilities';
 import { patientRepository } from '@db/repositories/patient.repository';
 import { Languages, TextSizes, type UpdatePatientSettingsInput } from '@db/schema.types';
 import { getLanguageName, getTextSizeName, t } from '@i18n/index';
@@ -60,6 +61,7 @@ export default function SettingsScreen() {
           <ThemedText>{t(language, preferences[key] ? 'on' : 'off')}</ThemedText>
         </SmaranCard>)}
         {section === 'voice' && <ReadScreenButton language={language} text={t(language, 'previewBody')} />}
+        {section === 'voice' && <VoiceCapabilities language={language} />}
       </View>}
     {status !== 'idle' && <ThemedText accessibilityLiveRegion="polite" accessibilityRole={status === 'failed' ? 'alert' : undefined}>
       {t(language, status === 'saving' ? 'saving' : status === 'saved' ? 'saved' : 'settingsSaveFailed')}

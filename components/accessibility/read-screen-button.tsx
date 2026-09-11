@@ -1,8 +1,9 @@
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
+import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
@@ -26,13 +27,17 @@ export function ReadScreenButton({ language, speechLanguage = language, text, la
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [outcome, setOutcome] = useState<SpeechOutcome | null>(null);
   const requestId = useRef(0);
+  const reading = useRef(false);
+  const currentPatient = useRef(capturePatientRequest()).current;
 
   useEffect(() => {
     setIsStarting(false);
     setIsSpeaking(false);
     setOutcome(null);
+    reading.current = false;
     return () => {
       requestId.current += 1;
+      reading.current = false;
       void stopSpeech();
     };
   }, [language, speechLanguage, text, voiceGuidance]);
@@ -41,15 +46,28 @@ export function ReadScreenButton({ language, speechLanguage = language, text, la
     setIsStarting(false);
     setIsSpeaking(false);
     setOutcome(null);
+    reading.current = false;
+    const subscription = AppState.addEventListener('change', state => {
+      if (state !== 'active') {
+        requestId.current += 1;
+        reading.current = false;
+        setIsStarting(false); setIsSpeaking(false);
+        void stopSpeech();
+      }
+    });
     return () => {
       requestId.current += 1;
+      reading.current = false;
+      subscription.remove();
       void stopSpeech();
     };
   }, []));
 
   const handlePress = async () => {
+    if (!currentPatient()) return;
     const request = ++requestId.current;
-    if (isSpeaking || isStarting) {
+    if (reading.current) {
+      reading.current = false;
       setIsStarting(false);
       setIsSpeaking(false);
       await stopSpeech();
@@ -57,29 +75,36 @@ export function ReadScreenButton({ language, speechLanguage = language, text, la
     }
 
     setOutcome(null);
+    reading.current = true;
     setIsStarting(true);
-    setIsSpeaking(true);
+    let finished = false;
     const nextOutcome = await speakScreenText(text, speechLanguage, {
+      onStart: () => {
+        if (request === requestId.current) { setIsStarting(false); setIsSpeaking(true); }
+      },
       onDone: () => {
-        if (request === requestId.current) setIsSpeaking(false);
+        finished = true;
+        if (request === requestId.current) { reading.current = false; setIsStarting(false); setIsSpeaking(false); }
       },
       onError: () => {
+        finished = true;
         if (request === requestId.current) {
+          reading.current = false;
+          setIsStarting(false);
           setIsSpeaking(false);
           setOutcome('failed');
         }
       },
     });
-    if (request === requestId.current) {
+    if (request === requestId.current && !finished) {
       setOutcome(nextOutcome);
-      if (nextOutcome !== 'started') setIsSpeaking(false);
-      setIsStarting(false);
+      if (nextOutcome !== 'started') { reading.current = false; setIsSpeaking(false); setIsStarting(false); }
     }
   };
 
   if (!voiceGuidance) return null;
 
-  const label = t(language, isSpeaking ? 'stopReading' : labelKey);
+  const label = t(language, isSpeaking || isStarting ? 'stopReading' : labelKey);
 
   return (
     <View style={styles.container}>

@@ -12,7 +12,8 @@ import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { t, type TranslationKey } from '@i18n/index';
 import { myDayRepository } from '@db/repositories/my-day.repository';
 import { myDayService } from '@services/my-day.service';
-import { localDateTime, localDay, MyDayError, ReminderTypes, validateReminder, type ReminderType } from '@/src/my-day/types';
+import { localDateTime, localDay, MyDayError, validateReminder, type ReminderType } from '@/src/my-day/types';
+import { reminderPresets } from '@/src/my-day/presets';
 
 export default function ReminderEditor() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function ReminderEditor() {
   const { patientId, language, failed, retry } = useMyDayPatient();
   const [step, setStep] = useState(0);
   const [type, setType] = useState<ReminderType>('medicine');
+  const [presetId, setPresetId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
   const [hour, setHour] = useState('08');
@@ -34,21 +36,21 @@ export default function ReminderEditor() {
   const [error, setError] = useState<TranslationKey | null>(null);
   const [busy, setBusy] = useState(false);
   const locked = useRef(false);
+  const current = useRef(capturePatientRequest()).current;
   useEffect(() => {
     let active = true;
     if (!patientId || !id) return;
     void myDayRepository.get(patientId, id).then(reminder => {
-      if (!active) return;
+      if (!active || !current()) return;
       if (!reminder || reminder.deletedAt) throw new MyDayError('missing');
       setType(reminder.type); setTitle(reminder.title); setNote(reminder.note);
       setHour(reminder.timeOfDay.slice(0,2)); setMinute(reminder.timeOfDay.slice(3)); setRepeat(reminder.repeatRule);
       if (reminder.scheduledDate) { setYear(reminder.scheduledDate.slice(0,4)); setMonth(reminder.scheduledDate.slice(5,7)); setDay(reminder.scheduledDate.slice(8)); }
       setLoaded(true); setError(null);
-    }).catch(() => { if (active) setError('dayFailed'); });
+    }).catch(() => { if (active && current()) setError('dayFailed'); });
     return () => { active = false; };
-  }, [patientId, id, attempt]);
+  }, [patientId, id, attempt, current]);
   const save = async () => {
-    const current = capturePatientRequest();
     if (!current()) return;
     if (!patientId || locked.current) return;
     setError(null);
@@ -60,11 +62,11 @@ export default function ReminderEditor() {
       locked.current = true; setBusy(true);
       await myDayService.save(patientId, input, id);
       if (current()) router.dismissTo('/patient/my-day');
-    } catch (reason) { setError(reason instanceof MyDayError ? reason.code === 'limit' ? 'dayLimit' : reason.code === 'past' ? 'dayPast' : reason.code === 'invalid' ? 'dayInvalid' : 'dayFailed' : 'dayFailed'); }
-    finally { locked.current = false; setBusy(false); }
+    } catch (reason) { if (current()) setError(reason instanceof MyDayError ? reason.code === 'limit' ? 'dayLimit' : reason.code === 'past' ? 'dayPast' : reason.code === 'invalid' ? 'dayInvalid' : 'dayFailed' : 'dayFailed'); }
+    finally { locked.current = false; if (current()) setBusy(false); }
   };
   const heading: TranslationKey = step === 0 ? 'dayType' : step === 1 ? 'dayDetails' : 'dayWhen';
-  const speech = [t(language, heading), step === 0 ? ReminderTypes.map(item => t(language, category[item].key)).join('. ')
+  const speech = [t(language, heading), step === 0 ? [...reminderPresets.map(item => t(language, item.key)), t(language, 'dayOther')].join('. ')
     : step === 1 ? `${t(language, 'dayTitle')}. ${title}. ${t(language, 'dayNote')}. ${note}`
       : `${t(language, 'dayTime')}. ${hour}:${minute}. ${t(language, repeat === 'daily' ? 'dayDaily' : 'dayOnce')}. ${repeat === 'once' ? `${day} ${month} ${year}` : ''}. ${t(language, 'dayTimeHelp')}`].join(' ');
   return <ScreenWrapper scroll key={step}><View style={styles.content}>
@@ -78,13 +80,25 @@ export default function ReminderEditor() {
       {(!loaded || failed) && <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={() => { retry(); setAttempt(n => n + 1); }} />}
     </View>}
     {!patientId || !loaded ? (!error && !failed && <SmaranLoading label={t(language, 'loadingSetup')} />) : <>
-      {step === 0 && ReminderTypes.map(item => <SelectionCard key={item} icon={category[item].icon}
-        title={t(language, category[item].key)} selected={type === item} selectedLabel={t(language, 'selected')}
-        onPress={() => { if (type !== item) { setType(item); setRepeat(item === 'appointment' ? 'once' : 'daily'); } }} />)}
+      {step === 0 && <>
+        {reminderPresets.map(item => <SelectionCard key={item.id} icon={item.icon}
+          title={t(language, item.key)} selected={presetId === item.id || (presetId === null && type !== 'custom' && type === item.type)} selectedLabel={t(language, 'selected')}
+          onPress={() => {
+            setPresetId(item.id); setType(item.type);
+            if (!id) {
+              setTitle(t(language, item.key)); setRepeat(item.repeat);
+              setHour(item.time.slice(0, 2)); setMinute(item.time.slice(3));
+            }
+          }} />)}
+        <SelectionCard icon={category.custom.icon} title={t(language, 'dayOther')}
+          selected={type === 'custom' && presetId !== 'meal'} selectedLabel={t(language, 'selected')}
+          onPress={() => { setPresetId('other'); setType('custom'); if (!id) setTitle(''); }} />
+      </>}
       {step === 1 && <>
         <Field label={t(language, 'dayTitle')} value={title} onChangeText={setTitle} maxLength={120} multiline />
         <Field label={t(language, 'dayNote')} value={note} onChangeText={setNote} maxLength={300} multiline />
         {type === 'medicine' && <ThemedText>{t(language, 'daySafety')}</ThemedText>}
+        {type === 'hydration' && <ThemedText>{t(language, 'dayWaterTapOnly')}</ThemedText>}
       </>}
       {step === 2 && <>
         <ThemedText>{t(language, 'dayTimeHelp')}</ThemedText>
@@ -103,7 +117,10 @@ export default function ReminderEditor() {
         disabled={busy} loading={busy} onPress={() => {
           if (step === 2) void save();
           else if (step === 1 && !title.trim()) setError('dayInvalid');
-          else { setError(null); setStep(step + 1); }
+          else {
+            if (step === 0 && !id && !title && type !== 'custom') setTitle(t(language, category[type].key));
+            setError(null); setStep(step + 1);
+          }
         }} />
       <ReadScreenButton language={language} text={speech} />
     </>}

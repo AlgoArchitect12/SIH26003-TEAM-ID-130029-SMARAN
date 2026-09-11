@@ -211,6 +211,7 @@ async function checkPermissionBoundary() {
     getPresentedNotificationsAsync: async () => [],
   };
   const service = load('src/services/my-day.service.ts', {
+    './active-patient.service': { resolveActivePatient: async () => { throw Error('Permission checks must not resolve a patient'); } },
     'expo-notifications': notifications, 'react-native': { Platform: { OS: 'android' } },
     '../db/repositories/my-day.repository': { myDayRepository: { list: async () => [], currentCompletions: async () => [] } },
     '../db/repositories/patient.repository': { patientRepository: { getSettings: async () => null } },

@@ -184,6 +184,9 @@ assert.doesNotMatch(added, /Rahul Sharma|demoPatient|fakeScore|samplePatient|dem
 // MVP-20 explicitly authorizes these cognitive files and migration 007's registry entry.
 // Keep every other protected path guarded, including historical migrations 001–006.
 const cognitiveAIPaths = new Set([
+  // MVP-21 authorizes only these additional reminder/speech sources. Database/config guards remain below.
+  'src/my-day/presets.ts', 'src/i18n/my-day-strings.ts',
+  'src/db/repositories/my-day.repository.ts', 'src/services/my-day.service.ts', 'src/services/speech.service.ts',
   'components/games/memory-card.tsx',
   'src/db/migrations/index.ts', 'src/db/migrations/007_cognitive_ai_expansion.ts',
   'src/db/schema.types.ts', 'src/db/repositories/cognitive.repository.ts',

@@ -1,6 +1,6 @@
 import * as Speech from 'expo-speech';
 
-import type { Language } from '@db/schema.types';
+import { Languages, type Language } from '../db/schema.types';
 
 export type SpeechOutcome = 'failed' | 'started' | 'unavailable';
 
@@ -11,10 +11,12 @@ const preferredLocales: Record<Language, readonly string[]> = {
   hi: ['hi-IN'],
   kha: ['kha-IN'],
   lus: ['lus-IN'],
-  mni: ['mni-IN', 'mni-Beng-IN', 'mni-Mtei-IN'],
+  // The current Meitei catalog is romanized; Bengali/Meetei-script voices are not a suitable match.
+  mni: ['mni-Latn-IN'],
 };
 
 type SpeechCallbacks = {
+  onStart?: () => void;
   onDone?: () => void;
   onError?: () => void;
 };
@@ -22,15 +24,35 @@ type SpeechCallbacks = {
 let speechRequest = 0;
 
 function normalizeLocale(locale: string) {
-  return locale.replace('_', '-').toLowerCase();
+  return locale.replace(/_/g, '-').toLowerCase();
 }
 
 function findVoice(voices: Speech.Voice[], language: Language) {
   const locales = preferredLocales[language].map(normalizeLocale);
+  const suitable = voices.filter(voice => voice.identifier && (language !== 'mni' || normalizeLocale(voice.language).split('-').includes('latn')));
   return (
-    voices.find((voice) => locales.includes(normalizeLocale(voice.language))) ??
-    voices.find((voice) => normalizeLocale(voice.language).startsWith(`${language}-`))
+    suitable.find((voice) => locales.includes(normalizeLocale(voice.language))) ??
+    suitable.find((voice) => normalizeLocale(voice.language).split('-')[0] === language)
   );
+}
+
+export type LanguageVoiceCapability = {
+  language: Language;
+  uiTranslation: true;
+  tts: 'available' | 'unavailable' | 'unknown';
+  voice: Speech.Voice | null;
+  // Native recognition is absent, so device STT language support has not been queried.
+  stt: 'not-implemented';
+};
+
+export async function getVoiceCapabilities(): Promise<LanguageVoiceCapability[]> {
+  let voices: Speech.Voice[] = [];
+  let checked = false;
+  try { voices = await Speech.getAvailableVoicesAsync(); checked = true; } catch { /* Text and touch remain available. */ }
+  return Languages.map(language => {
+    const voice = findVoice(voices, language) ?? null;
+    return { language, uiTranslation: true, tts: checked ? voice ? 'available' : 'unavailable' : 'unknown', voice, stt: 'not-implemented' };
+  });
 }
 
 export async function speakScreenText(
@@ -46,6 +68,7 @@ export async function speakScreenText(
   const request = ++speechRequest;
   try {
     await Speech.stop();
+    if (request !== speechRequest) return 'failed';
     const voice = findVoice(await Speech.getAvailableVoicesAsync(), language);
     if (request !== speechRequest) return 'failed';
     if (!voice) {
@@ -54,10 +77,10 @@ export async function speakScreenText(
 
     Speech.speak(spokenText, {
       language: voice.language,
-      onDone: callbacks.onDone,
+      onStart: () => { if (request === speechRequest) callbacks.onStart?.(); },
+      onDone: () => { if (request === speechRequest) callbacks.onDone?.(); },
       onError: () => {
         if (request !== speechRequest) {
-          callbacks.onDone?.();
           return;
         }
         if (__DEV__) {
@@ -65,7 +88,7 @@ export async function speakScreenText(
         }
         callbacks.onError?.();
       },
-      onStopped: callbacks.onDone,
+      onStopped: () => { if (request === speechRequest) callbacks.onDone?.(); },
       pitch: 1,
       rate: 0.8,
       voice: voice.identifier,
