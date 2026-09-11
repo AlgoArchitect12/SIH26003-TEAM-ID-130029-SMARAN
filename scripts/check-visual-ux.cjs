@@ -191,7 +191,12 @@ const cognitiveAIPaths = new Set([
   'src/games/pattern-recognition.ts', 'src/games/selection-engine.ts', 'src/games/telemetry.ts',
   'src/games/presentation.ts', 'src/games/recall-activities.ts',
   'src/i18n/cognitive-strings.ts', 'src/i18n/cognitive-ai-strings.ts',
+  'src/i18n/analytics-strings.ts', // Six-game integration: remove the obsolete pattern/routine-only attempt description.
 ]);
+const analyticsCopyDiff = git('diff', '--unified=0', 'e6b0f2c', '--', 'src/i18n/analytics-strings.ts')
+  .split(/\r?\n/).filter(line => /^[+-](?![+-])/.test(line));
+assert.ok(analyticsCopyDiff.every(line => /^[+-]  analyticsSelectionAttempts: /.test(line)),
+  'Only the six-game attempt description is authorized to change in the analytics catalog');
 const outsideCognitiveAI = output => output.trim().split(/\r?\n/).filter(file => file && !cognitiveAIPaths.has(file));
 const baselinePaths = ['package.json', 'package-lock.json', 'app.json', 'eas.json', 'plugins/with-private-backup.cjs',
   'src/db/migrations', 'src/db/client.web.ts'];

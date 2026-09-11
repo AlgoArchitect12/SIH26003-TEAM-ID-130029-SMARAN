@@ -27,7 +27,7 @@ const en = {
   analyticsPage: 'Showing {count} sessions, from {start} to {end}.',
   analyticsSessionElapsed: 'Elapsed time: {seconds} seconds.',
   analyticsMemoryAttempts: 'An attempt is one two-card comparison; a correct attempt is a matched pair.',
-  analyticsSelectionAttempts: 'An attempt is one selected answer; correct answers complete a pattern or routine step.',
+  analyticsSelectionAttempts: 'An attempt is one selected answer.',
   analyticsFeedback: 'Recorded feedback: {feedback}',
   analyticsNext: 'Next activity level saved with this session: {level} of 5.',
 } as const;
@@ -51,7 +51,7 @@ const hi: Catalog = {
   analyticsOlder: 'पुरानी गतिविधियाँ', analyticsNewest: 'सबसे नई गतिविधियाँ', analyticsEnd: 'सहेजी गतिविधियों के इतिहास का अंत।',
   analyticsNoHistory: 'इस रोगी के लिए कोई पूरी गतिविधि सहेजी नहीं गई है।', analyticsPage: '{start} से {end} तक {count} सत्र दिखाए जा रहे हैं।',
   analyticsSessionElapsed: 'बीता समय: {seconds} सेकंड।', analyticsMemoryAttempts: 'एक प्रयास दो कार्डों की तुलना है; सही प्रयास एक मिला हुआ जोड़ा है।',
-  analyticsSelectionAttempts: 'एक प्रयास एक चुना हुआ उत्तर है; सही उत्तर एक पैटर्न या दिनचर्या का चरण पूरा करता है।', analyticsFeedback: 'दर्ज प्रतिक्रिया: {feedback}',
+  analyticsSelectionAttempts: 'एक प्रयास एक चुना हुआ उत्तर है।', analyticsFeedback: 'दर्ज प्रतिक्रिया: {feedback}',
 };
 const as: Catalog = {
   analyticsNext: 'এই অধিবেশনৰ সৈতে সংৰক্ষিত পৰৱৰ্তী কাৰ্যকলাপৰ স্তৰ: 5ৰ ভিতৰত {level}।',
@@ -70,7 +70,7 @@ const as: Catalog = {
   analyticsOlder: 'পুৰণি কাৰ্যকলাপ', analyticsNewest: 'শেহতীয়া কাৰ্যকলাপ', analyticsEnd: 'সংৰক্ষিত কাৰ্যকলাপৰ ইতিহাসৰ শেষ।',
   analyticsNoHistory: 'এই ৰোগীৰ কোনো সম্পূৰ্ণ কাৰ্যকলাপ সংৰক্ষিত নাই।', analyticsPage: '{start}ৰ পৰা {end}লৈ {count} অধিবেশন দেখুওৱা হৈছে।',
   analyticsSessionElapsed: 'অতিবাহিত সময়: {seconds} ছেকেণ্ড।', analyticsMemoryAttempts: 'এটা প্ৰচেষ্টা মানে দুখন কাৰ্ডৰ তুলনা; শুদ্ধ প্ৰচেষ্টা মানে মিল থকা যোৰ।',
-  analyticsSelectionAttempts: 'এটা প্ৰচেষ্টা মানে এটা বাছনি কৰা উত্তৰ; শুদ্ধ উত্তৰে এটা আৰ্হি বা দিনচৰ্যাৰ খোজ সম্পূৰ্ণ কৰে।', analyticsFeedback: 'লিপিবদ্ধ মতামত: {feedback}',
+  analyticsSelectionAttempts: 'এটা প্ৰচেষ্টা মানে এটা বাছনি কৰা উত্তৰ।', analyticsFeedback: 'লিপিবদ্ধ মতামত: {feedback}',
 };
 const bn: Catalog = {
   analyticsNext: 'এই সেশনের সঙ্গে সংরক্ষিত পরের কার্যকলাপের স্তর: 5 এর মধ্যে {level}।',
@@ -89,7 +89,7 @@ const bn: Catalog = {
   analyticsOlder: 'পুরোনো কার্যকলাপ', analyticsNewest: 'নতুন কার্যকলাপ', analyticsEnd: 'সংরক্ষিত কার্যকলাপের ইতিহাসের শেষ।',
   analyticsNoHistory: 'এই রোগীর জন্য কোনো সম্পূর্ণ কার্যকলাপ সংরক্ষিত নেই।', analyticsPage: '{start} থেকে {end} পর্যন্ত {count} সেশন দেখানো হচ্ছে।',
   analyticsSessionElapsed: 'অতিবাহিত সময়: {seconds} সেকেন্ড।', analyticsMemoryAttempts: 'একটি চেষ্টা হল দুটি কার্ডের তুলনা; সঠিক চেষ্টা হল একটি মিলে যাওয়া জোড়া।',
-  analyticsSelectionAttempts: 'একটি চেষ্টা হল একটি বেছে নেওয়া উত্তর; সঠিক উত্তর একটি প্যাটার্ন বা রুটিনের ধাপ সম্পূর্ণ করে।', analyticsFeedback: 'নথিভুক্ত মতামত: {feedback}',
+  analyticsSelectionAttempts: 'একটি চেষ্টা হল একটি বেছে নেওয়া উত্তর।', analyticsFeedback: 'নথিভুক্ত মতামত: {feedback}',
 };
 const mni: Catalog = {
   analyticsNext: 'Session asi loinana save touraba mathanggi thabak level: 5 dagi {level}.',
@@ -108,7 +108,7 @@ const mni: Catalog = {
   analyticsOlder: 'Ahanba thabaksing', analyticsNewest: 'Anouba thabaksing', analyticsEnd: 'Save touraba thabakgi itihas loire.',
   analyticsNoHistory: 'Mi asigidamak loisillaba thabak save toude.', analyticsPage: '{start} dagi {end} faoba session {count} utli.',
   analyticsSessionElapsed: 'Houkhreba matam: second {seconds}.', analyticsMemoryAttempts: 'Hotnaba ama haibadi card ani changdamnaba; achumba hotnaba haibadi channaba pair ama.',
-  analyticsSelectionAttempts: 'Hotnaba ama haibadi khallaba paokhum ama; achumba paokhumna pattern nattraga routine gi khongthang ama loisilli.', analyticsFeedback: 'Record touraba wahei: {feedback}',
+  analyticsSelectionAttempts: 'Hotnaba ama haibadi khallaba paokhum ama.', analyticsFeedback: 'Record touraba wahei: {feedback}',
 };
 const kha: Catalog = {
   analyticsNext: 'Ka kyrdan kam kaba bud ba la buh bad kane ka bynta: {level} na 5.',
@@ -127,7 +127,7 @@ const kha: Catalog = {
   analyticsOlder: 'Ki kam kiba kham mynshwa', analyticsNewest: 'Ki kam kiba thymmai tam', analyticsEnd: 'Ka kut jong ka histori kam ba la buh.',
   analyticsNoHistory: 'Ym don kam ba la pyndep ba la buh na ka bynta une u nongpang.', analyticsPage: 'La pyni {count} ki bynta, na {start} haduh {end}.',
   analyticsSessionElapsed: 'Ka por ba la iaid: {seconds} sekhon.', analyticsMemoryAttempts: 'Kawei ka jingpyrshang ka dei ka jingianujor ar tylli ki kard; ka jingpyrshang kaba dei ka dei ka shijur ba iadei.',
-  analyticsSelectionAttempts: 'Kawei ka jingpyrshang ka dei kawei ka jubab ba la jied; ki jubab kiba dei ki pyndep ia ka dur ne ka sienjam kam.', analyticsFeedback: 'Ka jingpynsngew ba la buh: {feedback}',
+  analyticsSelectionAttempts: 'Kawei ka jingpyrshang ka dei kawei ka jubab ba la jied.', analyticsFeedback: 'Ka jingpynsngew ba la buh: {feedback}',
 };
 const lus: Catalog = {
   analyticsNext: 'He hun nen dahthat thiltih level dawt: 5 zingah {level}.',
@@ -146,6 +146,6 @@ const lus: Catalog = {
   analyticsOlder: 'Thiltih hlui zawk', analyticsNewest: 'Thiltih thar ber', analyticsEnd: 'Thiltih chanchin dahthat tawpna.',
   analyticsNoHistory: 'He damlo tan thiltih zawh tawh dahthat a awm lo.', analyticsPage: '{start} atanga {end} thleng hun {count} entir a ni.',
   analyticsSessionElapsed: 'Hun kal: second {seconds}.', analyticsMemoryAttempts: 'Tum pakhat chu card pahnih khaikhin a ni; tum dik chu kawp inmil a ni.',
-  analyticsSelectionAttempts: 'Tum pakhat chu chhanna thlan pakhat a ni; chhanna dik chuan pattern emaw nitin tih tur peng emaw a zo.', analyticsFeedback: 'Thu sawifiah chhinchhiah: {feedback}',
+  analyticsSelectionAttempts: 'Tum pakhat chu chhanna thlan pakhat a ni.', analyticsFeedback: 'Thu sawifiah chhinchhiah: {feedback}',
 };
 export const analyticsStrings = { en, hi, as, bn, mni, kha, lus } satisfies Record<Language, Catalog>;
