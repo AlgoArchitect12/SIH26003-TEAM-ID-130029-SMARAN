@@ -1,4 +1,5 @@
 import { uxStrings } from './ux-strings';
+import { accountStrings } from './account-strings';
 import { profileStrings } from './profile-strings';
 import { cognitiveStrings } from './cognitive-strings';
 import { careStrings } from './care-strings';
@@ -11,6 +12,7 @@ import type { Language, Region } from '@db/schema.types';
 import { regionalRegionNames, regionalStrings } from './regional-strings';
 
 const english = {
+  ...accountStrings.en,
   ...uxStrings.en,
   ...profileStrings.en,
   ...myHomeStrings.en,
@@ -290,6 +292,7 @@ const assameseGame = {
 
 const hindi = {
   ...uxStrings.hi,
+  ...accountStrings.hi,
   ...profileStrings.hi,
   ...myHomeStrings.hi,
   ...careStrings.hi,
@@ -392,6 +395,7 @@ const hindi = {
 
 const assamese = {
   ...uxStrings.as,
+  ...accountStrings.as,
   ...profileStrings.as,
   ...myHomeStrings.as,
   ...careStrings.as,

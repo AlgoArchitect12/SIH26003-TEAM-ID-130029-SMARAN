@@ -29,6 +29,8 @@
       ]
     }
   },
+  "exclude": ["supabase/functions/online-ai/index.ts"],
+  "exclude": ["supabase/functions/online-ai/index.ts"],
   "include": [
     "**/*.ts",
     "**/*.tsx",

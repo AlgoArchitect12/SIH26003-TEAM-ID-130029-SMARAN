@@ -133,8 +133,11 @@ function checkContracts() {
   }
   assert.match(t('en', 'daySafety'), /healthcare professional.*only reminds/);
   const protectedPaths = ['package.json', 'package-lock.json', 'app.json', 'eas.json', 'plugins/with-private-backup.cjs', 'src/db/client.web.ts', 'src/db/migrations'];
-  assert.equal(execFileSync('git', ['diff', '--name-only', '5381c76', '--', ...protectedPaths], { encoding: 'utf8' }).trim(), '');
-  assert.equal(execFileSync('git', ['ls-files', '--others', '--exclude-standard', '--', ...protectedPaths], { encoding: 'utf8' }).trim(), '');
+  const { authorized, checkMvp22Boundaries } = require('./check-mvp22-boundaries.cjs');
+  checkMvp22Boundaries();
+  const unapproved = output => output.trim().split(/\r?\n/).filter(file => file && !authorized.has(file));
+  assert.deepEqual(unapproved(execFileSync('git', ['diff', '--name-only', '5381c76', '--', ...protectedPaths], { encoding: 'utf8' })), []);
+  assert.deepEqual(unapproved(execFileSync('git', ['ls-files', '--others', '--exclude-standard', '--', ...protectedPaths], { encoding: 'utf8' })), []);
   assert.ok(JSON.parse(source('app.json')).expo.android.blockedPermissions.includes('android.permission.RECORD_AUDIO'));
   console.log('PASS contracts: five presets, factual water semantics, seven catalog/placeholder parity, privacy-safe copy, touch fallback, large controls, medical boundary, protected paths/no microphone or cloud additions');
 }

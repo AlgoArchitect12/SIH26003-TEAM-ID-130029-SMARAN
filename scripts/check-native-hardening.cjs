@@ -30,9 +30,10 @@ async function main() {
   const migrations = files('src/db/migrations');
   assert.deepEqual(migrations.map(file => path.basename(file)).sort(), [
     '001_core_bootstrap.ts', '002_cognitive_adaptation.ts', '003_multilingual_expansion.ts',
-    '004_my_day.ts', '005_my_memories.ts', '006_cognitive_expansion.ts', '007_cognitive_ai_expansion.ts', 'index.ts',
-  ], 'Only authorized migration 007 added');
-  for (const file of ['package.json', 'package-lock.json', ...migrations.filter(file => /\/00[1-6]_/.test(file))]) {
+    '004_my_day.ts', '005_my_memories.ts', '006_cognitive_expansion.ts', '007_cognitive_ai_expansion.ts', '008_auth_sync.ts', 'index.ts',
+  ], 'Only authorized migrations 001–008');
+  require('./check-mvp22-boundaries.cjs').checkMvp22Boundaries();
+  for (const file of migrations.filter(file => /\/00[1-6]_/.test(file))) {
     assert.equal(read(file).replace(/\r\n/gu, '\n').trim(), git('show', '6b1c0f5:' + file), file + ' must preserve stable base');
   }
   const sdk = json('node_modules/expo/bundledNativeModules.json');
@@ -45,7 +46,7 @@ async function main() {
     assert.ok(semver.satisfies(installed, sdk[name] ?? pkg.dependencies[name]), name + ' SDK 54 mismatch');
   }
   assert.ok(!Object.keys({ ...pkg.dependencies, ...pkg.devDependencies }).some(name =>
-    /supabase|firebase|apollo|graphql|axios|sentry|analytics|openai|expo-updates|expo-dev-client|async-storage/iu.test(name)));
+    name !== '@supabase/supabase-js' && /supabase|firebase|apollo|graphql|axios|sentry|analytics|openai|expo-updates|expo-dev-client|async-storage/iu.test(name)));
   const eas = json('eas.json');
   assert.equal(eas.cli.appVersionSource, 'local');
   assert.equal(eas.build.preview.distribution, 'internal');
@@ -86,7 +87,10 @@ async function main() {
   const creditFiles = new Set(['src/my-home/content.ts', 'src/my-home/image-credits.json', 'components/ui/icon-symbol.tsx', 'hooks/use-theme-color.ts']);
   for (const file of sources) {
     const text = read(file);
-    assert.ok(!/\bfetch\s*\(|\baxios\b|\bsupabase\b|\bfirebase\b|\bgraphql\b|new\s+(WebSocket|XMLHttpRequest)|\bprocess\.env|console\.(log|debug)\s*\(/iu.test(text), 'Runtime network, secret or debug path: ' + file);
+    if (file.startsWith('src/cloud/')) {
+      assert.ok(require('./check-mvp22-boundaries.cjs').authorized.has(file), 'Only reviewed cloud modules may use the gateway');
+      assert.doesNotMatch(text, /service_role|SERVICE_ROLE|postgres(?:ql)?:\/\/|DB_PASSWORD|DATABASE_URL|OPENAI_API_KEY|GEMINI_API_KEY|ANTHROPIC_API_KEY|SUPABASE_SERVICE|console\.(log|debug)\s*\(/);
+    } else assert.ok(!/\bfetch\s*\(|\baxios\b|\bsupabase\b|\bfirebase\b|\bgraphql\b|new\s+(WebSocket|XMLHttpRequest)|\bprocess\.env|console\.(log|debug)\s*\(/iu.test(text), 'Runtime network, secret or debug path: ' + file);
     if (/https?:\/\//u.test(text)) assert.ok(creditFiles.has(file), 'Review new URL: ' + file);
     if (/bhashini|remote translation/iu.test(text)) assert.equal(file, 'src/services/language/bhashini.service.ts');
     // Reject raw release logs; walk ancestors so nested __DEV__ handlers are recognized.
@@ -111,7 +115,7 @@ async function main() {
   assert.equal(files('assets/my-home').length, 32);
   for (const asset of assets) assert.ok(fs.statSync(asset).size > 0);
   for (const file of files('src/games')) assert.ok(!/https?:\/\//u.test(read(file)), file);
-  assert.equal(files('src/db/migrations').filter(file => /\/\d{3}_/u.test(file)).length, 7);
+  assert.equal(files('src/db/migrations').filter(file => /\/\d{3}_/u.test(file)).length, 8);
   for (const route of ['index', '_layout', 'patient/home', 'patient/games/index', 'patient/games/memory-match', 'patient/games/pattern-recognition',
     'patient/games/routine-recall', 'patient/games/result', 'patient/games/why-level', 'patient/my-day', 'patient/my-day-reminder',
     'patient/my-memories', 'patient/my-memory', 'patient/my-memory-editor', 'patient/my-home', 'patient/my-home-memory', 'caregiver/home']) assert.ok(fs.existsSync(path.join(root, 'app', route + '.tsx')), route);
@@ -172,7 +176,7 @@ async function checkConnectionSafety() {
   try {
     const db = adapter(sql), runner = load('src/db/migrations/index.ts').runMigrations;
     await runner(db); await runner(db);
-    assert.equal(sql.prepare('SELECT count(*) AS n FROM schema_migrations').get().n, 7);
+    assert.equal(sql.prepare('SELECT count(*) AS n FROM schema_migrations').get().n, 8);
     for (const table of ['patient_profiles', 'cognitive_sessions', 'adaptive_model_state', 'personal_memories', 'reminders']) assert.equal(sql.prepare('SELECT count(*) AS n FROM ' + table).get().n, 0);
     const overrides = { '../client': { getDatabase: async () => db } };
     const memories = load('src/db/repositories/memories.repository.ts', overrides).memoriesRepository;

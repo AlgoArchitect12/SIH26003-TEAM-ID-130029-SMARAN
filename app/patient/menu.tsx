@@ -21,6 +21,7 @@ const groups: { title: TranslationKey; entries: Entry[] }[] = [
     { label: 'homeCareTitle', icon: 'favorite-outline', href: '/caregiver/home' },
   ] },
   { title: 'menuSettings', entries: [
+    { label: 'accountTitle', icon: 'cloud-queue', href: '/account' },
     { label: 'languageLabel', icon: 'language', href: { pathname: '/patient/settings', params: { section: 'language' } } },
     { label: 'appearance', icon: 'contrast', href: { pathname: '/patient/settings', params: { section: 'appearance' } } },
     { label: 'accessibility', icon: 'accessibility-new', href: { pathname: '/patient/settings', params: { section: 'accessibility' } } },

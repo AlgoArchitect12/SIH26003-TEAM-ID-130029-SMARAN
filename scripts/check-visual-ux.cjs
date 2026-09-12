@@ -200,7 +200,9 @@ const analyticsCopyDiff = git('diff', '--unified=0', 'e6b0f2c', '--', 'src/i18n/
   .split(/\r?\n/).filter(line => /^[+-](?![+-])/.test(line));
 assert.ok(analyticsCopyDiff.every(line => /^[+-]  analyticsSelectionAttempts: /.test(line)),
   'Only the six-game attempt description is authorized to change in the analytics catalog');
-const outsideCognitiveAI = output => output.trim().split(/\r?\n/).filter(file => file && !cognitiveAIPaths.has(file));
+const { authorized, checkMvp22Boundaries } = require('./check-mvp22-boundaries.cjs');
+checkMvp22Boundaries();
+const outsideCognitiveAI = output => output.trim().split(/\r?\n/).filter(file => file && !cognitiveAIPaths.has(file) && !authorized.has(file));
 const baselinePaths = ['package.json', 'package-lock.json', 'app.json', 'eas.json', 'plugins/with-private-backup.cjs',
   'src/db/migrations', 'src/db/client.web.ts'];
 assert.deepEqual(outsideCognitiveAI(git('diff', '--name-only', 'b7eb6bd', '--', ...baselinePaths)), [], 'Protected paths outside authorized 007 unchanged');

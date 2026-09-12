@@ -1,8 +1,8 @@
 import { PatientNavigation } from '@components/patient/patient-navigation';
 import { loadAppearance } from '@/src/stores/appearance.store';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { SmaranLoading } from '@components/ui/smaran-loading';
@@ -16,10 +16,13 @@ import { Spacing } from '@constants/layout';
 import { initializeDatabase } from '@db/client';
 import { t } from '@i18n/index';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
+import { startAuthLifecycle } from '@/src/cloud/auth';
+import { startSyncLifecycle } from '@/src/cloud/sync';
 
 type BootstrapStatus = 'loading' | 'ready' | 'failed';
 
 function DatabaseBootstrap() {
+  const pathname = usePathname();
   const colors = useThemeColors();
   const { dark } = useAppearance();
   const language = useOnboardingStore((state) => state.language) ?? 'en';
@@ -50,7 +53,7 @@ function DatabaseBootstrap() {
     };
   }, [attempt]);
 
-  if (status === 'ready') {
+  if (status === 'ready' || (Platform.OS === 'web' && (pathname === '/account' || pathname === '/auth/callback'))) {
     return <View style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar style={dark ? 'light' : 'dark'} />
       <View style={{ flex: 1 }}><Stack screenOptions={{ headerShown: false, animation: 'none', contentStyle: { backgroundColor: colors.background } }} /></View>
@@ -78,6 +81,11 @@ function DatabaseBootstrap() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    const stopAuth = startAuthLifecycle();
+    const stopSync = startSyncLifecycle();
+    return () => { stopAuth(); stopSync(); };
+  }, []);
   return (
     <ErrorBoundary>
       <DatabaseBootstrap />

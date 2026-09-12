@@ -8,7 +8,7 @@ export const SecureStorageKeys = {
   pendingPersonId: 'smaran.pending-person-id',
 } as const;
 
-export type SecureStorageKey = (typeof SecureStorageKeys)[keyof typeof SecureStorageKeys] | `smaran.dob.${string}`;
+export type SecureStorageKey = (typeof SecureStorageKeys)[keyof typeof SecureStorageKeys] | `smaran.dob.${string}` | `smaran.cloud.${string}`;
 
 export class SecureStorageUnavailableError extends Error {
   constructor() {
