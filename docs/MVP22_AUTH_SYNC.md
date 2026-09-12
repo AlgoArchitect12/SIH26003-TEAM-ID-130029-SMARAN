@@ -1,5 +1,7 @@
 # MVP-22: optional accounts, structured sync, and AI gateway foundation
 
+The final source audit is recorded in section 31. Sections 1-30 retain the implementation-time evidence and Git snapshot; their uncommitted-file inventory is historical, not the current working tree.
+
 Validated on 2026-09-12 in `C:\Users\Dharmin\OneDrive\Desktop\SMARAN-A`, branch `feature/mvp22-auth-sync`, against `58e7938ab71f47f3080ac9d1ec355c07f0ec30ca` / `smaran-mvp21-stable`.
 
 The source implementation and local checks are complete. Live Supabase, Google, PostgreSQL/RLS, Edge Function deployment, and physical-device validation remain pending. No commit, push, merge, tag, APK build, production deployment, or live patient database mutation was performed.
@@ -74,6 +76,8 @@ The migration adds indexes and triggers, without changing/rebuilding domain tabl
 `node scripts/check-auth-sync-migration.cjs` passed using real Node SQLite and the actual migration runner. It populated all seven domain tables for two synthetic patients before migration 008, then verified every previous row and rowid, original schema/index definitions, an extra preservation-check index, and foreign keys. Four injected migration failures rolled back. Fresh creation with FKs on/off passed. Historical migration source comparisons, bootstrap idempotence, malformed-event rejection, and immutable ownership/event checks passed.
 
 No actual patient database was used or reset. Migrations 001–007 remain unchanged. Existing regression expectations were narrowly updated from seven migrations to eight; preservation assertions continue comparing all historical tables/indexes. Dependency and architecture guards now permit only the explicit MVP-22 additions.
+
+Rollback means transaction rollback if migration 008 fails before commit. There is no down migration or verified binary-downgrade path after it succeeds. Preserve the database and queued ownership records and use a forward repair; deleting sync tables/triggers, resetting the database, uninstalling, or restoring an older backup is not an automatic recovery procedure. Any downgrade or backup restoration needs separate authorization and data-preservation validation.
 
 ## 5. Auth architecture
 
@@ -382,3 +386,60 @@ supabase/tests/auth_sync.sql
 ## 30. Safe to commit?
 
 **Yes, as the reviewed MVP-22 source foundation with the documented evidence limits.** Local migration/data-preservation, auth/outbox isolation checks, full regressions, toolchain, and all platform exports passed. This is not a production-release or hosted-cloud readiness claim: server execution/RLS, live auth and two-device sync, deployed gateway, regional copy review, and physical-device checks still gate rollout. No commit was made.
+
+## 31. Final source integration and security audit — 2026-09-12
+
+Audited the complete current source on `feature/mvp22-auth-sync`, starting from a clean working tree at `1a5ef943cf7b8ed361a8d11a9c86a09c06a91637`. That existing commit contains the implementation described above. This audit did not commit, merge, tag, deploy, or build an APK.
+
+**Source is suitable to commit as a foundation; tagging is NO-GO.** No blocking integration/security defect was identified in the inspected source. The only product repair removes the database name from the account platform message. This report also clarifies migration rollback and distinguishes the historical Git snapshot above from the current audit.
+
+| Area | Final source finding and evidence limit |
+| --- | --- |
+| Authentication | Real Supabase email/password APIs, no fabricated account, native SecureStore persistence, PKCE, foreground refresh, explicit storage-error recovery. Controlled SDK tests pass; hosted confirmation, expiry, refresh and revocation remain unverified. |
+| Google | Hosted browser OAuth with S256, Expo auth session, exact custom-scheme callback validation and code exchange. Controlled exchange/cancellation tests pass. Native Google end-to-end is not verified. |
+| Offline use | Auth initializes independently of local bootstrap. No login gate on patient activities. Auth/network failure and logout do not delete patient records. Web intentionally cannot provide native patient storage. |
+| SQLite and outbox | Same-transaction triggers capture eligible writes. Durable mutation IDs, ordered batches, partial receipt handling, bounded retry/backoff, transactional pull/cursor update and stale-account rejection pass real SQLite/controlled RPC tests. No production database was used. |
+| PostgreSQL/RLS | Four owner-scoped tables enable RLS; authenticated direct writes are revoked; RPCs derive ownership from auth.uid(), use an empty search path and serialize account versions. Patient identities/parents are checked within the owner. These are source findings, not executed PostgreSQL results. No cross-account caregiver sharing is implemented. |
+| AI gateway | Handler validates the bearer token through Supabase getUser and accepts only a bounded activity/language request. Valid requests truthfully return 503 not-configured. No AI provider, provider secret, diagnosis or generated clinical advice is wired; deterministic offline coaching remains independent. |
+| Migrations | 001–007 match the MVP-21 baseline. Migration 008 preserves all seeded domain rows/rowids/schema/indexes/FKs, passes fresh creation, repeated initialization and four injected rollback points. Successful-upgrade downgrade is not supported or tested; see section 4. |
+| Account/patient isolation | Separate account generations and patient revisions preserve A→B→A isolation in the exercised local flows. Outbox ownership never transfers to another account, and pulls reject conflicting local identities. Existing local profiles remain shared on the unlocked device. |
+| Logout/switching | Stops cloud continuations and refresh; clears secure session/verifier material with durable interrupted-logout recovery. Offline remote-token revocation is not claimed. B cannot send A's queue or fetch A's cloud rows through the inspected owner-scoped paths. |
+| Photos | No upload path or photo_path in the sync allowlist. Existing local photos survive remote text updates; receiving devices get text only. A remote tombstone can leave an orphaned local photo file, as documented in section 23. |
+| UI/accessibility | Optional account, local exit, readable configuration state, secure password/autofill, large controls and existing palette/contrast system. Removed SQLite from patient-facing account copy. Reviewed regional translations and native assistive-technology checks remain pending. |
+
+Failure-state audit: network/backend errors retain pending work; backoff stops after eight failures and manual retry preserves mutation identity. Only validated acknowledgements remove events. Local writes block pull application until uploaded. Account changes roll back stale local apply/ack transactions; process restart preserves the queue. Lost receipts replay without duplicate records at the controlled transport. Invalid/conflicting events retain an attention state. Expired/revoked sessions depend on SDK refresh and server rejection; live tests remain required. Foreground polling runs every 30 seconds; background sync and immediate refresh of already-open screens/notifications are not guaranteed.
+
+Conflict policy remains a material limitation: mutable records use the last server-accepted whole record, without field merging or retention of losing edits. Immutable history uses the first accepted record; memory/reminder deletion is terminal. This is not a claim of lossless concurrent editing. Local profiles created after logout inherit the last enabled/default owner until another owner enables sync or a previously linked account resumes; existing associations never move. All local profiles, including downloaded records, remain accessible on the unlocked shared device.
+
+### Validation repeated during this audit
+
+All 19 regression scripts listed in section 25 finished with exit 0 after the copy repair and browser cleanup. The shared MVP-22 boundary assertions were also invoked directly and passed. One earlier run correctly failed the visual cleanup guard while Playwright's temporary log folder existed; the folder was removed and the entire suite subsequently passed without weakening the guard.
+
+All requested toolchain commands completed with exit 0 after the repair: `npx.cmd tsc --noEmit`, `npx.cmd expo lint`, `npx.cmd expo-doctor` (18/18), `npx.cmd expo install --check`, `npx.cmd expo config --type public`, and `npx.cmd expo export --platform all`. Final exports contain one 5.75 MB Hermes bundle per native platform and one 3.53 MB web bundle, with 36 static routes. Exports are not native execution or an APK.
+
+Real browser QA used `http://localhost:8087/account` at widths 360, 768 and 1280. No horizontal overflow; actions measured at least 60 pixels high. Email/password fields were read-only while unconfigured, password masking/autofill attributes were correct, and unavailable sign-in actions were disabled. Dark/reduced-motion rendering and keyboard focus/Enter on the local exit passed. The exit reached the intended web native-storage recovery screen. All observed HTTP requests returned 200; no cloud request was made. Console diagnostics were the expected web notification warning and local-storage/onboarding recovery errors. Initial navigation timed out during Metro compilation; the loaded page was then exercised successfully. Browser/server sessions were stopped.
+
+The secret scan covered 223 Git-tracked/untracked text files, then 226 text files including ignored local configuration, and 41 exported JS/Hermes/HTML/JSON files. Five source matches were reviewed: three synthetic fixtures in `scripts/check-auth-sync.cjs` and two password UI labels in `src/i18n/account-strings.ts`. No private credential was identified, and exported-file patterns found no private keys, provider secrets or JWTs. No secret values were printed. This is a source/artifact pattern scan, not a Git-history audit. The ignored `.env` has no usable project URL/key pair; values were not changed.
+
+### Exact external configuration and live gates
+
+- Select a Supabase project; apply `supabase/migrations/20260912000000_auth_sync.sql` and execute `supabase/tests/auth_sync.sql` in a disposable Supabase database before rollout. Verify actual RLS privileges, PostgREST RPC behavior and concurrent commit ordering.
+- Set only the client values `EXPO_PUBLIC_SUPABASE_URL` (HTTPS project origin) and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (modern sb_publishable_ format). No service-role key, database password, Google secret or AI-provider secret belongs in the app environment.
+- Enable email/password auth; configure confirmation email delivery/SMTP, the Auth Site URL and allowed confirmation destinations. Verify delivery, confirmation and subsequent app sign-in.
+- Enable Google's provider with a Google Web application OAuth client ID and server-held client secret. Configure the consent audience/test users and required profile/email scopes. Register the project's exact Supabase callback, normally `https://<project-ref>.supabase.co/auth/v1/callback`, in Google. The existing browser-based flow does not consume separate Android/iOS Google client IDs or a client-side Google secret. See [Supabase Google configuration](https://supabase.com/docs/guides/auth/social-login/auth-google).
+- Allowlist `smaran-ai://auth/callback` in Supabase Auth. Verify that supported Android/iOS builds register the existing `smaran-ai` scheme and `com.smaran.ai` identity, including warm/cold/cancelled callbacks. Expo Go does not verify that custom-scheme build behavior. See [Expo SDK 54 WebBrowser](https://docs.expo.dev/versions/v54.0.0/sdk/webbrowser/) and [Supabase PKCE](https://supabase.com/docs/guides/auth/sessions/pkce-flow).
+- Separately deploy `online-ai` only when authorized. Its server environment needs `SUPABASE_URL` and `SUPABASE_ANON_KEY`; preserve the handler's getUser verification when using the supplied `verify_jwt = false` configuration. Test missing/invalid/expired/revoked tokens, size limits, verifier outage and authenticated 503 behavior. No provider configuration enables generated AI in this implementation. Native requests need no browser CORS allowlist; web auth/sync is intentionally disabled, and this gateway does not implement browser OPTIONS/CORS support.
+- Run actual Android/iOS and two-device tests for populated upgrades, airplane mode, restart/process death during sync, native SecureStore/crypto/autofill, session restoration/refresh/revocation, A logout→B login with delayed responses, retries/conflicts/deletions, profile isolation and incoming reminder reconciliation. Verify large text, high contrast, TalkBack/VoiceOver and regional copy on devices.
+
+No PostgreSQL, hosted auth, deployed gateway or two-device test ran here. psql, Supabase CLI and Deno were unavailable; Docker's daemon was unavailable. No database or cloud service was provisioned or mutated for this audit.
+
+### Final working tree
+
+Only `src/i18n/account-strings.ts` and this report changed during the audit. Nothing is staged. HEAD remains `1a5ef943cf7b8ed361a8d11a9c86a09c06a91637` on `feature/mvp22-auth-sync`.
+
+```text
+ M docs/MVP22_AUTH_SYNC.md
+ M src/i18n/account-strings.ts
+```
+
+The temporary `.playwright-mcp` and previous `.expo/mvp22-checks` audit artifacts were removed. Generated exports remain in ignored `dist`; normal Expo routing/device metadata is retained. No product feature, dependency, schema, permission, authentication or sync behavior changed in this audit. **Safe to commit this source with its documented limits: YES. Safe to tag a validated cloud/native release: NO.**

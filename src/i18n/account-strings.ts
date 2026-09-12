@@ -5,7 +5,7 @@ const en = {
   accountIntro: 'An account is optional. You can keep using Smaran and all your local activities without signing in.',
   accountLocal: 'Continue using Smaran locally',
   accountMissing: 'Cloud sync is not configured on this build.',
-  accountNative: 'Cloud accounts and SQLite sync require the Android or iOS app.',
+  accountNative: 'Cloud accounts and sync require the Android or iOS app.',
   accountEmail: 'Email', accountPassword: 'Password', accountSignIn: 'Sign in', accountCreate: 'Create account',
   accountGoogle: 'Continue with Google', accountLogout: 'Logout', accountEnable: 'Enable backup and sync',
   accountConsent: 'Enabling sync backs up structured records for local people who are not linked to another account. Photos and dates of birth stay on this device. Local people remain visible to anyone using this unlocked device.',
