@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const { execFileSync } = require('node:child_process');
 const baseline = file => execFileSync('git',['show','58e7938:'+file],{encoding:'utf8'});
 const authorized = new Set([
+  'src/db/migrations/009_extra_cognitive_games.ts', // Explicit forward-migration authorization for the two extra games.
   'package.json','package-lock.json','src/db/migrations/index.ts','src/db/migrations/008_auth_sync.ts',
   'src/db/repositories/sync.repository.ts','src/services/secure-storage.service.ts',
   'src/i18n/account-strings.ts','src/i18n/strings.ts','src/i18n/regional-strings.ts','src/i18n/ux-strings.ts',

@@ -40,13 +40,16 @@ async function main() {
   const now = new Date(2026, 2, 8, 12); // Spring DST transition in New York.
   const w7 = analyticsWindow(7, now), w30 = analyticsWindow(30, now);
   const stamp = (offset, hour = 9) => new Date(2026, 2, 8 + offset, hour).toISOString();
+  const completed = (game, level) => game === 'remember_lights' ? 2 * (level + 1) : game === 'number_path' ? [5, 7, 10, 10, 10][level - 1] : 2;
   const add = async (owner, gameType, at, attempts = 4, ms = 1000, difficulty = 2) => {
+    const correct = completed(gameType, difficulty);
+    attempts += correct - 2; // Keep the same error counts with each game's actual completion length.
     const metrics = gameType === 'memory_match' ? { totalPairs: 2, matches: 2, repeatedMistakes: 1 }
       : ['pattern_recognition','familiar_object','picture_recall'].includes(gameType) ? { challengesCompleted: 2, correctSelections: 2, repeatedErrors: 1 }
-        : { stepsCompleted: 2, correctSelections: 2, repeatedErrors: 1 };
+        : { stepsCompleted: correct, correctSelections: correct, repeatedErrors: 1 };
     return repo.saveCompletedSession({ patientId: owner, gameType, ...metrics, difficulty,
       startedAt: new Date(Date.parse(at) - 5000).toISOString(), completedAt: at,
-      attempts, hintsUsed: 1, averageResponseMs: ms, accuracy: 2 / attempts, feedbackLabel: null, recommendedDifficulty: difficulty + 1 });
+      attempts, hintsUsed: 1, averageResponseMs: ms, accuracy: correct / attempts, feedbackLabel: null, recommendedDifficulty: difficulty + 1 });
   };
   const snapshot = () => JSON.stringify(sqlite.prepare('SELECT * FROM cognitive_sessions ORDER BY id').all()) +
     JSON.stringify(sqlite.prepare('SELECT * FROM adaptive_model_state ORDER BY patient_id, game_type').all()) +
@@ -94,14 +97,15 @@ async function main() {
     const weighted = await summary('weighted', 7, now);
     for (const game of weighted.games) {
       const row = game.summary;
-      assert.equal(row.sessions, 3); assert.equal(row.attempts, 20); assert.equal(row.correct, 6);
-      close(row.accuracy, 6 / 20); close(row.averageResponseMs, 46000 / 20);
+      const c2 = completed(game.gameType, 2), c3 = completed(game.gameType, 3), correct = 2 * c2 + c3, attempts = correct + 14;
+      assert.equal(row.sessions, 3); assert.equal(row.attempts, attempts); assert.equal(row.correct, correct);
+      close(row.accuracy, correct / attempts); close(row.averageResponseMs, (46000 + 4000 * (c2 - 2) + 2000 * (c3 - 2)) / attempts);
       assert.equal(row.hints, 3); assert.equal(row.repeatedErrors, 3);
       assert.equal(row.participationDays, 3); assert.equal(row.averageElapsedMs, 5000);
       assert.equal(row.latestAt, stamp(0)); assert.equal(row.latestDifficulty, 2); assert.equal(row.recommendedDifficulty, 3);
-      close(game.levels[0].accuracy, 4 / 14); close(game.levels[0].averageResponseMs, 34000 / 14);
+      close(game.levels[0].accuracy, 2 * c2 / (2 * c2 + 10)); close(game.levels[0].averageResponseMs, (34000 + 4000 * (c2 - 2)) / (2 * c2 + 10));
       assert.equal(game.levels[0].sessions, 2); assert.equal(game.levels[1].sessions, 1);
-      assert.notEqual(row.accuracy, (2 / 4 + 2 / 10 + 2 / 6) / 3, 'not an unweighted mean of percentages');
+      assert.notEqual(row.accuracy, (c2 / (c2 + 2) + c2 / (c2 + 8) + c3 / (c3 + 4)) / 3, 'not an unweighted mean of percentages');
     }
     // Existing schema requires core facts. Nullable feedback and invalid legacy elapsed timing remain unknown.
     const unknown = await add('weighted', 'memory_match', stamp(-3));
@@ -124,7 +128,7 @@ async function main() {
     const one = await summary('one', 7, now), two = await summary('two', 30, now);
     assert.equal(reads.length, 2, 'one snapshot SELECT per summary');
     assert.ok(one.games.every(game => game.summary.sessions === 61 && game.summary.participationDays === 1));
-    assert.ok(two.games.every(game => game.summary.sessions === 1 && game.summary.attempts === 10));
+    assert.ok(two.games.every(game => game.summary.sessions === 1 && game.summary.attempts === completed(game.gameType, 2) + 8));
     const expected = sqlite.prepare('SELECT id FROM cognitive_sessions WHERE patient_id = ? AND is_demo_seed = 0 ORDER BY completed_at DESC,id DESC').all('one').map(row => row.id);
     const seen = []; let cursor;
     do {
@@ -135,7 +139,7 @@ async function main() {
       if (cursor) await assert.rejects(history('two', cursor, 17), /cursor/);
     } while (cursor);
     assert.deepEqual(seen, expected, '>50 rows with identical timestamps: no loss, no duplicates, correct order');
-    assert.equal(new Set(seen).size, 366);
+    assert.equal(new Set(seen).size, 61 * games.length);
     const first = await history('one', undefined, 50);
     assert.equal(first.sessions.length, 50); assert.ok(first.next);
     await assert.rejects(history('one', undefined, 51)); await assert.rejects(history('one', undefined, 0));
@@ -174,7 +178,7 @@ async function main() {
     const allAfter = []; cursor = undefined;
     do { const page = await history('one', cursor, 50); allAfter.push(...page.sessions.map(row => row.id)); cursor = page.next; } while (cursor);
     assert.ok(allAfter.includes(inserted.id), 'new traversal includes new completions');
-    console.log(`PASS analytics (${process.env.TZ || 'device local'}): real SQLite/migrations/repository/service; all six games; empty, two patients, active switch and in-flight switch; 1/7/30 calendar days; midnight/DST; weighted game/level metrics; 366 tied sessions; pagination; unknown timing/feedback; demo exclusion; read-only; failure/retry.`);
+    console.log(`PASS analytics (${process.env.TZ || 'device local'}): real SQLite/migrations/repository/service; all ${games.length} games; empty, two patients, active switch and in-flight switch; 1/7/30 calendar days; midnight/DST; weighted game/level metrics; ${61 * games.length} tied sessions; pagination; unknown timing/feedback; demo exclusion; read-only; failure/retry.`);
   } finally { sqlite.close(); }
 
   const { analyticsStrings } = load('src/i18n/analytics-strings.ts');

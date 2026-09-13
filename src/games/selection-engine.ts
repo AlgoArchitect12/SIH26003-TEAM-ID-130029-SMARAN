@@ -73,7 +73,7 @@ export function finalizeSelection(state: SelectionState, gameType: Exclude<Cogni
     accuracy: state.correctSelections / state.attempts,
     averageResponseMs: state.durationsMs.reduce((sum, duration) => sum + duration, 0) / state.attempts,
   };
-  return gameType === 'routine_recall' || gameType === 'sequence_memory'
+  return gameType === 'routine_recall' || gameType === 'sequence_memory' || gameType === 'remember_lights' || gameType === 'number_path'
     ? { ...common, gameType, stepsCompleted: state.correctSelections }
     : { ...common, gameType, challengesCompleted: state.correctSelections };
 }

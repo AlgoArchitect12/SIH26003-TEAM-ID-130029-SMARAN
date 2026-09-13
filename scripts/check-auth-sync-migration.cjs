@@ -70,7 +70,17 @@ async function main() {
     const before = Object.fromEntries(tables.map(table=>[table,rows(table)]));
     const oldSchema = schema();
     const fks = Object.fromEntries(tables.map(table=>[table,sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all()]));
-    const run = load('src/db/migrations/index.ts').runMigrations;
+    // Inspect the exact 007→008 boundary while the production runner applies both migrations.
+    const migration9 = load('src/db/migrations/009_extra_cognitive_games.ts').extraCognitiveGamesMigration;
+    let checked008 = 0;
+    const run = load('src/db/migrations/index.ts', {
+      './009_extra_cognitive_games': { extraCognitiveGamesMigration: { ...migration9, up: async tx => {
+        for (const item of oldSchema) assert.deepEqual(schema().find(r=>r.name===item.name),item,'preserved 008 schema '+item.name);
+        assert.equal(rows('schema_migrations').length,8);
+        checked008++;
+        await migration9.up(tx);
+      } } },
+    }).runMigrations;
     for (const fault of ['CREATE TABLE sync_outbox','CREATE TRIGGER sync_validate_reminders','CREATE TRIGGER sync_initial_snapshot','INSERT INTO schema_migrations']) {
       db.fault = fault;
       await assert.rejects(run(db),/Injected/);
@@ -84,8 +94,8 @@ async function main() {
       else assert.deepEqual(rows(table),before[table],'every row/field/rowid '+table);
       assert.deepEqual(sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(),fks[table]);
     }
-    for (const item of oldSchema) assert.deepEqual(schema().find(r=>r.name===item.name),item,'preserved schema '+item.name);
-    assert.equal(rows('schema_migrations').length,8);
+    assert.equal(checked008,1,'production runner reaches the preserved 008 boundary exactly once');
+    assert.equal(rows('schema_migrations').length,9);
     assert.equal(rows('sync_outbox').length,0,'local-only migration does not enqueue');
     const repo = load('src/db/repositories/sync.repository.ts',{'../client':{getDatabase:async()=>db}}).syncRepository;
     await repo.link(A,()=>true);
@@ -110,7 +120,7 @@ async function main() {
   for (const foreignKeys of [0,1]) {
     const {sqlite,db}=createDatabase();
     try { sqlite.exec(`PRAGMA foreign_keys=${foreignKeys}`); await load('src/db/migrations/index.ts').runMigrations(db);
-      assert.equal(sqlite.prepare('SELECT count(*) n FROM schema_migrations').get().n,8);
+      assert.equal(sqlite.prepare('SELECT count(*) n FROM schema_migrations').get().n,9);
       assert.deepEqual(sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
     } finally { sqlite.close(); }
   }

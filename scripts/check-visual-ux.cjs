@@ -184,6 +184,7 @@ assert.doesNotMatch(added, /Rahul Sharma|demoPatient|fakeScore|samplePatient|dem
 // MVP-20 explicitly authorizes these cognitive files and migration 007's registry entry.
 // Keep every other protected path guarded, including historical migrations 001–006.
 const cognitiveAIPaths = new Set([
+  'src/games/grid-activities.ts', 'src/i18n/extra-game-strings.ts', 'src/games/memory-match/engine.ts',
   // MVP-21 authorizes only these additional reminder/speech sources. Database/config guards remain below.
   'src/my-day/presets.ts', 'src/i18n/my-day-strings.ts',
   'src/db/repositories/my-day.repository.ts', 'src/services/my-day.service.ts', 'src/services/speech.service.ts',
@@ -201,6 +202,9 @@ const analyticsCopyDiff = git('diff', '--unified=0', 'e6b0f2c', '--', 'src/i18n/
 assert.ok(analyticsCopyDiff.every(line => /^[+-]  analyticsSelectionAttempts: /.test(line)),
   'Only the six-game attempt description is authorized to change in the analytics catalog');
 const { authorized, checkMvp22Boundaries } = require('./check-mvp22-boundaries.cjs');
+assert.equal(fs.readFileSync(path.join(root, 'src/games/memory-match/engine.ts'), 'utf8').replace(/\r\n/g, '\n').trim(),
+  git('show', '9a4f43c:src/games/memory-match/engine.ts').replace('function shuffle<T>', 'export function shuffle<T>').trim(),
+  'Memory Match behavior is unchanged; only its existing shuffle is shared');
 checkMvp22Boundaries();
 const outsideCognitiveAI = output => output.trim().split(/\r?\n/).filter(file => file && !cognitiveAIPaths.has(file) && !authorized.has(file));
 const baselinePaths = ['package.json', 'package-lock.json', 'app.json', 'eas.json', 'plugins/with-private-backup.cjs',

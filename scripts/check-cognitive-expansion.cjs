@@ -113,6 +113,8 @@ async function architectureChecks() {
       attempts: 5, accuracy: .6, hintsUsed: 1, averageResponseMs: 1000, feedbackLabel: null,
       ...(gameType === 'memory_match' ? { totalPairs: 3, matches: 3, repeatedMistakes: 1 } :
         ['pattern_recognition','familiar_object','picture_recall'].includes(gameType) ? { challengesCompleted: 3, correctSelections: 3, repeatedErrors: 1 } :
+        gameType === 'remember_lights' || gameType === 'number_path' ? { stepsCompleted: gameType === 'remember_lights' ? 4 : 5,
+          correctSelections: gameType === 'remember_lights' ? 4 : 5, repeatedErrors: 1, attempts: 7, accuracy: (gameType === 'remember_lights' ? 4 : 5) / 7 } :
         { stepsCompleted: 3, correctSelections: 3, repeatedErrors: 1 }),
     });
     const modelsBefore = table('adaptive_model_state');
@@ -175,7 +177,7 @@ async function architectureChecks() {
     assert.deepEqual([table('cognitive_sessions'),table('adaptive_model_state')], beforeReopen, 'file reopen persistence');
     const { loadCaregiverDashboard } = load('src/services/caregiver.service.ts',overrides,cache);
     const dashboard = await loadCaregiverDashboard('one', new Date('2026-09-07T12:00:00'));
-    assert.equal(dashboard.cognitive.today, 6, 'all six genuine games; old one-patient rows are demo');
+    assert.equal(dashboard.cognitive.today, 8, 'all eight genuine games; old one-patient rows are demo');
     assert.equal(dashboard.cognitive.recent.length, 3, 'dashboard keeps its latest-three limit');
     assert.ok(dashboard.cognitive.recent.every(row => CognitiveActivityTypes.includes(row.gameType)));
     assert.deepEqual(new Set((await repo.getRecentSessions('one', 50)).map(row=>row.gameType)), new Set(CognitiveActivityTypes));
@@ -196,7 +198,7 @@ async function architectureChecks() {
     // Separate fresh database runs the real registry 001→007.
     sqlite.close(); sqlite = new DatabaseSync(':memory:'); sqlite.exec('PRAGMA foreign_keys = ON');
     await runner(db); await runner(db);
-    assert.equal(table('schema_migrations').length, 8);
+    assert.equal(table('schema_migrations').length, 9);
     assert.equal(table('cognitive_sessions').length, 0); assert.equal(table('adaptive_model_state').length, 0);
     assert.deepEqual(await db.getAllAsync('PRAGMA foreign_key_check'), []);
     console.log('PASS: fresh 001–007 chain, idempotence, no seeded activities/models');

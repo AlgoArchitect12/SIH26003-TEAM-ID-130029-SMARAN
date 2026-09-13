@@ -3,7 +3,7 @@ import { MemorySymbols } from './assets';
 import type { FlipOutcome, MemoryCard, MemoryGameState } from './types';
 import type { DifficultyLevel } from '@db/schema.types';
 
-function shuffle<T>(values: readonly T[], random: () => number): T[] {
+export function shuffle<T>(values: readonly T[], random: () => number): T[] {
   const result = [...values];
   for (let index = result.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(random() * (index + 1));

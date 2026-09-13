@@ -12,6 +12,8 @@ Run `npx tsc --noEmit`, `npx expo lint` and the regression scripts in `scripts/`
 
 Optional Supabase accounts, structured offline sync, configuration, validation evidence, and remaining cloud/device checks are documented in [MVP22 auth and sync](docs/MVP22_AUTH_SYNC.md). Local patient use requires no account; personal photos remain device-only.
 
+The eight-activity catalog includes Remember the Lights and Number Path. See [the extra games report](docs/EXTRA_COGNITIVE_GAMES.md) for gameplay, difficulty, migration 009, the forward cloud validator, regression results, and remaining device checks.
+
 ## Brand assets
 
 The teal lotus extends the existing Home mark: Material Icons `spa`, bundled with `@expo/vector-icons`. Launcher, adaptive, monochrome, splash and favicon PNGs are generated from that same glyph. On Windows, regenerate with `powershell -NoProfile -File scripts/generate-brand-assets.ps1` after installing dependencies. No new runtime dependency is needed.

@@ -145,7 +145,9 @@ function validateSession(input: CompletedSessionInput) {
     correct !== completed ||
     repeated > input.attempts - correct ||
     (input.gameType === 'routine_recall' && (completed < 2 || completed > 5)) ||
-    (input.gameType === 'sequence_memory' && (completed < 2 || completed > 6))
+    (input.gameType === 'sequence_memory' && (completed < 2 || completed > 6)) ||
+    (input.gameType === 'remember_lights' && completed !== 2 * (input.difficulty + 1)) ||
+    (input.gameType === 'number_path' && completed !== [5, 7, 10, 10, 10][input.difficulty - 1])
   ) {
     throw new Error('Completed activity counts are inconsistent.');
   }

@@ -22,6 +22,8 @@ export function extractAdaptiveFeatures(input: AdaptiveSessionInput): FeatureExt
     case 'pattern_recognition': return extractPatternFeatures({ ...input, telemetry: input.telemetry });
     case 'routine_recall': return extractRoutineFeatures({ ...input, telemetry: input.telemetry });
     case 'familiar_object':
+    case 'remember_lights':
+    case 'number_path':
     case 'sequence_memory':
     case 'picture_recall': return extractSelectionFeatures({ ...input, telemetry: input.telemetry });
   }

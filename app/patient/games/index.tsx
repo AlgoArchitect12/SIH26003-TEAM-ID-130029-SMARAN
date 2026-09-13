@@ -23,6 +23,8 @@ const activities = {
   familiar_object: { subtitle: 'familiarSubtitle', route: '/patient/games/familiar-object', icon: 'search' },
   sequence_memory: { subtitle: 'sequenceSubtitle', route: '/patient/games/sequence-memory', icon: 'view-list' },
   picture_recall: { subtitle: 'pictureSubtitle', route: '/patient/games/picture-recall', icon: 'photo-library' },
+  remember_lights: { subtitle: 'lightsSubtitle', route: '/patient/games/remember-lights', icon: 'lightbulb-outline' },
+  number_path: { subtitle: 'numberSubtitle', route: '/patient/games/number-path', icon: 'format-list-numbered' },
 } as const satisfies Record<CognitiveActivityType, { subtitle: TranslationKey; route: string; icon: string }>;
 
 export default function ActivitiesScreen() {

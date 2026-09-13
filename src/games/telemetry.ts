@@ -21,6 +21,8 @@ export function activityMetrics(value: CognitiveSessionMetrics): CognitiveSessio
     case 'familiar_object':
     case 'picture_recall': return { gameType: value.gameType, challengesCompleted: value.challengesCompleted, correctSelections: value.correctSelections, repeatedErrors: value.repeatedErrors };
     case 'routine_recall':
+    case 'remember_lights':
+    case 'number_path':
     case 'sequence_memory': return { gameType: value.gameType, stepsCompleted: value.stepsCompleted, correctSelections: value.correctSelections, repeatedErrors: value.repeatedErrors };
   }
 }

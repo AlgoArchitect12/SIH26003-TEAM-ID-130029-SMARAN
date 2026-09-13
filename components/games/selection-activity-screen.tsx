@@ -26,6 +26,8 @@ import { preparePatterns, type PatternChallenge, type PatternShape } from '@/src
 import { prepareRoutine, type Routine } from '@/src/games/routine-recall';
 import { prepareFamiliarObjects, prepareSequence, preparePictures, type ObjectTask, type RecallActivity } from '@/src/games/recall-activities';
 import { getMemorySymbol } from '@/src/games/memory-match/assets';
+import { prepareGridActivity, type GridActivity } from '@/src/games/grid-activities';
+import { GridActivityBoard } from '@components/games/grid-activity-board';
 import type { MemorySymbolId } from '@/src/games/memory-match/types';
 import {
   chooseSelection, continueSelection, createSelection, finalizeSelection, hintSelection, resumeSelection,
@@ -36,7 +38,7 @@ type SelectionActivity = Exclude<CognitiveActivityType, 'memory_match'>;
 type ActivityData = {
   patientId: string; settings: PatientSettings; level: DifficultyLevel; history: readonly CognitiveSession[];
   model: AdaptiveModelState; tasks: readonly SelectionTask[]; patterns: readonly PatternChallenge[] | null; routine: Routine | null;
-  objects: readonly ObjectTask[] | null; recall: RecallActivity | null; isCurrent: () => boolean;
+  objects: readonly ObjectTask[] | null; recall: RecallActivity | null; grid: GridActivity | null; isCurrent: () => boolean;
 };
 const shapeKeys = { circle: 'shapeCircle', triangle: 'shapeTriangle', square: 'shapeSquare', star: 'shapeStar' } as const satisfies Record<PatternShape, TranslationKey>;
 const shapeIcons = { circle: 'circle', triangle: 'change-history', square: 'square', star: 'star' } as const;
@@ -44,6 +46,7 @@ const shapeIcons = { circle: 'circle', triangle: 'change-history', square: 'squa
 const instructionKeys = {
   pattern_recognition: 'patternInstructions', routine_recall: 'routineInstructions',
   familiar_object: 'familiarInstructions', sequence_memory: 'sequenceInstructions', picture_recall: 'pictureInstructions',
+  remember_lights: 'lightsInstructions', number_path: 'numberInstructions',
 } as const satisfies Record<SelectionActivity, TranslationKey>;
 
 function ShapeRow({ shapes, language }: { shapes: readonly (PatternShape | null)[]; language: Language }) {
@@ -105,7 +108,8 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
       const preparedRoutine = gameType === 'routine_recall' ? prepareRoutine(level) : null;
       const objects = gameType === 'familiar_object' ? prepareFamiliarObjects(level) : null;
       const recall = gameType === 'sequence_memory' ? prepareSequence(level) : gameType === 'picture_recall' ? preparePictures(level) : null;
-      const tasks = patterns ?? preparedRoutine?.tasks ?? objects ?? recall?.tasks;
+      const grid = gameType === 'remember_lights' || gameType === 'number_path' ? prepareGridActivity(gameType, level) : null;
+      const tasks = patterns ?? preparedRoutine?.tasks ?? objects ?? recall?.tasks ?? grid?.tasks;
       if (!tasks) throw new Error('Activity content is unavailable.');
       createSelection(tasks, 0); // Validate bundled content before offering Start.
       const store = useOnboardingStore.getState();
@@ -115,7 +119,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
         reducedMotion: settings.reducedMotion, voiceGuidance: settings.voiceGuidance,
       });
       setData({ patientId: profile.id, settings, level, history, model: stored ?? createInitialAdaptiveModel(profile.id, gameType),
-        tasks, patterns, routine: preparedRoutine?.routine ?? null, objects, recall, isCurrent });
+        tasks, patterns, routine: preparedRoutine?.routine ?? null, objects, recall, grid, isCurrent: () => active && isCurrent() });
     })().catch(() => { if (active && isCurrent()) setFailed(true); });
     return () => { active = false; };
   }, [attempt, gameType, router]);
@@ -136,7 +140,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
   const object = data?.objects?.[selection?.position ?? 0];
   const optionText = (choice: string) => data?.routine
     ? data.routine.steps.find(step => step.id === choice)?.text ?? ''
-    : data?.patterns ? t(language, shapeKeys[choice as PatternShape]) : t(language, getMemorySymbol(choice as MemorySymbolId).labelKey);
+    : data?.grid ? choice : data?.patterns ? t(language, shapeKeys[choice as PatternShape]) : t(language, getMemorySymbol(choice as MemorySymbolId).labelKey);
   const position = pattern ? (pattern.missingIndex ?? (pattern.kind === 'match' ? 0 : pattern.sequence.length)) + 1 : (selection?.position ?? 0) + 1;
   const prompt = object ? t(language, data && data.level <= 2 ? 'familiarFind' : object.cue, { answer: optionText(object.answer) })
     : gameType === 'sequence_memory' ? t(language, 'sequenceQuestion', { position: String(position) })
@@ -195,6 +199,9 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
           onPress={() => { if (data.isCurrent() && !current.current) update(createSelection(data.tasks, Date.now())); }} />
       </> : <>
         <ThemedText accessibilityLiveRegion="polite" type="action">{t(language, 'activityProgress', { current: String(selection.correctSelections), total: String(data.tasks.length) })}</ThemedText>
+        {data.grid ? <GridActivityBoard key={Math.floor(selection.position / data.grid.roundLength)} activity={data.grid} selection={selection}
+          language={language} voice={data.settings.voiceGuidance} isCurrent={data.isCurrent} onContinue={finishOrContinue}
+          onChange={change => { if (data.isCurrent() && current.current) update(change(current.current)); }} /> : <>
         {pattern && <View style={styles.group}>
           {pattern.kind !== 'match' && <>
             <ThemedText>{t(language, 'patternRepeat')}</ThemedText>
@@ -230,6 +237,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
         {selection.awaitingContinue ? <SmaranButton testID="activity-continue" label={t(language, 'activityContinue')} accessibilityLabel={t(language, 'activityContinue')} onPress={finishOrContinue} /> :
           <SmaranButton testID="activity-hint" variant="outline" label={t(language, 'gameHint')} accessibilityLabel={t(language, 'gameHint')}
             disabled={selection.hintLevel === 3} onPress={() => { if (data.isCurrent() && current.current) update(hintSelection(current.current)); }} />}
+        </>}
         {finishingFailed && <ThemedText accessibilityRole="alert">{t(language, 'activityPrepareFailed')}</ThemedText>}
       </>}
     </>}
