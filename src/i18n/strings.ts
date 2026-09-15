@@ -1,5 +1,6 @@
 import { uxStrings } from './ux-strings';
 import { accountStrings } from './account-strings';
+import { careCircleStrings } from './care-circle-strings';
 import { profileStrings } from './profile-strings';
 import { cognitiveStrings } from './cognitive-strings';
 import { careStrings } from './care-strings';
@@ -13,6 +14,7 @@ import { regionalRegionNames, regionalStrings } from './regional-strings';
 
 const english = {
   ...accountStrings.en,
+  ...careCircleStrings.en,
   ...uxStrings.en,
   ...profileStrings.en,
   ...myHomeStrings.en,
@@ -293,6 +295,7 @@ const assameseGame = {
 const hindi = {
   ...uxStrings.hi,
   ...accountStrings.hi,
+  ...careCircleStrings.hi,
   ...profileStrings.hi,
   ...myHomeStrings.hi,
   ...careStrings.hi,
@@ -396,6 +399,7 @@ const hindi = {
 const assamese = {
   ...uxStrings.as,
   ...accountStrings.as,
+  ...careCircleStrings.as,
   ...profileStrings.as,
   ...myHomeStrings.as,
   ...careStrings.as,

@@ -1,5 +1,6 @@
 import { uxStrings } from './ux-strings';
 import { accountStrings } from './account-strings';
+import { careCircleStrings } from './care-circle-strings';
 import { profileStrings } from './profile-strings';
 import { cognitiveStrings } from './cognitive-strings';
 import { careStrings } from './care-strings';
@@ -13,6 +14,7 @@ import type { TranslationCatalog } from './strings';
 
 const bengali = {
   ...accountStrings.bn,
+  ...careCircleStrings.bn,
   ...uxStrings.bn,
   ...profileStrings.bn,
   ...myHomeStrings.bn,
@@ -168,6 +170,7 @@ const bengali = {
 
 const meitei = {
   ...accountStrings.mni,
+  ...careCircleStrings.mni,
   ...uxStrings.mni,
   ...profileStrings.mni,
   ...myHomeStrings.mni,
@@ -323,6 +326,7 @@ const meitei = {
 
 const khasi = {
   ...accountStrings.kha,
+  ...careCircleStrings.kha,
   ...uxStrings.kha,
   ...profileStrings.kha,
   ...myHomeStrings.kha,
@@ -478,6 +482,7 @@ const khasi = {
 
 const mizo = {
   ...accountStrings.lus,
+  ...careCircleStrings.lus,
   ...uxStrings.lus,
   ...profileStrings.lus,
   ...myHomeStrings.lus,

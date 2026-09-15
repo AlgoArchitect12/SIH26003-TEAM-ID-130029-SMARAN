@@ -1,4 +1,6 @@
-import { SYNC_COLUMNS_V1, type SyncEntity } from '../db/migrations/008_auth_sync';
+import { SYNC_COLUMNS as SYNC_COLUMNS_V1, type SyncEntity } from './care-sync-columns';
+import { validateMember, parseScopes } from '../caregiver/care-circle';
+import { parseReportFacts } from '../caregiver/reports';
 import { CognitiveActivityTypes, type AgeBracket } from '../db/schema.types';
 import { validateCreatePatientProfile } from '../utils/validation';
 
@@ -36,6 +38,21 @@ export function validateCloudRecord(value: unknown, owner: string): CloudRecord 
     throw new Error('Invalid sync fields.');
   }
   const p = r.payload;
+  if (r.entity_type === 'care_circle_members') {
+    const scopes = parseScopes(String(p.scopes));
+    validateMember({ display_name: p.display_name as string, relationship: p.relationship as string,
+      access_role: p.access_role as 'family', email: p.email as string | null, phone: p.phone as string | null, scopes });
+    if (!['local','revoked'].includes(String(p.status)) || (p.status === 'revoked' && scopes.length)) throw new Error('Invalid care status.');
+  }
+  if (r.entity_type === 'activity_reports') {
+    parseReportFacts(String(p.snapshot));
+    if (p.report_version !== 1 || !['generated','share_requested'].includes(String(p.delivery_state)) ||
+        typeof p.period_start !== 'string' || typeof p.period_end !== 'string' || !Number.isFinite(Date.parse(p.period_start)) ||
+        !Number.isFinite(Date.parse(p.period_end)) || p.period_start >= p.period_end) throw new Error('Invalid report.');
+  }
+  if (r.entity_type === 'report_preferences' && (!['weekly','monthly'].includes(String(p.frequency)) ||
+      ![0,1].includes(Number(p.requested)) || typeof p.requested !== 'number' || p.delivery_status !== 'not_configured' ||
+      (p.recipient_id !== null && !id(p.recipient_id)) || (p.requested === 1 && (!p.recipient_id || !p.consented_at || !p.last_requested_at)))) throw new Error('Invalid delivery preference.');
   if (r.entity_type === 'patient_profiles') validateCreatePatientProfile({ id: String(p.id), preferredName: p.preferred_name as string,
     ageBracket: p.age_bracket as AgeBracket | null, emergencyName: p.emergency_name as string | null, emergencyPhone: p.emergency_phone as string | null });
   if (r.entity_type === 'adaptive_model_state') {
@@ -45,7 +62,7 @@ export function validateCloudRecord(value: unknown, owner: string): CloudRecord 
     }
   }
   if ((r.entity_type === 'patient_profiles' ? p.id : p.patient_id) !== r.patient_id) throw new Error('Invalid patient ownership.');
-  const expectedId = r.entity_type === 'patient_settings' ? r.patient_id
+  const expectedId = ['patient_settings', 'report_preferences'].includes(r.entity_type) ? r.patient_id
     : r.entity_type === 'adaptive_model_state' ? `${r.patient_id}:${p.game_type}`
       : r.entity_type === 'reminder_events' ? `${p.reminder_id}:${String(p.scheduled_for).slice(0, 10)}` : p.id;
   if (r.entity_id !== expectedId || ('id' in p && !id(p.id)) || ('reminder_id' in p && !id(p.reminder_id))) throw new Error('Invalid entity identity.');
@@ -53,7 +70,7 @@ export function validateCloudRecord(value: unknown, owner: string): CloudRecord 
   // Domain constraints remain enforced by SQLite; protect timestamps/numeric/text shape before SQL binding.
   for (const [column, item] of Object.entries(p)) {
     if (column.endsWith('_at') && item !== null && (typeof item !== 'string' || !Number.isFinite(Date.parse(item)))) throw new Error('Invalid timestamp.');
-    if (typeof item === 'string' && item.length > 2048) throw new Error('Invalid text size.');
+    if (typeof item === 'string' && new TextEncoder().encode(item).length > (r.entity_type === 'activity_reports' && column === 'snapshot' ? 12000 : 2048)) throw new Error('Invalid text size.');
   }
   return r;
 }

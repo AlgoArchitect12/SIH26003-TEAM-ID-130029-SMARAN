@@ -1,6 +1,7 @@
 import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { CurrentPerson } from '@components/patient/current-person';
+import { CareOverview } from '@components/caregiver/care-overview';
 import { useIsFocused } from '@react-navigation/native';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { Stack, useRouter } from 'expo-router';
@@ -109,6 +110,7 @@ export default function CaregiverHomeScreen() {
         onPress={() => router.replace('/onboarding/role')} />
     </SmaranCard>}
     {status === 'ready' && data && <>
+      <CareOverview language={language} />
       {voiceGuidance && <ReadScreenButton language={language} text={summary} labelKey="careReadSummary" />}
       <Section title={t(language, 'careGlance')}>
         <View style={styles.metrics}>

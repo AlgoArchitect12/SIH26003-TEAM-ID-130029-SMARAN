@@ -53,7 +53,7 @@ async function main() {
     const { runMigrations } = load('src/db/migrations/index.ts');
     await runMigrations(db); await runMigrations(db);
     assert.deepEqual(await snapshot(), before);
-    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length,9);
+    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length,10);
     assert.deepEqual(await repo.today(patient),[]);
     for (const bad of [{type:'invalid'}, {timeOfDay:'24:00'}, {title:' '}, {repeatRule:'weekly'}, {repeatRule:'once',scheduledDate:'2026-02-30'}]) {
       assert.throws(() => validateReminder({...base,...bad}));
@@ -339,7 +339,7 @@ async function main() {
     }
     sqlite.close(); sqlite=new DatabaseSync(':memory:'); sqlite.exec('PRAGMA foreign_keys = ON');
     await runMigrations(db); await runMigrations(db);
-    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length,9);
+    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length,10);
     assert.deepEqual(await repo.list(patient),[]);
     console.log('PASS: migrations 001–007 and idempotence, existing data, constraints/FKs, patient isolation, five categories, file reopen persistence, append-only/duplicate Done, local dates, CRUD, notification permission/failure/retry/cancel/reschedule/queue and web fallback; explicit completion ownership/status, binding audit, early-Done and tomorrow schedule preservation');
     console.log('PASS: seven-language daily/once notification content, warm language rescheduling, safe presented messages, patient isolation and missing/failed language lookup fallback without losing saved reminders');

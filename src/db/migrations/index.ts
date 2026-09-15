@@ -9,6 +9,7 @@ import { cognitiveExpansionMigration } from './006_cognitive_expansion';
 import { cognitiveAIExpansionMigration } from './007_cognitive_ai_expansion';
 import { authSyncMigration } from './008_auth_sync';
 import { extraCognitiveGamesMigration } from './009_extra_cognitive_games';
+import { careCircleReportsMigration } from './010_care_circle_reports';
 
 const migrations = [
   coreBootstrapMigration,
@@ -20,6 +21,7 @@ const migrations = [
   cognitiveAIExpansionMigration,
   authSyncMigration,
   extraCognitiveGamesMigration,
+  careCircleReportsMigration,
 ] as const;
 
 type AppliedMigrationRow = { version: number };

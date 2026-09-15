@@ -82,8 +82,19 @@ function contracts() {
     assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /among\s*us|simon\s*says|reactor|unlock\s*manifolds|countdown|setInterval|https?:|diagnos|dementia stage|prevent cognitive|slow cognitive/i);
   }
   for (const file of [...fs.readdirSync('src/db/migrations').filter(f => /^00[1-8]_/.test(f)).map(f => 'src/db/migrations/' + f),
-    'supabase/migrations/20260912000000_auth_sync.sql', 'package.json', 'package-lock.json', 'src/db/client.web.ts']) {
+    'supabase/migrations/20260912000000_auth_sync.sql', 'src/db/client.web.ts']) {
     assert.equal(fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n'), execFileSync('git', ['show', '9a4f43c:' + file], { encoding: 'utf8' }).replace(/\r\n/g, '\n'), file + ' unchanged');
+  }
+  // MVP-23 authorizes only these two SDK-54 PDF dependencies. Compare every other field/locked package.
+  for (const file of ['package.json','package-lock.json']) {
+    const before = JSON.parse(execFileSync('git',['show','a58ea61:'+file],{encoding:'utf8'}));
+    const after = JSON.parse(fs.readFileSync(file,'utf8'));
+    const dependencies = file === 'package.json' ? after.dependencies : after.packages[''].dependencies;
+    for (const [name,version] of Object.entries({'expo-print':'~15.0.8','expo-sharing':'~14.0.8'})) {
+      assert.equal(dependencies[name],version); delete dependencies[name];
+      if (file === 'package-lock.json') { assert.equal(after.packages['node_modules/'+name].version,version.slice(1)); delete after.packages['node_modules/'+name]; }
+    }
+    assert.deepEqual(after,before,'all other dependency fields preserved: '+file);
   }
   console.log('PASS extra games: eight-game catalog/routes, seeded playable rounds at all five levels, full 1–10, coaching/hints/completion, truthful telemetry, seven catalogs, original UI, historical source preservation.');
 }
@@ -145,7 +156,7 @@ async function migrationChecks() {
     }
     for (const item of beforeSchema.filter(item => item.type === 'trigger' || item.type === 'index')) assert.deepEqual(schema().find(row => row.name === item.name), item);
     const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(), after, 'registry replay is idempotent');
-    assert.equal(r.rows('schema_migrations').length, 9);
+    assert.equal(r.rows('schema_migrations').length, 10);
     for (const game of extra) {
       const count = prepare(game, 1).tasks.length;
       const row = { ...rowFor('sequence_memory', 'new-' + game, 'one', 1), game_type: game, steps_completed: count,
@@ -166,7 +177,7 @@ async function migrationChecks() {
   for (const fk of [0, 1]) {
     const r = await runtime();
     try { r.sqlite.exec(`PRAGMA foreign_keys=${fk}`); await r.run(r.db); await r.run(r.db);
-      assert.equal(r.rows('schema_migrations').length, 9); assert.equal(r.rows('cognitive_sessions').length, 0);
+      assert.equal(r.rows('schema_migrations').length, 10); assert.equal(r.rows('cognitive_sessions').length, 0);
       assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(), []);
     } finally { r.sqlite.close(); }
   }
