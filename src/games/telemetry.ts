@@ -23,6 +23,9 @@ export function activityMetrics(value: CognitiveSessionMetrics): CognitiveSessio
     case 'routine_recall':
     case 'remember_lights':
     case 'number_path':
+    case 'sudoku_lite':
+    case 'chess_puzzle':
+    case 'word_match':
     case 'sequence_memory': return { gameType: value.gameType, stepsCompleted: value.stepsCompleted, correctSelections: value.correctSelections, repeatedErrors: value.repeatedErrors };
   }
 }

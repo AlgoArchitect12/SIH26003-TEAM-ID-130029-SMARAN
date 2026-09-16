@@ -45,8 +45,11 @@ async function activate(owner: string, current: () => boolean) {
 }
 async function pending(owner: string) {
   assertOwner(owner);
-  // Read the head including backoff/failed events. Never leapfrog an older mutation of the same entity.
-  return (await getDatabase()).getAllAsync<OutboxEvent>('SELECT * FROM sync_outbox WHERE owner_id = ? ORDER BY sequence LIMIT ?', owner, BATCH_SIZE);
+  // Snapshot triggers can enqueue children first. Send parents first, retaining
+  // sequence order (including failed/backoff events) within each entity.
+  return (await getDatabase()).getAllAsync<OutboxEvent>(`SELECT * FROM sync_outbox WHERE owner_id = ?
+    ORDER BY CASE entity_type WHEN 'patient_profiles' THEN 0 WHEN 'reminders' THEN 1 WHEN 'care_circle_members' THEN 1 ELSE 2 END,
+      sequence LIMIT ?`, owner, BATCH_SIZE);
 }
 async function acknowledge(owner: string, sent: OutboxEvent[], receipts: PushReceipt[], current: () => boolean, now = Date.now()) {
   if (!Array.isArray(receipts) || receipts.length !== sent.length || receipts.some((r, i) => !r || typeof r !== 'object' || r.mutation_id !== sent[i].mutation_id ||

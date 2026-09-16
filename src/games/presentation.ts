@@ -5,6 +5,7 @@ export const activityTitleKeys = {
   memory_match: 'gameTitle', pattern_recognition: 'patternTitle', routine_recall: 'routineTitle',
   familiar_object: 'familiarTitle', sequence_memory: 'sequenceTitle', picture_recall: 'pictureTitle',
   remember_lights: 'lightsTitle', number_path: 'numberTitle',
+  sudoku_lite: 'sudokuTitle', chess_puzzle: 'chessTitle', word_match: 'wordTitle',
 } as const satisfies Record<CognitiveActivityType, TranslationKey>;
 
 export function activitySummary(language: Language, metrics: CognitiveSessionMetrics) {
@@ -15,6 +16,9 @@ export function activitySummary(language: Language, metrics: CognitiveSessionMet
     case 'picture_recall': return t(language, 'picturesCompleted', { count: String(metrics.challengesCompleted) });
     case 'routine_recall':
     case 'remember_lights':
+    case 'sudoku_lite':
+    case 'chess_puzzle':
+    case 'word_match':
     case 'number_path': return t(language, 'stepsCompleted', { count: String(metrics.stepsCompleted) });
     case 'sequence_memory': return t(language, 'sequenceCompleted', { count: String(metrics.stepsCompleted) });
   }

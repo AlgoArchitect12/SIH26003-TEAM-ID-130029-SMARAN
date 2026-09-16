@@ -14,7 +14,7 @@ Optional Supabase accounts, structured offline sync, configuration, validation e
 
 See [MVP24 auth and cloud hardening](docs/MVP24_AUTH_CLOUD_HARDENING.md) for secure email/Google callbacks, explicit backup consent, paused sync, regression results, and the native/cloud validation checklist.
 
-The eight-activity catalog includes Remember the Lights and Number Path. See [the extra games report](docs/EXTRA_COGNITIVE_GAMES.md) for gameplay, difficulty, migration 009, the forward cloud validator, regression results, and remaining device checks.
+The eleven-activity catalog includes Sudoku / Number Grid, Chess Puzzle and Word Match. See [MVP25 three cognitive games](docs/MVP25_THREE_COGNITIVE_GAMES.md) for gameplay, difficulty, migration 012, the forward cloud validators, validation evidence and remaining device checks. The [extra games report](docs/EXTRA_COGNITIVE_GAMES.md) covers Remember the Lights and Number Path.
 
 ## Brand assets
 

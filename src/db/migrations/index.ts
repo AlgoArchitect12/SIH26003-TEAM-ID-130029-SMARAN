@@ -11,6 +11,7 @@ import { authSyncMigration } from './008_auth_sync';
 import { extraCognitiveGamesMigration } from './009_extra_cognitive_games';
 import { careCircleReportsMigration } from './010_care_circle_reports';
 import { syncConsentMigration } from './011_sync_consent';
+import { threeCognitiveGamesMigration } from './012_three_cognitive_games';
 
 const migrations = [
   coreBootstrapMigration,
@@ -24,6 +25,7 @@ const migrations = [
   extraCognitiveGamesMigration,
   careCircleReportsMigration,
   syncConsentMigration,
+  threeCognitiveGamesMigration,
 ] as const;
 
 type AppliedMigrationRow = { version: number };

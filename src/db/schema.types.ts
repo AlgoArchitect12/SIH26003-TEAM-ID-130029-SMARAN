@@ -66,7 +66,7 @@ export type DifficultyLevel = (typeof DifficultyLevels)[number];
 export const ActivityFeedbackLabels = ['easy', 'comfortable', 'challenging'] as const;
 export type ActivityFeedbackLabel = (typeof ActivityFeedbackLabels)[number];
 
-export const CognitiveActivityTypes = ['memory_match', 'pattern_recognition', 'routine_recall', 'familiar_object', 'sequence_memory', 'picture_recall', 'remember_lights', 'number_path'] as const;
+export const CognitiveActivityTypes = ['memory_match', 'pattern_recognition', 'routine_recall', 'familiar_object', 'sequence_memory', 'picture_recall', 'remember_lights', 'number_path', 'sudoku_lite', 'chess_puzzle', 'word_match'] as const;
 export type CognitiveActivityType = (typeof CognitiveActivityTypes)[number];
 
 export type CognitiveSessionMetrics =
@@ -77,7 +77,10 @@ export type CognitiveSessionMetrics =
   | { gameType: 'sequence_memory'; stepsCompleted: number; correctSelections: number; repeatedErrors: number }
   | { gameType: 'picture_recall'; challengesCompleted: number; correctSelections: number; repeatedErrors: number }
   | { gameType: 'remember_lights'; stepsCompleted: number; correctSelections: number; repeatedErrors: number }
-  | { gameType: 'number_path'; stepsCompleted: number; correctSelections: number; repeatedErrors: number };
+  | { gameType: 'number_path'; stepsCompleted: number; correctSelections: number; repeatedErrors: number }
+  | { gameType: 'sudoku_lite'; stepsCompleted: number; correctSelections: number; repeatedErrors: number }
+  | { gameType: 'chess_puzzle'; stepsCompleted: number; correctSelections: number; repeatedErrors: number }
+  | { gameType: 'word_match'; stepsCompleted: number; correctSelections: number; repeatedErrors: number };
 
 type CognitiveSessionEnvelope = {
   id: string;

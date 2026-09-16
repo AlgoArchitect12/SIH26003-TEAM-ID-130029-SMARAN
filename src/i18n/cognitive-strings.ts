@@ -1,6 +1,7 @@
 import type { Language } from '../db/schema.types';
 import { cognitiveAIStrings } from './cognitive-ai-strings';
 import { extraGameStrings } from './extra-game-strings';
+import { threeGameStrings } from './three-game-strings';
 
 // UI translations await native-speaker review. Routine bodies explicitly use English.
 const en = {
@@ -313,7 +314,7 @@ const lus = {
 };
 
 export const cognitiveStrings = {
-  en: { ...en, ...cognitiveAIStrings.en, ...extraGameStrings.en }, hi: { ...hi, ...cognitiveAIStrings.hi, ...extraGameStrings.hi },
-  as: { ...as, ...cognitiveAIStrings.as, ...extraGameStrings.as }, bn: { ...bn, ...cognitiveAIStrings.bn, ...extraGameStrings.bn },
-  mni: { ...mni, ...cognitiveAIStrings.mni, ...extraGameStrings.mni }, kha: { ...kha, ...cognitiveAIStrings.kha, ...extraGameStrings.kha }, lus: { ...lus, ...cognitiveAIStrings.lus, ...extraGameStrings.lus },
-} satisfies Record<Language, Record<keyof typeof en | keyof typeof cognitiveAIStrings.en | keyof typeof extraGameStrings.en, string>>;
+  en: { ...en, ...cognitiveAIStrings.en, ...extraGameStrings.en, ...threeGameStrings.en }, hi: { ...hi, ...cognitiveAIStrings.hi, ...extraGameStrings.hi, ...threeGameStrings.hi },
+  as: { ...as, ...cognitiveAIStrings.as, ...extraGameStrings.as, ...threeGameStrings.as }, bn: { ...bn, ...cognitiveAIStrings.bn, ...extraGameStrings.bn, ...threeGameStrings.bn },
+  mni: { ...mni, ...cognitiveAIStrings.mni, ...extraGameStrings.mni, ...threeGameStrings.mni }, kha: { ...kha, ...cognitiveAIStrings.kha, ...extraGameStrings.kha, ...threeGameStrings.kha }, lus: { ...lus, ...cognitiveAIStrings.lus, ...extraGameStrings.lus, ...threeGameStrings.lus },
+} satisfies Record<Language, Record<keyof typeof en | keyof typeof cognitiveAIStrings.en | keyof typeof extraGameStrings.en | keyof typeof threeGameStrings.en, string>>;

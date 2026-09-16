@@ -1,4 +1,4 @@
-export const activities = ['memory_match','pattern_recognition','routine_recall','familiar_object','sequence_memory','picture_recall','remember_lights','number_path'] as const;
+export const activities = ['memory_match','pattern_recognition','routine_recall','familiar_object','sequence_memory','picture_recall','remember_lights','number_path','sudoku_lite','chess_puzzle','word_match'] as const;
 export const languages = ['en','hi','as','bn','mni','kha','lus'] as const;
 export type InstructionRequest = { version: 1; task: 'game-instruction'; activity: typeof activities[number]; language: typeof languages[number] };
 

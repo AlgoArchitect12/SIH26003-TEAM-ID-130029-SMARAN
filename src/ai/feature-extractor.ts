@@ -24,6 +24,9 @@ export function extractAdaptiveFeatures(input: AdaptiveSessionInput): FeatureExt
     case 'familiar_object':
     case 'remember_lights':
     case 'number_path':
+    case 'sudoku_lite':
+    case 'chess_puzzle':
+    case 'word_match':
     case 'sequence_memory':
     case 'picture_recall': return extractSelectionFeatures({ ...input, telemetry: input.telemetry });
   }

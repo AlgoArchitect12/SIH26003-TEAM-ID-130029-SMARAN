@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const { execFileSync } = require('node:child_process');
 const baseline = file => execFileSync('git',['show','58e7938:'+file],{encoding:'utf8'});
 const authorized = new Set([
+  'src/db/migrations/012_three_cognitive_games.ts', // MVP-25: extend only cognitive game constraints.
   'src/db/migrations/011_sync_consent.ts', // MVP-24: explicit, pausable backup consent; historical migrations stay frozen.
   // MVP-23 explicitly adds these patient-scoped entities and their source contracts.
   'src/db/migrations/010_care_circle_reports.ts','src/db/repositories/care-circle.repository.ts',

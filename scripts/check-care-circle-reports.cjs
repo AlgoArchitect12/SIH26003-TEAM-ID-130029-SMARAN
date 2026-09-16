@@ -70,7 +70,7 @@ async function migrations() {
       await migration11.up(tx);
     }}}}).runMigrations;
     await runThrough11(r.db);
-    assert.equal(r.rows('schema_migrations').length,11);
+    assert.equal(r.rows('schema_migrations').length,12);
     for(const table of tables) assert.deepEqual(r.sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(),fks[table],table+' FKs');
     assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
     const after=snapshot();await r.run(r.db);assert.deepEqual(snapshot(),after);
@@ -79,7 +79,7 @@ async function migrations() {
     assert.equal(r.rows('sync_outbox').at(-1).sequence,before.sqlite_sequence.find(s=>s.name==='sync_outbox').seq+1);
   } finally {r.sqlite.close();}
   for(const fk of ['ON','OFF']) {
-    const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length,11);
+    const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length,12);
       assert.deepEqual(await r.repo.list('one'),[]);await assert.rejects(r.repo.save('missing',memberInput,()=>true),/Missing patient/);
     } finally{r.sqlite.close();}
   }
@@ -137,8 +137,8 @@ async function reports(r) {
   const window=analytics.analyticsWindow(7,now), start=window.boundaries[0], end=window.boundaries.at(-1);
   for(const [i,game] of games.entries()) {
     const row=rowFor(game,'fact-'+game,'facts',1);
-    if(game==='remember_lights'||game==='number_path') {
-      const n=game==='remember_lights'?4:5;Object.assign(row,{attempts:n+2,accuracy:n/(n+2),challenges_completed:null,steps_completed:n,correct_selections:n});
+    if(['remember_lights','number_path','sudoku_lite','chess_puzzle','word_match'].includes(game)) {
+      const n={remember_lights:4,number_path:5,sudoku_lite:3,chess_puzzle:6,word_match:3}[game];Object.assign(row,{attempts:n+2,accuracy:n/(n+2),challenges_completed:null,steps_completed:n,correct_selections:n});
     }
     Object.assign(row,{started_at:start,completed_at:i===0?start:new Date(Date.parse(end)-1).toISOString()});insertRow(r.sqlite,'cognitive_sessions',row);
   }
@@ -151,17 +151,17 @@ async function reports(r) {
   }
   const service=r.module('src/services/reports.service.ts');
   const result=await service.loadReportFacts('facts',7,now), totals=reportTotals(result.facts);
-  assert.equal(totals.sessions,8);assert.equal(result.facts.routine.completed,2);assert.equal(result.facts.routine.hydration,2);assert.equal(result.facts.routine.unknownCategory,0);
+  assert.equal(totals.sessions,11);assert.equal(result.facts.routine.completed,2);assert.equal(result.facts.routine.hydration,2);assert.equal(result.facts.routine.unknownCategory,0);
   const rows=r.rows('cognitive_sessions').filter(s=>s.patient_id==='facts'&&s.completed_at>=start&&s.completed_at<end);
   assert.equal(totals.attempts,rows.reduce((n,s)=>n+s.attempts,0));assert.equal(totals.correct,rows.reduce((n,s)=>n+(s.matches??s.correct_selections),0));
-  assert.equal(totals.accuracy,totals.correct/totals.attempts);assert.equal(totals.hints,16);assert.equal(totals.repeatedErrors,8);
-  assert.equal(reportTotals((await service.loadReportFacts('facts',30,now)).facts).sessions,9);
+  assert.equal(totals.accuracy,totals.correct/totals.attempts);assert.equal(totals.hints,22);assert.equal(totals.repeatedErrors,11);
+  assert.equal(reportTotals((await service.loadReportFacts('facts',30,now)).facts).sessions,12);
   assert.equal(analytics.analyticsWindow(30,now).boundaries.length,31);
   const thirtyStart=analytics.analyticsWindow(30,now).boundaries[0];
   for(const [id,time] of [['thirty-before',new Date(Date.parse(thirtyStart)-1).toISOString()],['thirty-start',thirtyStart]])
     insertRow(r.sqlite,'cognitive_sessions',{...rowFor('memory_match',id,'facts'),started_at:time,completed_at:time});
-  assert.equal(reportTotals((await service.loadReportFacts('facts',30,now)).facts).sessions,10,'30-day start included; prior millisecond and exclusive end excluded');
-  assert.equal(reportTotals((await service.loadReportFacts('facts',7,now)).facts).sessions,8);
+  assert.equal(reportTotals((await service.loadReportFacts('facts',30,now)).facts).sessions,13,'30-day start included; prior millisecond and exclusive end excluded');
+  assert.equal(reportTotals((await service.loadReportFacts('facts',7,now)).facts).sessions,11);
   const dashboard=await r.module('src/services/caregiver.service.ts').loadCaregiverDashboard('facts',now);
   assert.equal(dashboard.cognitive.last7,totals.sessions);assert.equal(dashboard.routine.today.length,result.facts.routine.scheduledToday);
   r.change('facts');const report=await service.generateActivityReport('facts',7,r.current(),now);

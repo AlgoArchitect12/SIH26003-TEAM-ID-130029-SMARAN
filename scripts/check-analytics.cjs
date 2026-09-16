@@ -40,7 +40,9 @@ async function main() {
   const now = new Date(2026, 2, 8, 12); // Spring DST transition in New York.
   const w7 = analyticsWindow(7, now), w30 = analyticsWindow(30, now);
   const stamp = (offset, hour = 9) => new Date(2026, 2, 8 + offset, hour).toISOString();
-  const completed = (game, level) => game === 'remember_lights' ? 2 * (level + 1) : game === 'number_path' ? [5, 7, 10, 10, 10][level - 1] : 2;
+  const completed = (game, level) => game === 'remember_lights' ? 2 * (level + 1) : game === 'number_path' ? [5, 7, 10, 10, 10][level - 1] :
+    game === 'sudoku_lite' ? [3, 6, 8, 12, 16][level - 1] : game === 'chess_puzzle' ? [6, 4, 4, 3, 3][level - 1] :
+    game === 'word_match' ? [3, 4, 4, 5, 6][level - 1] : 2;
   const add = async (owner, gameType, at, attempts = 4, ms = 1000, difficulty = 2) => {
     const correct = completed(gameType, difficulty);
     attempts += correct - 2; // Keep the same error counts with each game's actual completion length.

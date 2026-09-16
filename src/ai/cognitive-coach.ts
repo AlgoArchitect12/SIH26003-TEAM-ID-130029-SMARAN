@@ -25,6 +25,9 @@ const hintKeys = {
   picture_recall: ['coachPictureHint', 'coachPictureFocus'],
   remember_lights: ['lightsHint', 'lightsFocus'],
   number_path: ['numberHint', 'numberHint'],
+  sudoku_lite: ['sudokuHint', 'sudokuFocus'],
+  chess_puzzle: ['chessChooseSquare', 'puzzleReveal'],
+  word_match: ['wordAssociation', 'puzzleReveal'],
 } as const satisfies Record<CognitiveActivityType, readonly [TranslationKey, TranslationKey]>;
 
 export function coachHintKey(game: CognitiveActivityType, state: CoachState): TranslationKey | null {

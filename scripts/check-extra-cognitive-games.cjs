@@ -46,7 +46,7 @@ function play(game, level, wrong = true) {
 }
 
 function contracts() {
-  assert.deepEqual(games, [...oldGames, ...extra]);
+  assert.deepEqual(games, [...oldGames, ...extra, 'sudoku_lite', 'chess_puzzle', 'word_match']);
   const titles = load('src/games/presentation.ts').activityTitleKeys;
   for (const game of extra) {
     assert.ok(titles[game]);
@@ -164,7 +164,7 @@ async function migrationChecks() {
     } } } }).runMigrations;
     await runThrough11(r.db);
     const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(), after, 'registry replay is idempotent');
-    assert.equal(r.rows('schema_migrations').length, 11);
+    assert.equal(r.rows('schema_migrations').length, 12);
     for (const game of extra) {
       const count = prepare(game, 1).tasks.length;
       const row = { ...rowFor('sequence_memory', 'new-' + game, 'one', 1), game_type: game, steps_completed: count,
@@ -185,7 +185,7 @@ async function migrationChecks() {
   for (const fk of [0, 1]) {
     const r = await runtime();
     try { r.sqlite.exec(`PRAGMA foreign_keys=${fk}`); await r.run(r.db); await r.run(r.db);
-      assert.equal(r.rows('schema_migrations').length, 11); assert.equal(r.rows('cognitive_sessions').length, 0);
+      assert.equal(r.rows('schema_migrations').length, 12); assert.equal(r.rows('cognitive_sessions').length, 0);
       assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(), []);
     } finally { r.sqlite.close(); }
   }
@@ -274,7 +274,7 @@ async function screenChecks() {
         '@db/repositories/cognitive.repository': { cognitiveRepository: { getRecentSessions: async () => [{ recommendedDifficulty: level }], getAdaptiveModel: async () => null } },
       };
       for (const name of ['adaptive-engine', 'feature-extractor', 'cognitive-coach']) overrides['@ai/' + name] = r.module('src/ai/' + name + '.ts');
-      for (const name of ['selection-engine', 'presentation', 'pattern-recognition', 'routine-recall', 'recall-activities', 'grid-activities', 'memory-match/assets']) overrides['@/src/games/' + name] = r.module('src/games/' + name + '.ts');
+      for (const name of ['selection-engine', 'presentation', 'pattern-recognition', 'routine-recall', 'recall-activities', 'grid-activities', 'sudoku-lite', 'chess-puzzle', 'word-match', 'memory-match/assets']) overrides['@/src/games/' + name] = r.module('src/games/' + name + '.ts');
       overrides['@/src/games/grid-activities'] = { prepareGridActivity: prepare };
       const parent = screen('components/games/selection-activity-screen.tsx', overrides, { gameType: game });
       parent(); await tick();

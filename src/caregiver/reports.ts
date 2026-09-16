@@ -21,7 +21,8 @@ export function parseReportFacts(snapshot: string): ReportFacts {
   const count = (n: unknown) => Number.isSafeInteger(n) && Number(n) >= 0;
   if (!exact(value, ['patientName','days','timezone','games','routine','memories']) || typeof value.patientName !== 'string' ||
       !value.patientName.trim() || value.patientName.length > 80 || ![7,30].includes(value.days) || typeof value.timezone !== 'string' || value.timezone.length > 100 ||
-      !Array.isArray(value.games) || value.games.length !== CognitiveActivityTypes.length ||
+      // Preserve the exact historical eight-game snapshot shape as well as today's catalog.
+      !Array.isArray(value.games) || ![8, CognitiveActivityTypes.length].includes(value.games.length) ||
       value.games.some((g, i) => !exact(g, ['gameType','sessions','attempts','correct','hints','repeatedErrors']) || g.gameType !== CognitiveActivityTypes[i] || !count(g.sessions) ||
         [g.attempts,g.correct,g.hints,g.repeatedErrors].some(n => n !== null && !count(n)) ||
         (g.attempts !== null && g.correct !== null && g.correct > g.attempts)) ||

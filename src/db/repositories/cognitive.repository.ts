@@ -11,6 +11,9 @@ import type {
 } from '../schema.types';
 import { ActivityFeedbackLabels, CognitiveActivityTypes, DifficultyLevels } from '../schema.types';
 import { validateRecordId } from '../../utils/validation';
+import { sudokuBlankCounts } from '../../games/sudoku-lite';
+import { chessRoundCounts } from '../../games/chess-puzzle';
+import { wordPairCounts } from '../../games/word-match';
 
 type CognitiveSessionRow = {
   id: string;
@@ -147,7 +150,10 @@ function validateSession(input: CompletedSessionInput) {
     (input.gameType === 'routine_recall' && (completed < 2 || completed > 5)) ||
     (input.gameType === 'sequence_memory' && (completed < 2 || completed > 6)) ||
     (input.gameType === 'remember_lights' && completed !== 2 * (input.difficulty + 1)) ||
-    (input.gameType === 'number_path' && completed !== [5, 7, 10, 10, 10][input.difficulty - 1])
+    (input.gameType === 'number_path' && completed !== [5, 7, 10, 10, 10][input.difficulty - 1]) ||
+    (input.gameType === 'sudoku_lite' && completed !== sudokuBlankCounts[input.difficulty - 1]) ||
+    (input.gameType === 'chess_puzzle' && completed !== chessRoundCounts[input.difficulty - 1]) ||
+    (input.gameType === 'word_match' && completed !== wordPairCounts[input.difficulty - 1])
   ) {
     throw new Error('Completed activity counts are inconsistent.');
   }

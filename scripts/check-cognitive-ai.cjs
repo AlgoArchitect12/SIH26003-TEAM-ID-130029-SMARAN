@@ -215,7 +215,7 @@ function screenBoundaries(r, settings, game, level) {
     '@/hooks/use-theme-color': { useThemeColors: () => ({ text: '#123', border: '#456', surface: '#fff', primary: '#075' }) },
   };
   for (const file of ['adaptive-engine', 'feature-extractor', 'cognitive-coach']) overrides['@ai/' + file] = r.module('src/ai/' + file + '.ts');
-  for (const file of ['presentation', 'selection-engine', 'pattern-recognition', 'routine-recall', 'recall-activities', 'grid-activities',
+  for (const file of ['presentation', 'selection-engine', 'pattern-recognition', 'routine-recall', 'recall-activities', 'grid-activities', 'sudoku-lite', 'chess-puzzle', 'word-match',
     'memory-match/assets', 'memory-match/difficulty', 'memory-match/engine', 'memory-match/telemetry']) overrides['@/src/games/' + file] = r.module('src/games/' + file + '.ts');
   insertRow(r.sqlite, 'cognitive_sessions', rowFor(game, `${game}-${settings.language}-${level}`, 'one', level));
   r.onboarding.getState().setLanguage(settings.language);

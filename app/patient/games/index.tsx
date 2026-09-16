@@ -25,6 +25,9 @@ const activities = {
   picture_recall: { subtitle: 'pictureSubtitle', route: '/patient/games/picture-recall', icon: 'photo-library' },
   remember_lights: { subtitle: 'lightsSubtitle', route: '/patient/games/remember-lights', icon: 'lightbulb-outline' },
   number_path: { subtitle: 'numberSubtitle', route: '/patient/games/number-path', icon: 'format-list-numbered' },
+  sudoku_lite: { subtitle: 'sudokuSubtitle', route: '/patient/games/sudoku-lite', icon: 'calculate' },
+  chess_puzzle: { subtitle: 'chessSubtitle', route: '/patient/games/chess-puzzle', icon: 'extension' },
+  word_match: { subtitle: 'wordSubtitle', route: '/patient/games/word-match', icon: 'translate' },
 } as const satisfies Record<CognitiveActivityType, { subtitle: TranslationKey; route: string; icon: string }>;
 
 export default function ActivitiesScreen() {
