@@ -14,6 +14,8 @@ Optional Supabase accounts, structured offline sync, configuration, validation e
 
 See [MVP24 auth and cloud hardening](docs/MVP24_AUTH_CLOUD_HARDENING.md) for secure email/Google callbacks, explicit backup consent, paused sync, regression results, and the native/cloud validation checklist.
 
+See [MVP26 database verification](docs/MVP26_LIVE_DATABASE_VERIFICATION.md) for executable SQLite/PostgreSQL lifecycle evidence, sync-status repairs, and the outstanding hosted migration/authentication prerequisites. Run `node scripts/check-live-database-sync.cjs` with installed PostgreSQL binaries (`SMARAN_PG_BIN` can select their directory); it creates and removes only disposable local databases and performs a read-only hosted audit.
+
 The eleven-activity catalog includes Sudoku / Number Grid, Chess Puzzle and Word Match. See [MVP25 three cognitive games](docs/MVP25_THREE_COGNITIVE_GAMES.md) for gameplay, difficulty, migration 012, the forward cloud validators, validation evidence and remaining device checks. The [extra games report](docs/EXTRA_COGNITIVE_GAMES.md) covers Remember the Lights and Number Path.
 
 ## Brand assets

@@ -24,7 +24,7 @@ async function status(owner: string) {
   const counts = await db.getFirstAsync<{ pending: number; failed: number }>(
     "SELECT count(*) AS pending, coalesce(sum(state = 'failed'),0) AS failed FROM sync_outbox WHERE owner_id = ?", owner);
   const unlinked = await db.getFirstAsync<{ count: number }>('SELECT count(*) AS count FROM patient_profiles WHERE id NOT IN (SELECT patient_id FROM sync_patient_owners)');
-  return { linked: account?.enabled === 1, unlinked: unlinked?.count ?? 0, cursor: account?.pull_cursor ?? 0, lastSuccess: account?.last_success_at ?? null, pending: counts?.pending ?? 0, failed: counts?.failed ?? 0 };
+  return { linked: account?.enabled === 1, paused: account?.enabled === 0, unlinked: unlinked?.count ?? 0, cursor: account?.pull_cursor ?? 0, lastSuccess: account?.last_success_at ?? null, pending: counts?.pending ?? 0, failed: counts?.failed ?? 0 };
 }
 async function pause(owner: string, current: () => boolean) {
   assertOwner(owner);

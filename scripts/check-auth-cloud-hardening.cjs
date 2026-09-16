@@ -330,4 +330,5 @@ function contractChecks() {
   console.log('PASS contracts: seven complete translated catalogs/interpolation, actual Account controls/status/offline action, email/password autofill, screen-reader labels, source secret scan, ignored credentials and frozen historical migrations.');
 }
 async function main(){await authChecks();await migrationChecks();await syncChecks();contractChecks();}
+module.exports = { harness };
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});

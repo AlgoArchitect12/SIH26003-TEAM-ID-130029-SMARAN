@@ -4,19 +4,21 @@ import { captureAccount, getCloudClient, invalidateCloudWork, sessionExpired, us
 import { syncRepository as repo } from '../db/repositories/sync.repository';
 import type { PullBatch, PushReceipt } from './sync-contract';
 
-type SyncStatus = 'local' | 'signed-in' | 'offline' | 'syncing' | 'current' | 'waiting' | 'attention';
+type SyncStatus = 'local' | 'paused' | 'signed-in' | 'offline' | 'syncing' | 'current' | 'waiting' | 'attention';
 export const useSyncStore = create<{
   status: SyncStatus; linked: boolean; unlinked: number; pending: number; lastSuccess: string | null;
 }>(() => ({ status: 'local', linked: false, unlinked: 0, pending: 0, lastSuccess: null }));
 let running: Promise<void> | null = null;
 let pausing = false;
 
-export async function refreshSyncStatus() {
+export async function refreshSyncStatus(completed = false) {
   const account = captureAccount();
   if (!account.current()) { useSyncStore.setState({ status: 'local', linked: false, unlinked: 0, pending: 0, lastSuccess: null }); return; }
   const state = await repo.status(account.ownerId!);
+  const previous = useSyncStore.getState().status;
   if (account.current()) useSyncStore.setState({ linked: state.linked, unlinked: state.unlinked, pending: state.pending, lastSuccess: state.lastSuccess,
-    status: !state.linked ? 'local' : state.failed ? 'attention' : state.pending ? 'waiting' : state.lastSuccess ? 'current' : 'signed-in' });
+    status: !state.linked ? state.paused ? 'paused' : 'local' : state.failed ? 'attention' : state.pending ? 'waiting'
+      : !completed && ['attention', 'offline', 'syncing'].includes(previous) ? previous : state.lastSuccess ? 'current' : 'signed-in' });
 }
 export async function pauseCloudSync() {
   pausing = true;
@@ -92,7 +94,11 @@ async function synchronize(manual: boolean) {
       await repo.apply(owner, batch, cursor, account.current);
       if (!account.current()) return;
       cursor = batch.cursor;
-      if (!batch.has_more) { await repo.success(owner, account.current); await refreshSyncStatus(); return; }
+      if (!batch.has_more) {
+        await repo.success(owner, account.current);
+        if (account.current()) await refreshSyncStatus(true);
+        return;
+      }
     }
     if (account.current()) useSyncStore.setState({ status: 'waiting' });
   } catch {

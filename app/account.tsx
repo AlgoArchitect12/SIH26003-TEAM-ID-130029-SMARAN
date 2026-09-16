@@ -45,7 +45,7 @@ export default function AccountScreen() {
   const statusKey: TranslationKey = auth.status === 'storage-error' ? 'accountStorage' : auth.status === 'restoring' ? 'accountRestoring' :
     auth.busy ? 'accountWorking' : auth.status === 'expired' ? 'accountSessionExpired' : auth.status === 'confirmation' ? 'accountConfirmEmail' :
       auth.status === 'offline' ? 'accountNetwork' : auth.status === 'unavailable' ? 'accountUnavailable' : !auth.ownerId ? 'accountLocalStatus'
-    : ({ local: 'accountLocalStatus', 'signed-in': 'accountSignedIn', offline: 'accountOffline', syncing: 'accountSyncing', current: 'accountCurrent', waiting: 'accountPending', attention: 'accountAttention' } as const)[sync.status];
+    : ({ local: 'accountLocalStatus', paused: 'accountPaused', 'signed-in': 'accountSignedIn', offline: 'accountOffline', syncing: 'accountSyncing', current: 'accountCurrent', waiting: 'accountPending', attention: 'accountAttention' } as const)[sync.status];
   return <ScreenWrapper scroll><View style={PageLayout.content}>
     <ThemedText type="screenTitle">{t(language, 'accountTitle')}</ThemedText>
     <ThemedText>{t(language, 'accountIntro')}</ThemedText>
