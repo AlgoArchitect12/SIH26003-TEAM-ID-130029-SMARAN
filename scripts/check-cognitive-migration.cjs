@@ -125,7 +125,7 @@ async function main() {
     assert.deepEqual(sqlite.prepare('PRAGMA foreign_key_check').all(), []);
     assert.equal(sqlite.prepare('PRAGMA integrity_check').get().integrity_check, 'ok');
     assert.equal(sqlite.prepare('PRAGMA foreign_keys').get().foreign_keys, 1);
-    assert.equal(rows('schema_migrations').length, 10);
+    assert.equal(rows('schema_migrations').length, 11);
     const after = schema();
     await runner(db);
     assert.deepEqual(schema(), after);
@@ -165,7 +165,7 @@ async function main() {
     try {
       fresh.sqlite.exec(`PRAGMA foreign_keys = ${foreignKeys}`);
       await runner(fresh.db); await runner(fresh.db);
-      assert.equal(fresh.sqlite.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 10);
+      assert.equal(fresh.sqlite.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 11);
       assert.equal(fresh.sqlite.prepare('SELECT COUNT(*) AS n FROM cognitive_sessions').get().n, 0);
       assert.equal(fresh.sqlite.prepare('SELECT COUNT(*) AS n FROM adaptive_model_state').get().n, 0);
       assert.deepEqual(fresh.sqlite.prepare('PRAGMA foreign_key_check').all(), []);

@@ -39,7 +39,11 @@ async function migrations() {
       const m=r.module('src/db/migrations/'+file+'.ts')[key];
       await r.db.withExclusiveTransactionAsync(async tx=>{await m.up(tx);await tx.runAsync('INSERT INTO schema_migrations VALUES(?,?,?)',m.version,m.name,stamp);});
     }
-    await seed(r.db);await r.sync.link(A,()=>true);
+    // Seed the historical 009 schema before the current repository's 011 enabled column exists.
+    await seed(r.db);
+    await r.db.runAsync('INSERT INTO sync_accounts(owner_id,linked_at) VALUES(?,?)',A,stamp);
+    await r.db.runAsync('INSERT INTO sync_patient_owners(patient_id,owner_id,linked_at) SELECT id,?,? FROM patient_profiles',A,stamp);
+    await r.db.runAsync('UPDATE sync_installation SET default_owner_id=? WHERE singleton=1',A);
     await r.sync.fail(A,await r.sync.pending(A),'network',()=>true,1234);
     // Acknowledged tail records leave an AUTOINCREMENT high-water mark above max(sequence).
     r.sqlite.exec("UPDATE sqlite_sequence SET seq=seq+100 WHERE name='sync_outbox'");
@@ -58,10 +62,15 @@ async function migrations() {
     r.db.getAllAsync=async(sql,...args)=>sql==='PRAGMA foreign_key_check'?[{}]:originalAll(sql,...args);
     await assert.rejects(r.run(r.db),/foreign key/);assert.deepEqual(snapshot(),before);assert.deepEqual(schema(),beforeSchema);
     r.db.getAllAsync=originalAll;
-    await r.run(r.db);
-    for(const table of tables) assert.deepEqual(table==='schema_migrations'?r.rows(table).slice(0,9):r.rows(table),before[table],'preserve all columns/rowids: '+table);
-    for(const item of beforeSchema.filter(s=>s.type==='trigger'||s.type==='index')) assert.deepEqual(schema().find(s=>s.name===item.name),item,'preserve '+item.name);
-    assert.equal(r.rows('schema_migrations').length,10);
+    const migration11=r.module('src/db/migrations/011_sync_consent.ts').syncConsentMigration;
+    const runThrough11=load('src/db/migrations/index.ts',{'./011_sync_consent':{syncConsentMigration:{...migration11,up:async tx=>{
+      // Keep every 009→010 preservation assertion at that exact boundary before 011 changes consent metadata.
+      for(const table of tables) assert.deepEqual(table==='schema_migrations'?r.rows(table).slice(0,9):r.rows(table),before[table],'preserve all columns/rowids: '+table);
+      for(const item of beforeSchema.filter(s=>s.type==='trigger'||s.type==='index')) assert.deepEqual(schema().find(s=>s.name===item.name),item,'preserve '+item.name);
+      await migration11.up(tx);
+    }}}}).runMigrations;
+    await runThrough11(r.db);
+    assert.equal(r.rows('schema_migrations').length,11);
     for(const table of tables) assert.deepEqual(r.sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(),fks[table],table+' FKs');
     assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
     const after=snapshot();await r.run(r.db);assert.deepEqual(snapshot(),after);
@@ -70,7 +79,7 @@ async function migrations() {
     assert.equal(r.rows('sync_outbox').at(-1).sequence,before.sqlite_sequence.find(s=>s.name==='sync_outbox').seq+1);
   } finally {r.sqlite.close();}
   for(const fk of ['ON','OFF']) {
-    const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length,10);
+    const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length,11);
       assert.deepEqual(await r.repo.list('one'),[]);await assert.rejects(r.repo.save('missing',memberInput,()=>true),/Missing patient/);
     } finally{r.sqlite.close();}
   }

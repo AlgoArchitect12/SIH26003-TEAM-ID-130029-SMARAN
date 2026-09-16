@@ -1,21 +1,32 @@
 import { AppState } from 'react-native';
 import { create } from 'zustand';
-import { captureAccount, getCloudClient, useAuthStore } from './auth';
+import { captureAccount, getCloudClient, invalidateCloudWork, sessionExpired, useAuthStore, validateSession } from './auth';
 import { syncRepository as repo } from '../db/repositories/sync.repository';
 import type { PullBatch, PushReceipt } from './sync-contract';
 
 type SyncStatus = 'local' | 'signed-in' | 'offline' | 'syncing' | 'current' | 'waiting' | 'attention';
 export const useSyncStore = create<{
-  status: SyncStatus; linked: boolean; pending: number; lastSuccess: string | null;
-}>(() => ({ status: 'local', linked: false, pending: 0, lastSuccess: null }));
+  status: SyncStatus; linked: boolean; unlinked: number; pending: number; lastSuccess: string | null;
+}>(() => ({ status: 'local', linked: false, unlinked: 0, pending: 0, lastSuccess: null }));
 let running: Promise<void> | null = null;
+let pausing = false;
 
 export async function refreshSyncStatus() {
   const account = captureAccount();
-  if (!account.current()) { useSyncStore.setState({ status: 'local', linked: false, pending: 0, lastSuccess: null }); return; }
+  if (!account.current()) { useSyncStore.setState({ status: 'local', linked: false, unlinked: 0, pending: 0, lastSuccess: null }); return; }
   const state = await repo.status(account.ownerId!);
-  if (account.current()) useSyncStore.setState({ linked: state.linked, pending: state.pending, lastSuccess: state.lastSuccess,
-    status: state.failed ? 'attention' : state.pending ? 'waiting' : state.lastSuccess ? 'current' : 'signed-in' });
+  if (account.current()) useSyncStore.setState({ linked: state.linked, unlinked: state.unlinked, pending: state.pending, lastSuccess: state.lastSuccess,
+    status: !state.linked ? 'local' : state.failed ? 'attention' : state.pending ? 'waiting' : state.lastSuccess ? 'current' : 'signed-in' });
+}
+export async function pauseCloudSync() {
+  pausing = true;
+  invalidateCloudWork();
+  const account = captureAccount();
+  try {
+    if (!account.current()) throw new Error('Account changed.');
+    await repo.pause(account.ownerId!, account.current);
+    await refreshSyncStatus();
+  } finally { pausing = false; }
 }
 export async function enableCloudSync() {
   const account = captureAccount();
@@ -24,6 +35,8 @@ export async function enableCloudSync() {
   await syncNow();
 }
 async function synchronize(manual: boolean) {
+  if (useAuthStore.getState().busy) return;
+  if (['offline', 'unavailable'].includes(useAuthStore.getState().status)) await validateSession();
   const account = captureAccount();
   if (!account.current()) return;
   const owner = account.ownerId!;
@@ -53,6 +66,7 @@ async function synchronize(manual: boolean) {
         await repo.fail(owner, events, reason, account.current);
         await refreshSyncStatus();
         if (account.current()) useSyncStore.setState({ status: reason === 'network' ? 'offline' : 'attention' });
+        if (reason === 'auth' && account.current()) sessionExpired();
         return;
       }
       try { await repo.acknowledge(owner, events, result.data as PushReceipt[], account.current); }
@@ -71,10 +85,12 @@ async function synchronize(manual: boolean) {
       if (result.error) {
         await refreshSyncStatus();
         if (account.current()) useSyncStore.setState({ status: result.status === 0 ? 'offline' : 'attention' });
+        if ((result.status === 401 || result.status === 403) && account.current()) sessionExpired();
         return;
       }
       const batch = result.data as PullBatch;
       await repo.apply(owner, batch, cursor, account.current);
+      if (!account.current()) return;
       cursor = batch.cursor;
       if (!batch.has_more) { await repo.success(owner, account.current); await refreshSyncStatus(); return; }
     }
@@ -87,6 +103,7 @@ async function synchronize(manual: boolean) {
   }
 }
 export function syncNow(manual = false) {
+  if (pausing) return Promise.resolve();
   running ??= synchronize(manual).finally(() => { running = null; });
   return running;
 }
@@ -94,7 +111,7 @@ export function startSyncLifecycle() {
   const run = () => { if (AppState.currentState === 'active') void syncNow(); };
   const auth = useAuthStore.subscribe((next, before) => {
     if (next.revision !== before.revision || next.status === 'storage-error') {
-      useSyncStore.setState({ status: 'local', linked: false, pending: 0, lastSuccess: null });
+      useSyncStore.setState({ status: 'local', linked: false, unlinked: 0, pending: 0, lastSuccess: null });
     }
     if (next.ownerId && !next.busy && next.status === 'signed-in') run();
   });

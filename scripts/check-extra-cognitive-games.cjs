@@ -131,7 +131,10 @@ async function migrationChecks() {
           weight_hints: model.weights.hints, weight_stability: model.weights.stability, sample_count: 7, updated_at: stamp });
       }
     }
-    await r.module('src/db/repositories/sync.repository.ts').syncRepository.link(A, () => true);
+    // Seed the historical 008 ownership shape; current link() requires migration 011.
+    await r.db.runAsync('INSERT INTO sync_accounts(owner_id,linked_at) VALUES(?,?)', A, stamp);
+    await r.db.runAsync('INSERT INTO sync_patient_owners(patient_id,owner_id,linked_at) SELECT id,?,? FROM patient_profiles', A, stamp);
+    await r.db.runAsync('UPDATE sync_installation SET default_owner_id=? WHERE singleton=1', A);
     r.sqlite.exec(`CREATE INDEX extra_game_test_index ON cognitive_sessions(completed_at DESC) WHERE is_demo_seed = 0;
       CREATE TRIGGER extra_game_test_trigger AFTER UPDATE ON patient_settings BEGIN SELECT count(*) FROM cognitive_sessions; END;`);
     const tables = r.sqlite.prepare("SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name").all().map(row => row.name);
@@ -149,14 +152,19 @@ async function migrationChecks() {
     r.db.getAllAsync = async (sql, ...args) => sql === 'PRAGMA foreign_key_check' ? [{}] : originalAll(sql, ...args);
     await assert.rejects(r.run(r.db), /foreign key/); assert.deepEqual(snapshot(), before); assert.deepEqual(schema(), beforeSchema);
     r.db.getAllAsync = originalAll;
-    await r.run(r.db);
-    for (const table of tables) {
-      assert.deepEqual(table === 'schema_migrations' ? r.rows(table).slice(0, 8) : r.rows(table), before[table], 'exact fields/IDs/rowids: ' + table);
-      assert.deepEqual(r.sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(), fks[table]);
-    }
-    for (const item of beforeSchema.filter(item => item.type === 'trigger' || item.type === 'index')) assert.deepEqual(schema().find(row => row.name === item.name), item);
+    const migration11 = r.module('src/db/migrations/011_sync_consent.ts').syncConsentMigration;
+    const runThrough11 = load('src/db/migrations/index.ts', { './011_sync_consent': { syncConsentMigration: { ...migration11, up: async tx => {
+      // Preserve every historical assertion before the deliberate 011 consent metadata change.
+      for (const table of tables) {
+        assert.deepEqual(table === 'schema_migrations' ? r.rows(table).slice(0, 8) : r.rows(table), before[table], 'exact fields/IDs/rowids: ' + table);
+        assert.deepEqual(r.sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(), fks[table]);
+      }
+      for (const item of beforeSchema.filter(item => item.type === 'trigger' || item.type === 'index')) assert.deepEqual(schema().find(row => row.name === item.name), item);
+      await migration11.up(tx);
+    } } } }).runMigrations;
+    await runThrough11(r.db);
     const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(), after, 'registry replay is idempotent');
-    assert.equal(r.rows('schema_migrations').length, 10);
+    assert.equal(r.rows('schema_migrations').length, 11);
     for (const game of extra) {
       const count = prepare(game, 1).tasks.length;
       const row = { ...rowFor('sequence_memory', 'new-' + game, 'one', 1), game_type: game, steps_completed: count,
@@ -177,7 +185,7 @@ async function migrationChecks() {
   for (const fk of [0, 1]) {
     const r = await runtime();
     try { r.sqlite.exec(`PRAGMA foreign_keys=${fk}`); await r.run(r.db); await r.run(r.db);
-      assert.equal(r.rows('schema_migrations').length, 10); assert.equal(r.rows('cognitive_sessions').length, 0);
+      assert.equal(r.rows('schema_migrations').length, 11); assert.equal(r.rows('cognitive_sessions').length, 0);
       assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(), []);
     } finally { r.sqlite.close(); }
   }

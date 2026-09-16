@@ -103,7 +103,7 @@ async function main() {
     const before = await snapshot();
     const { runMigrations } = load('src/db/migrations/index.ts');
     await runMigrations(db); await runMigrations(db);
-    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 10);
+    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 11);
     assert.deepEqual(await snapshot(), before);
     console.log('PASS: real migration 001-007 upgrade, idempotent runner, existing patient/cognitive/My Day data preserved');
 
@@ -233,7 +233,7 @@ async function main() {
     // Fresh-install path uses the same production migration runner too.
     sqlite.close(); sqlite = new DatabaseSync(':memory:'); sqlite.exec('PRAGMA foreign_keys=ON');
     await runMigrations(db); await runMigrations(db);
-    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 10);
+    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 11);
     assert.deepEqual(await db.getAllAsync('PRAGMA foreign_key_check'), []);
     console.log('PASS: fresh migration chain. Expo Android ImagePicker/FileSystem: NOT NATIVE VERIFIED.');
   } finally {

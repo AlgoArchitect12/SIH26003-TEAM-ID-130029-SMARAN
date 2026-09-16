@@ -149,7 +149,7 @@ async function main() {
     await assert.rejects(resolver.resolveActivePatient(), /More than one local patient/, 'Missing flags cannot pick between patients');
     flags.active = 'missing'; await assert.rejects(resolver.resolveActivePatient(), /Saved patient setup/);
     assert.equal(flags.active, 'missing', 'Recovery must preserve flags');
-    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 10);
+    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 11);
     assert.equal(w.end.getHours(), 0); assert.equal(w.last7.getHours(), 0);
     assert.equal(localDay(w.last7), '2026-03-02'); assert.equal(localDay(w.previous7), '2026-02-23');
     if (process.env.TZ === 'America/New_York') assert.equal((w.end - w.today) / 3600000, 23);
@@ -176,7 +176,7 @@ async function main() {
   assert.match(screen, /useIsFocused/u); assert.match(screen, /\[focused, attempt, router\]/u);
   assert.match(screen, /MemoryPhoto/u); assert.doesNotMatch(screen, /numberOfLines|ellipsizeMode/u);
   assert.deepEqual(fs.readdirSync(path.join(__dirname, '../src/db/migrations')).filter(file => /^\d/u.test(file)).sort(),
-    ['001_core_bootstrap.ts','002_cognitive_adaptation.ts','003_multilingual_expansion.ts','004_my_day.ts','005_my_memories.ts','006_cognitive_expansion.ts','007_cognitive_ai_expansion.ts','008_auth_sync.ts','009_extra_cognitive_games.ts','010_care_circle_reports.ts']);
+    ['001_core_bootstrap.ts','002_cognitive_adaptation.ts','003_multilingual_expansion.ts','004_my_day.ts','005_my_memories.ts','006_cognitive_expansion.ts','007_cognitive_ai_expansion.ts','008_auth_sync.ts','009_extra_cognitive_games.ts','010_care_circle_reports.ts','011_sync_consent.ts']);
   const { validateMemoryPhotoPath } = load('src/memories/types.ts');
   assert.throws(() => validateMemoryPhotoPath('care-one', 'memories/care-two/' + 'a'.repeat(32) + '.jpg'));
   assert.throws(() => validateMemoryPhotoPath('care-one', '../outside.jpg'));

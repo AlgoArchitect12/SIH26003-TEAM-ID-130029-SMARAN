@@ -76,7 +76,7 @@ export async function restoreSessionStorage(onFailure: () => void) {
   const keysForFlows = (flows: string[]) => flows.map(id => `${AUTH_STORAGE_KEY}-flow-${id}-code-verifier`);
   async function finishLogout(flows: string[]) {
     for (const key of keysForFlows(flows)) await secure.removeItem(key);
-    for (const suffix of ['', '-code-verifier', '-flows-code-verifier', '-user']) await secure.removeItem(AUTH_STORAGE_KEY + suffix);
+    for (const suffix of ['', '-code-verifier', '-flows-code-verifier', '-user', '-callback-state']) await secure.removeItem(AUTH_STORAGE_KEY + suffix);
     await deleteSecureValue('smaran.cloud.logout-pending');
     memory.clear();
   }
@@ -88,7 +88,7 @@ export async function restoreSessionStorage(onFailure: () => void) {
     else flowKeys = keysForFlows(parseFlows(await secure.getItem(AUTH_STORAGE_KEY + '-flows-code-verifier')));
   } catch { onFailure(); throw new Error('Account storage needs attention.'); }
   for (const key of flowKeys) memory.set(key, await secure.getItem(key));
-  for (const suffix of ['', '-code-verifier', '-flows-code-verifier', '-user']) {
+  for (const suffix of ['', '-code-verifier', '-flows-code-verifier', '-user', '-callback-state']) {
     const key = AUTH_STORAGE_KEY + suffix;
     memory.set(key, await secure.getItem(key));
   }
@@ -103,6 +103,15 @@ export async function restoreSessionStorage(onFailure: () => void) {
   }
   return {
     close: () => secure.close(),
+    clearCallback: async (current: () => boolean) => {
+      // This app permits one pending attempt. Clear the SDK's indexed copies too, not just its legacy slot.
+      const keys = [...keysForFlows(parseFlows(memory.get(AUTH_STORAGE_KEY + '-flows-code-verifier'))),
+        ...['-code-verifier', '-flows-code-verifier', '-callback-state'].map(suffix => AUTH_STORAGE_KEY + suffix)];
+      for (const key of keys) {
+        if (!current()) throw new Error('Account request expired.');
+        await secure.removeItem(key); memory.delete(key);
+      }
+    },
     beginLogout: () => setSecureValue('smaran.cloud.logout-pending', JSON.stringify(parseFlows(memory.get(AUTH_STORAGE_KEY + '-flows-code-verifier')))),
     finishLogout: async () => {
       const pending = await getSecureValue('smaran.cloud.logout-pending');

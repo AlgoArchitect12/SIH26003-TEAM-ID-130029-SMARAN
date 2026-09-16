@@ -43,6 +43,8 @@ async function outboxChecks() {
     assert.equal((await repo.pending(B)).length,0,'B never acquires A queue or already linked local patients');
     assert.ok(rows('sync_patient_owners').every(p=>p.owner_id===A));
     await domain.patient.upsertProfileWithSettings({id:'three',preferredName:'B local'},{});
+    assert.equal((await repo.pending(B)).length,0,'new profiles need explicit backup consent');
+    await repo.link(B,()=>true);
     assert.ok((await repo.pending(B)).every(e=>e.patient_id==='three'),'new linked profile uses B');
     assert.equal((await repo.pending(B)).length,2);
     const sent=await repo.pending(A);
@@ -54,7 +56,7 @@ async function outboxChecks() {
     const saved=rows('sync_outbox');
     await assert.rejects(repo.acknowledge(A,sent,receipts,()=>false),/expired/);
     assert.deepEqual(rows('sync_outbox'),saved,'stale A receipt cannot mutate B/current queue');
-    for(let i=0;i<7;i++) await repo.fail(A,[first],'network',()=>true,100);
+    for(let i=0;i<7;i++) await repo.fail(A,[first],'server',()=>true,100);
     assert.equal((await repo.pending(A))[0].state,'failed','bounded retries stop at eight');
     assert.equal((await repo.pending(A))[0].attempts,8);
     await repo.retry(A,()=>true);
@@ -212,19 +214,24 @@ async function authChecks() {
     if(pause){const waiting=pause;pause=null;sawSignal=!!init.signal;await waiting.promise;}
     if(url.includes('/logout'))return new Response('{}',{status:200});
     if(url.includes('/signup'))return Response.json({user:{id:A,email:'a@example.test'}});
+    if(url.endsWith('/settings'))return Response.json({external:{google:true}});
+    if(url.endsWith('/user'))return Response.json(session(A).user);
     if(url.includes('grant_type=pkce'))return Response.json(session(A));
     if(url.includes('/token'))return Response.json(session(JSON.parse(init.body).email==='b@example.test'?B:A));
     throw Error('Unexpected endpoint');
   };
-  const config={cloudConfig:{url:'https://synthetic.supabase.co',key:'sb_publishable_synthetic'},AUTH_STORAGE_KEY:'smaran.cloud.session',oauthCode,OAUTH_REDIRECT};
+  const config={...load('src/cloud/config.ts'),cloudConfig:{url:'https://synthetic.supabase.co',key:'sb_publishable_synthetic'},AUTH_STORAGE_KEY:'smaran.cloud.session',oauthCode,OAUTH_REDIRECT};
   const native={Platform:{OS:'android'},AppState:{currentState:'background',addEventListener:()=>({remove(){}})}};
   const overrides={
     'react-native-url-polyfill/auto':{},'@supabase/supabase-js':require('@supabase/supabase-js'),'react-native':native,
     './config':config,'./native-crypto':{preparePKCE(){}},
     'expo-linking':{getInitialURL:async()=>null,addEventListener:()=>({remove(){}})},
     'expo-web-browser':{openAuthSessionAsync:async url=>{const parsed=new URL(url);assert.equal(parsed.searchParams.get('provider'),'google');
-      assert.equal(parsed.searchParams.get('code_challenge_method'),'s256');assert.equal(parsed.searchParams.get('redirect_to'),OAUTH_REDIRECT);
-      return browserResult==='cancel'?{type:'cancel'}:{type:'success',url:OAUTH_REDIRECT+'?code=synthetic-code'};}},
+      assert.equal(parsed.searchParams.get('code_challenge_method'),'s256');const callback=new URL(parsed.searchParams.get('redirect_to'));
+      assert.equal(callback.href.split('?')[0],OAUTH_REDIRECT);
+      assert.deepEqual([...callback.searchParams.keys()],['state']);
+      assert.match(callback.searchParams.get('state'),/^[a-f0-9]{64}$/);callback.searchParams.set('code','synthetic-code');
+      return browserResult==='cancel'?{type:'cancel'}:{type:'success',url:callback.href};}},
     'expo-secure-store':{
       isAvailableAsync:async()=>true,getItemAsync:async key=>{if(fault==='read')throw Error('injected');return values.get(key)??null;},
       setItemAsync:async(key,value)=>{if(fault==='write')throw Error('injected');values.set(key,value);},

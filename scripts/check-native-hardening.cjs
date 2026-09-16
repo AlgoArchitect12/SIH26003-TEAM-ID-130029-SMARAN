@@ -30,7 +30,7 @@ async function main() {
   const migrations = files('src/db/migrations');
   assert.deepEqual(migrations.map(file => path.basename(file)).sort(), [
     '001_core_bootstrap.ts', '002_cognitive_adaptation.ts', '003_multilingual_expansion.ts',
-    '004_my_day.ts', '005_my_memories.ts', '006_cognitive_expansion.ts', '007_cognitive_ai_expansion.ts', '008_auth_sync.ts', '009_extra_cognitive_games.ts', '010_care_circle_reports.ts', 'index.ts',
+    '004_my_day.ts', '005_my_memories.ts', '006_cognitive_expansion.ts', '007_cognitive_ai_expansion.ts', '008_auth_sync.ts', '009_extra_cognitive_games.ts', '010_care_circle_reports.ts', '011_sync_consent.ts', 'index.ts',
   ], 'Only authorized migrations 001–010');
   require('./check-mvp22-boundaries.cjs').checkMvp22Boundaries();
   for (const file of migrations.filter(file => /\/00[1-6]_/.test(file))) {
@@ -115,7 +115,7 @@ async function main() {
   assert.equal(files('assets/my-home').length, 32);
   for (const asset of assets) assert.ok(fs.statSync(asset).size > 0);
   for (const file of files('src/games')) assert.ok(!/https?:\/\//u.test(read(file)), file);
-  assert.equal(files('src/db/migrations').filter(file => /\/\d{3}_/u.test(file)).length, 10);
+  assert.equal(files('src/db/migrations').filter(file => /\/\d{3}_/u.test(file)).length, 11);
   for (const route of ['index', '_layout', 'patient/home', 'patient/games/index', 'patient/games/memory-match', 'patient/games/pattern-recognition',
     'patient/games/routine-recall', 'patient/games/result', 'patient/games/why-level', 'patient/my-day', 'patient/my-day-reminder',
     'patient/my-memories', 'patient/my-memory', 'patient/my-memory-editor', 'patient/my-home', 'patient/my-home-memory', 'caregiver/home']) assert.ok(fs.existsSync(path.join(root, 'app', route + '.tsx')), route);
@@ -176,7 +176,7 @@ async function checkConnectionSafety() {
   try {
     const db = adapter(sql), runner = load('src/db/migrations/index.ts').runMigrations;
     await runner(db); await runner(db);
-    assert.equal(sql.prepare('SELECT count(*) AS n FROM schema_migrations').get().n, 10);
+    assert.equal(sql.prepare('SELECT count(*) AS n FROM schema_migrations').get().n, 11);
     for (const table of ['patient_profiles', 'cognitive_sessions', 'adaptive_model_state', 'personal_memories', 'reminders']) assert.equal(sql.prepare('SELECT count(*) AS n FROM ' + table).get().n, 0);
     const overrides = { '../client': { getDatabase: async () => db } };
     const memories = load('src/db/repositories/memories.repository.ts', overrides).memoriesRepository;

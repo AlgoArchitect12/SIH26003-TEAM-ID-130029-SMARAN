@@ -10,6 +10,7 @@ async function link(owner: string, current: () => boolean) {
     check(current);
     const now = new Date().toISOString();
     await tx.runAsync('INSERT INTO sync_accounts(owner_id, linked_at) VALUES(?,?) ON CONFLICT DO NOTHING', owner, now);
+    await tx.runAsync('UPDATE sync_accounts SET enabled = 1 WHERE owner_id = ?', owner);
     await tx.runAsync(`INSERT INTO sync_patient_owners(patient_id, owner_id, linked_at)
       SELECT id, ?, ? FROM patient_profiles WHERE id NOT IN (SELECT patient_id FROM sync_patient_owners)`, owner, now);
     await tx.runAsync('UPDATE sync_installation SET default_owner_id = ? WHERE singleton = 1', owner);
@@ -19,10 +20,20 @@ async function link(owner: string, current: () => boolean) {
 async function status(owner: string) {
   assertOwner(owner);
   const db = await getDatabase();
-  const account = await db.getFirstAsync<{ pull_cursor: number; last_success_at: string | null }>('SELECT pull_cursor, last_success_at FROM sync_accounts WHERE owner_id = ?', owner);
+  const account = await db.getFirstAsync<{ pull_cursor: number; last_success_at: string | null; enabled: number }>('SELECT pull_cursor, last_success_at, enabled FROM sync_accounts WHERE owner_id = ?', owner);
   const counts = await db.getFirstAsync<{ pending: number; failed: number }>(
     "SELECT count(*) AS pending, coalesce(sum(state = 'failed'),0) AS failed FROM sync_outbox WHERE owner_id = ?", owner);
-  return { linked: !!account, cursor: account?.pull_cursor ?? 0, lastSuccess: account?.last_success_at ?? null, pending: counts?.pending ?? 0, failed: counts?.failed ?? 0 };
+  const unlinked = await db.getFirstAsync<{ count: number }>('SELECT count(*) AS count FROM patient_profiles WHERE id NOT IN (SELECT patient_id FROM sync_patient_owners)');
+  return { linked: account?.enabled === 1, unlinked: unlinked?.count ?? 0, cursor: account?.pull_cursor ?? 0, lastSuccess: account?.last_success_at ?? null, pending: counts?.pending ?? 0, failed: counts?.failed ?? 0 };
+}
+async function pause(owner: string, current: () => boolean) {
+  assertOwner(owner);
+  await (await getDatabase()).withExclusiveTransactionAsync(async tx => {
+    check(current);
+    await tx.runAsync('UPDATE sync_accounts SET enabled = 0 WHERE owner_id = ?', owner);
+    await tx.runAsync('UPDATE sync_installation SET default_owner_id = NULL WHERE default_owner_id = ?', owner);
+    check(current);
+  });
 }
 async function activate(owner: string, current: () => boolean) {
   await (await getDatabase()).withExclusiveTransactionAsync(async tx => {
@@ -38,7 +49,7 @@ async function pending(owner: string) {
   return (await getDatabase()).getAllAsync<OutboxEvent>('SELECT * FROM sync_outbox WHERE owner_id = ? ORDER BY sequence LIMIT ?', owner, BATCH_SIZE);
 }
 async function acknowledge(owner: string, sent: OutboxEvent[], receipts: PushReceipt[], current: () => boolean, now = Date.now()) {
-  if (!Array.isArray(receipts) || receipts.length !== sent.length || receipts.some((r, i) => r.mutation_id !== sent[i].mutation_id ||
+  if (!Array.isArray(receipts) || receipts.length !== sent.length || receipts.some((r, i) => !r || typeof r !== 'object' || r.mutation_id !== sent[i].mutation_id ||
       !['applied', 'duplicate', 'rejected'].includes(r.status) || (r.status === 'rejected' && !['invalid', 'conflict', 'server'].includes(r.error ?? '')))) {
     throw new Error('Invalid sync acknowledgement.');
   }
@@ -54,8 +65,8 @@ async function acknowledge(owner: string, sent: OutboxEvent[], receipts: PushRec
 async function failIn(tx: SQLiteDatabase, owner: string, id: string, reason: string, now: number) {
   await tx.runAsync(`UPDATE sync_outbox SET attempts = min(attempts + 1,8), last_failure = ?,
     next_attempt_at = ? + min(300000, 2000 * (1 << attempts)),
-    state = CASE WHEN attempts >= 7 OR ? IN ('invalid','conflict') THEN 'failed' ELSE 'pending' END
-    WHERE owner_id = ? AND mutation_id = ?`, reason, now, reason, owner, id);
+    state = CASE WHEN (attempts >= 7 AND ? = 'server') OR ? IN ('invalid','conflict') THEN 'failed' ELSE 'pending' END
+    WHERE owner_id = ? AND mutation_id = ?`, reason, now, reason, reason, owner, id);
 }
 async function fail(owner: string, events: OutboxEvent[], reason: 'network' | 'auth' | 'server', current: () => boolean, now = Date.now()) {
   await (await getDatabase()).withExclusiveTransactionAsync(async tx => {
@@ -146,4 +157,4 @@ async function success(owner: string, current: () => boolean) {
     check(current);
   });
 }
-export const syncRepository = { link, status, activate, pending, acknowledge, fail, retry, apply, success };
+export const syncRepository = { link, status, activate, pause, pending, acknowledge, fail, retry, apply, success };

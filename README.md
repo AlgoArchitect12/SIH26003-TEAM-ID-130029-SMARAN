@@ -12,6 +12,8 @@ Run `npx tsc --noEmit`, `npx expo lint` and the regression scripts in `scripts/`
 
 Optional Supabase accounts, structured offline sync, configuration, validation evidence, and remaining cloud/device checks are documented in [MVP22 auth and sync](docs/MVP22_AUTH_SYNC.md). Local patient use requires no account; personal photos remain device-only.
 
+See [MVP24 auth and cloud hardening](docs/MVP24_AUTH_CLOUD_HARDENING.md) for secure email/Google callbacks, explicit backup consent, paused sync, regression results, and the native/cloud validation checklist.
+
 The eight-activity catalog includes Remember the Lights and Number Path. See [the extra games report](docs/EXTRA_COGNITIVE_GAMES.md) for gameplay, difficulty, migration 009, the forward cloud validator, regression results, and remaining device checks.
 
 ## Brand assets

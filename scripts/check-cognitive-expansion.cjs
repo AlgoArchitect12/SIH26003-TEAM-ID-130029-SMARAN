@@ -198,7 +198,7 @@ async function architectureChecks() {
     // Separate fresh database runs the real registry 001→007.
     sqlite.close(); sqlite = new DatabaseSync(':memory:'); sqlite.exec('PRAGMA foreign_keys = ON');
     await runner(db); await runner(db);
-    assert.equal(table('schema_migrations').length, 10);
+    assert.equal(table('schema_migrations').length, 11);
     assert.equal(table('cognitive_sessions').length, 0); assert.equal(table('adaptive_model_state').length, 0);
     assert.deepEqual(await db.getAllAsync('PRAGMA foreign_key_check'), []);
     console.log('PASS: fresh 001–007 chain, idempotence, no seeded activities/models');

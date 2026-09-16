@@ -10,8 +10,8 @@ import { PageLayout } from '@constants/layout';
 import { t, type TranslationKey } from '@i18n/index';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import { accessEmail, accessGoogle, initializeAuth, logout, retryAuth, useAuthStore } from '@/src/cloud/auth';
-import { cloudConfig } from '@/src/cloud/config';
-import { enableCloudSync, refreshSyncStatus, syncNow, useSyncStore } from '@/src/cloud/sync';
+import { AccountError, cloudConfig } from '@/src/cloud/config';
+import { enableCloudSync, pauseCloudSync, refreshSyncStatus, syncNow, useSyncStore } from '@/src/cloud/sync';
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function AccountScreen() {
   const [busy, setBusy] = useState(false);
   const locked = useRef(false);
   useEffect(() => { void initializeAuth(); void refreshSyncStatus().catch(() => {}); }, []);
-  useEffect(() => { setEmail(''); setPassword(''); setMessage(null); }, [auth.ownerId, auth.revision]);
+  useEffect(() => { setEmail(''); setPassword(''); }, [auth.ownerId, auth.revision]);
   const available = !!cloudConfig && Platform.OS !== 'web';
   const disabled = busy || auth.busy || auth.status === 'restoring';
   const run = async (work: () => Promise<unknown>) => {
@@ -36,13 +36,15 @@ export default function AccountScreen() {
       if (result === 'check-email') setMessage('accountCheckEmail');
       if (result === 'cancelled') setMessage('accountCancelled');
       if (result === 'local-offline') setMessage('accountOfflineLogout');
-    } catch { setMessage('accountFailure'); }
+    } catch (error) { setMessage(error instanceof AccountError ? error.key : 'accountFailure'); }
     finally { setPassword(''); locked.current = false; setBusy(false); }
   };
   const action = (key: TranslationKey, work: () => Promise<unknown>, variant: 'primary' | 'outline' = 'primary') =>
     <SmaranButton key={key} label={t(language, key)} accessibilityLabel={t(language, key)} disabled={disabled}
       variant={variant} onPress={() => void run(work)} />;
-  const statusKey: TranslationKey = !auth.ownerId ? auth.status === 'restoring' ? 'accountRestoring' : auth.status === 'offline' ? 'accountOffline' : 'accountLocalStatus'
+  const statusKey: TranslationKey = auth.status === 'storage-error' ? 'accountStorage' : auth.status === 'restoring' ? 'accountRestoring' :
+    auth.busy ? 'accountWorking' : auth.status === 'expired' ? 'accountSessionExpired' : auth.status === 'confirmation' ? 'accountConfirmEmail' :
+      auth.status === 'offline' ? 'accountNetwork' : auth.status === 'unavailable' ? 'accountUnavailable' : !auth.ownerId ? 'accountLocalStatus'
     : ({ local: 'accountLocalStatus', 'signed-in': 'accountSignedIn', offline: 'accountOffline', syncing: 'accountSyncing', current: 'accountCurrent', waiting: 'accountPending', attention: 'accountAttention' } as const)[sync.status];
   return <ScreenWrapper scroll><View style={PageLayout.content}>
     <ThemedText type="screenTitle">{t(language, 'accountTitle')}</ThemedText>
@@ -51,9 +53,12 @@ export default function AccountScreen() {
       onPress={() => { setPassword(''); if (router.canGoBack()) router.back(); else router.replace('/'); }} />
     {!available && <ThemedText accessibilityRole="alert">{t(language, cloudConfig ? 'accountNative' : 'accountMissing')}</ThemedText>}
     <SmaranCard><ThemedText accessibilityLiveRegion="polite" type="cardHeading">{t(language, statusKey, { count: String(sync.pending) })}</ThemedText>
-      {auth.email && <ThemedText>{auth.email}</ThemedText>}
-      <ThemedText>{t(language, 'accountPending', { count: String(sync.pending) })}</ThemedText>
-      <ThemedText>{t(language, 'accountLast', { time: sync.lastSuccess ? new Date(sync.lastSuccess).toLocaleString() : t(language, 'accountNever') })}</ThemedText>
+      {auth.email && <ThemedText>{t(language, 'accountSignedIn')}: {auth.email}</ThemedText>}
+      {!auth.ownerId && <ThemedText>{t(language, 'accountSignInToSync')}</ThemedText>}
+      {auth.ownerId && <>
+        <ThemedText>{t(language, 'accountPending', { count: String(sync.pending) })}</ThemedText>
+        <ThemedText>{t(language, 'accountLast', { time: sync.lastSuccess ? new Date(sync.lastSuccess).toLocaleString() : t(language, 'accountNever') })}</ThemedText>
+      </>}
     </SmaranCard>
     {auth.status === 'storage-error' ? <>
       <ThemedText accessibilityRole="alert">{t(language, 'accountStorage')}</ThemedText>
@@ -73,9 +78,11 @@ export default function AccountScreen() {
     </> : <>
       <ThemedText>{t(language, 'accountConsent')}</ThemedText>
       {sync.linked ? action('accountSyncNow', () => syncNow(true)) : action('accountEnable', enableCloudSync)}
+      {sync.linked && sync.unlinked > 0 && action('accountAddProfiles', enableCloudSync, 'outline')}
+      {sync.linked && action('accountPause', pauseCloudSync, 'outline')}
       {action('accountLogout', logout, 'outline')}
     </>}
-    {message && <ThemedText accessibilityRole="alert" accessibilityLiveRegion="polite">{t(language, message)}</ThemedText>}
+    {(message || auth.message) && <ThemedText accessibilityRole="alert" accessibilityLiveRegion="polite">{t(language, message ?? auth.message!)}</ThemedText>}
     <ThemedText type="secondary">{t(language, 'accountMedia')}</ThemedText>
   </View></ScreenWrapper>;
 }
