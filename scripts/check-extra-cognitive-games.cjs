@@ -15,9 +15,10 @@ const tick = () => new Promise(setImmediate);
 const seeded = (seed = 123) => () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
 const prepare = (game, level) => prepareGridActivity(game, level, seeded());
 
+let currentPlayTime = Date.parse(stamp);
 function play(game, level, wrong = true) {
   const activity = prepare(game, level);
-  let now = Date.parse(stamp), state = engine.createSelection(activity.tasks, now);
+  let now = currentPlayTime, state = engine.createSelection(activity.tasks, now);
   assert.throws(() => engine.finalizeSelection(state, game));
   for (const [index, task] of activity.tasks.entries()) {
     if (index === 0 && wrong) {
@@ -42,6 +43,7 @@ function play(game, level, wrong = true) {
   assert.equal(value.accuracy, value.correctSelections / value.attempts);
   assert.equal(value.averageResponseMs, 1000, 'observation/continuation/background excluded by resume boundary');
   assert.ok(!('challengesCompleted' in value) && !('totalPairs' in value));
+  currentPlayTime = now + 1000;
   return value;
 }
 

@@ -16,6 +16,14 @@ const authorized = new Set([
   'src/i18n/account-strings.ts','src/i18n/strings.ts','src/i18n/regional-strings.ts','src/i18n/ux-strings.ts',
   'src/cloud/auth.ts','src/cloud/auth-storage.ts','src/cloud/config.ts','src/cloud/native-crypto.ts',
   'src/cloud/sync.ts','src/cloud/sync-contract.ts','src/cloud/online-ai.ts','app/patient/menu.tsx',
+  'app/onboarding/accessibility.tsx', 'app/onboarding/complete.tsx', 'app/onboarding/language.tsx',
+  'app/onboarding/profile.tsx', 'app/onboarding/region.tsx', 'app/onboarding/role.tsx',
+  'components/onboarding/finish-onboarding.tsx', 'components/onboarding/onboarding-screen.tsx',
+  'src/ai/adaptive-engine.ts', 'src/games/routine-recall.ts', 'src/i18n/index.ts',
+  'src/my-day/types.ts', 'src/my-home/content.ts', 'src/services/profile-switching.service.ts',
+  'src/stores/onboarding.store.ts', 'src/stores/patient-session.store.ts',
+  'app/onboarding/caregiver.tsx', 'src/i18n/routine-strings.ts', 'src/i18n/stabilization-strings.ts',
+  'src/services/onboarding-recovery.service.ts'
 ]);
 function checkMvp22Boundaries() {
   const additions={'@supabase/supabase-js':'2.116.0','react-native-url-polyfill':'4.0.0','expo-crypto':'~15.0.9','expo-print':'~15.0.8','expo-sharing':'~14.0.8'};

@@ -111,9 +111,10 @@ export function MemoryCard({
         <ThemedText accessible={false} type="secondary">{positionLabel}</ThemedText>
         <MaterialIcons
           accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-          color={colors.primary}
+          color={state === 'matched' ? colors.textSecondary : colors.primary}
           name={symbol.icon}
           size={Math.min(64, size * 0.4)}
+          style={state === 'matched' ? { opacity: 0.55 } : undefined}
         />
         {state === 'matched' ? (
           <MaterialIcons

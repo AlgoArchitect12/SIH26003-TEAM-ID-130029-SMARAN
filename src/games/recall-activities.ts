@@ -43,7 +43,7 @@ export function preparePictures(level: DifficultyLevel): RecallActivity {
   const symbols = rotate(MemorySymbols.map(symbol => symbol.id), level + 1);
   const preview = symbols.slice(0, [2, 3, 4, 4, 5][level - 1]);
   const unseen = symbols.filter(symbol => !preview.includes(symbol));
-  return { preview, tasks: preview.map((answer, index) => ({
+  return { preview, tasks: [...preview].reverse().map((answer, index) => ({
     id: `picture-${level}-${index}`, answer,
     // Exactly one previously shown picture per question; all distractors were absent.
     choices: rotate([answer, ...rotate(unseen, index).slice(0, Math.min(3, level))], index + 1),

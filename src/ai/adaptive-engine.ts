@@ -42,13 +42,19 @@ export function recommendDifficulty(
   const readiness = sigmoid(
     model.bias + Object.values(contributions).reduce((sum, value) => sum + value, 0)
   );
-  const direction = readiness < 0.35 ? 'gentler' : readiness > 0.75 ? 'challenge' : 'hold';
-  const change = direction === 'gentler' ? -1 : direction === 'challenge' ? 1 : 0;
+  let change = readiness < 0.35 ? -1 : readiness > 0.75 ? 1 : 0;
+  // Patient failing multiple times (e.g. 3x) on Level 1 must not be promoted.
+  if (currentDifficulty === 1 && features.accuracy <= 0.65 && change > 0) {
+    change = 0;
+  }
+  const recommendedDifficulty = clampDifficulty(currentDifficulty + change);
+  // Explain the actual bounded change, including level 1 and level 5.
+  const direction = recommendedDifficulty < currentDifficulty ? 'gentler' : recommendedDifficulty > currentDifficulty ? 'challenge' : 'hold';
 
   return {
     contributions,
     direction,
     readiness,
-    recommendedDifficulty: clampDifficulty(currentDifficulty + change),
+    recommendedDifficulty,
   };
 }

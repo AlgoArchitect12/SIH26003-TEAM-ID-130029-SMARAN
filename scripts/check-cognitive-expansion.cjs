@@ -240,7 +240,8 @@ function gameChecks() {
     assert.equal(new Set(routine.routine.steps.map(step=>step.text)).size, routine.tasks.length);
     for (const [index, task] of routine.tasks.entries()) {
       assert.equal(task.answer, routine.routine.steps[index].id);
-      assert.deepEqual(new Set(task.choices), new Set(routine.routine.steps.slice(index).map(step=>step.id)));
+      assert.ok(task.choices.includes(task.answer), 'answer is in choices');
+      assert.equal(new Set(task.choices).size, task.choices.length, 'choices are unique');
     }
     for (const [gameType,tasks] of [['pattern_recognition',patterns],['routine_recall',routine.tasks]]) {
       let state = engine.createSelection(tasks,1000);
@@ -344,7 +345,7 @@ function gameChecks() {
   }
   const ui = fs.readFileSync(path.join(__dirname,'../components/games/selection-activity-screen.tsx'),'utf8');
   assert.match(ui,/recommendedDifficulty \?\? 1/);
-  assert.match(ui,/speechLanguage="en"/); assert.match(ui,/routineEnglish/);
+  assert.match(ui,/language=\{language\}/);
   assert.match(ui,/SelectionState \| null/); assert.doesNotMatch(ui,/setTimeout|setInterval/);
   console.log('PASS: Pattern/Routine all levels, unique choices/sequence, retry/hints/timing/accuracy/repeated errors, completion guard, bounds, first levels, Memory Match feature parity, result/Why labels, seven-language parity, routine safety and offline/no-fake-data scans');
 }

@@ -11,6 +11,7 @@ import { useThemeColors } from '@/hooks/use-theme-color';
 import { Spacing } from '@constants/layout';
 import type { Language } from '@db/schema.types';
 import { t } from '@i18n/index';
+import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 type OnboardingScreenProps = PropsWithChildren<{
   backDisabled?: boolean;
@@ -35,6 +36,7 @@ export function OnboardingScreen({
   title,
 }: OnboardingScreenProps) {
   const colors = useThemeColors();
+  const role = useOnboardingStore(state => state.role);
 
   return (
     <ScreenWrapper contentContainerStyle={styles.scrollContent} scroll>
@@ -57,7 +59,7 @@ export function OnboardingScreen({
         <View style={styles.introduction}>
           {step ? (
             <ThemedText type="caption">
-              {t(language, 'stepProgress', { current: String(step), total: '5' })}
+              {t(language, 'stepProgress', { current: String(step), total: role === 'caregiver' ? '6' : '5' })}
             </ThemedText>
           ) : null}
           <ThemedText accessibilityRole="header" type="screenTitle">

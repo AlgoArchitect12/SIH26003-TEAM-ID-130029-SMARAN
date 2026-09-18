@@ -4,7 +4,7 @@ import { myDayRepository as repository } from '../db/repositories/my-day.reposit
 import { patientRepository } from '../db/repositories/patient.repository';
 import { strings, t } from '../i18n/index';
 import { localDateTime, localDay, type ReminderInput } from '../my-day/types';
-import { capturePatientRequest } from '../stores/patient-session.store';
+import { capturePatientRequest, captureReminderManagement } from '../stores/patient-session.store';
 import { resolveActivePatient } from './active-patient.service';
 
 export type ReminderPermission = 'granted' | 'denied' | 'undetermined' | 'unavailable';
@@ -95,9 +95,9 @@ function serialized<T>(work: () => Promise<T>): Promise<T> {
   queue = result.catch(() => {});
   return result;
 }
-function mutate<T>(patientId: string, work: (isCurrent: () => boolean) => Promise<T>): Promise<T> {
+function mutate<T>(patientId: string, work: (isCurrent: () => boolean) => Promise<T>, administrative = true): Promise<T> {
   // Capture before entering the queue: returning to the same patient still invalidates old work.
-  const isCurrent = capturePatientRequest();
+  const isCurrent = administrative ? captureReminderManagement() : capturePatientRequest();
   return serialized(async () => {
     if (!isCurrent()) throw new Error('Reminder patient changed before saving.');
     const active = await resolveActivePatient();
@@ -117,11 +117,13 @@ export const myDayService = {
     await repository.setEnabled(patientId, id, enabled, isCurrent);
     return reconcile(patientId);
   }),
+
   remove: (patientId: string, id: string) => mutate(patientId, async isCurrent => {
     await repository.remove(patientId, id, isCurrent);
     return reconcile(patientId);
   }),
   complete: (patientId: string, id: string, day = localDay()) => mutate(patientId, async isCurrent => {
     await repository.complete(patientId, id, day, isCurrent);
-  }),
+    return reconcile(patientId);
+  }, false),
 };

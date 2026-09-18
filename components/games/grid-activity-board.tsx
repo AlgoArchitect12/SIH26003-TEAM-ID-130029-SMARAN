@@ -76,7 +76,7 @@ export function GridActivityBoard({ activity, selection, language, voice, isCurr
   const requestHint = () => {
     if (!canAct() || phaseRef.current !== 'answer') return;
     onChange(state => hintSelection(state));
-    if (lights && selection.hintLevel === 0) replay();
+    if (lights) replay();
   };
   const pick = (choice: string) => {
     if (!canAct() || phaseRef.current !== 'answer') return;
@@ -101,19 +101,22 @@ export function GridActivityBoard({ activity, selection, language, voice, isCurr
   return <View style={styles.group}>
     <ThemedText type="secondary">{t(language, 'gridRound', { current: String(round + 1), total: String(activity.rounds) })}</ThemedText>
     <ThemedText accessibilityLiveRegion="polite" type="cardHeading">{prompt}</ThemedText>
+    {lights && phase === 'answer' && <ThemedText accessibilityLiveRegion="polite">{t(language, 'lightsProgress', {
+      current: String(selection.correctSelections - round * activity.roundLength), total: String(activity.roundLength),
+    })}</ThemedText>}
     <View style={styles.grid}>
-      {activity.tiles.map((tile, index) => {
-        const done = !lights && Number(tile) <= selection.correctSelections;
+    {(lights ? activity.tiles : task.choices).map((tile, index) => {
+        const done = !lights && activity.tasks.slice(0, selection.correctSelections).some(item => item.answer === tile);
         const guided = phase === 'answer' && !selection.awaitingContinue && tile === task.answer &&
           (selection.hintLevel >= (lights ? 2 : 1) || activity.markNext);
         const emphasized = tile === activeLight || guided;
         const disabled = phase !== 'answer' || selection.awaitingContinue || done || !focused || !foreground ||
           (selection.hintLevel === 3 && tile !== task.answer);
-        return <SmaranButton key={tile} testID={'grid-tile-' + tile} size="large" label={tile}
+        return <SmaranButton key={tile} testID={'grid-tile-' + tile} size="large" label={`${tile === activeLight ? '◆ ' : done ? '✓ ' : ''}${tile}`}
           accessibilityLabel={t(language, lights ? 'lightTile' : done ? 'numberDone' : 'numberTile', {
             number: tile, row: String(Math.floor(index / 2) + 1), column: String(index % 2 + 1),
           })}
-          accessibilityState={{ selected: done }} accessibilityHint={guided ? hint || prompt : undefined}
+          accessibilityState={{ selected: done || tile === activeLight }} accessibilityHint={guided ? hint || prompt : undefined}
           disabled={disabled} variant="outline" reducedMotionOverride hapticsEnabled={!reducedMotion}
           style={[styles.tile, { borderColor: emphasized ? colors.primary : colors.border,
             borderWidth: emphasized ? 4 : 2, backgroundColor: emphasized ? colors.surfaceSelected : done ? colors.surfaceMuted : colors.surface }]}

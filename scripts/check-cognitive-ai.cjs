@@ -267,6 +267,9 @@ async function screenChecks() {
         await new Promise(resolve => setTimeout(resolve, 5));
       } else {
         const tasks = prepare(game, level);
+        if (game === 'sequence_memory') {
+          while (byId('activity-next-preview')) press(byId('activity-next-preview'));
+        }
         press(byId('activity-start'));
         // Recall previews are not mounted after Start, so neither sight nor screen readers receive the answers.
         if (game === 'sequence_memory' || game === 'picture_recall') assert.ok(!nodes(tree).some(node => node.type?.name === 'PictureRow'));

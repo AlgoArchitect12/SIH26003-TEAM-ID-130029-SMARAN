@@ -3,7 +3,7 @@ import { SmaranBrand } from '@components/ui/smaran-brand';
 import { getDateOfBirth } from '@services/profile-details.service';
 import { displayDateOfBirth, ageFromDateOfBirth } from '@/src/utils/date-of-birth';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -37,6 +37,7 @@ function SummaryRow({ label }: { label: string }) {
 
 export default function CompleteScreen() {
   const router = useRouter();
+  const { view } = useLocalSearchParams<{ view?: string }>();
   const resetOnboarding = useOnboardingStore((state) => state.resetOnboarding);
   const loadingLanguage = useOnboardingStore((state) => state.language) ?? 'en';
   const setLanguage = useOnboardingStore((state) => state.setLanguage);
@@ -139,7 +140,7 @@ export default function CompleteScreen() {
       <SmaranButton
         accessibilityLabel={t(settings.language, 'continue')}
         label={t(settings.language, 'continue')}
-        onPress={() => router.replace('/patient/home')}
+        onPress={() => router.replace(view === 'caregiver' ? '/caregiver/home' : '/patient/home')}
         size="large"
       />
     </OnboardingScreen>

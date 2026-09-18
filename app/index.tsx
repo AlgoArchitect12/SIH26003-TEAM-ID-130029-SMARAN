@@ -58,9 +58,7 @@ export default function IndexScreen() {
 
     resolveLaunchRoute().catch(error => {
       if (active && error instanceof PatientSelectionRequiredError) { router.replace('/profiles'); return; }
-      if (__DEV__) {
-        console.error('Onboarding route resolution failed');
-      }
+      if (__DEV__) { console.error('Onboarding route resolution failed'); }
       if (active) {
         setStatus('failed');
       }

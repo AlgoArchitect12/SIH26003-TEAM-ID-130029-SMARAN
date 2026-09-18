@@ -6,9 +6,11 @@ import { ThemedText } from '@components/themed-text';
 import { patientRepository } from '@db/repositories/patient.repository';
 import { t } from '@i18n/index';
 import { saveDateOfBirth } from '@services/profile-details.service';
-import { SecureStorageKeys, setSecureValue } from '@services/secure-storage.service';
+import { deleteSecureValue, SecureStorageKeys, setSecureValue } from '@services/secure-storage.service';
 import { parseDateOfBirth } from '@/src/utils/date-of-birth';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
+import { validateMember } from '@/src/caregiver/care-circle';
+import { saveOnboardingCareMember } from '@services/care-circle.service';
 
 export function FinishOnboarding() {
   const router = useRouter();
@@ -22,17 +24,24 @@ export function FinishOnboarding() {
     locked.current = true; setBusy(true); setFailed(false);
     try {
       const dob = parseDateOfBirth(state.profile.dateOfBirth);
-      if (!dob || state.role !== 'patient' || !state.language || !state.region) throw new Error('Incomplete setup.');
+      if (!dob || !state.role || !state.language || !state.region) throw new Error('Incomplete setup.');
+      if (state.role === 'caregiver') validateMember(state.caregiver);
+      const id = state.savedProfileId ?? await patientRepository.newProfileId();
+      // Persist only the recovery identity/role before committing any profile data.
+      await setSecureValue(SecureStorageKeys.pendingOnboarding, JSON.stringify({ id, role: state.role }));
+      state.setSavedProfileId(id);
       // Keep the created ID across retries/back navigation; never overwrite another local patient.
       const result = await patientRepository.upsertProfileWithSettings({
-        id: state.savedProfileId ?? undefined, preferredName: state.profile.preferredName,
+        id, preferredName: state.profile.preferredName,
         emergencyName: state.profile.emergencyName, emergencyPhone: state.profile.emergencyPhone,
       }, { ...state.accessibility, language: state.language, region: state.region });
       state.setSavedProfileId(result.profile.id);
       await saveDateOfBirth(result.profile.id, dob);
+      if (state.role === 'caregiver') await saveOnboardingCareMember(result.profile.id, state.caregiver);
       await setSecureValue(SecureStorageKeys.activeProfileId, result.profile.id);
       await setSecureValue(SecureStorageKeys.onboardingCompleted, 'true');
-      router.replace('/onboarding/complete');
+      await deleteSecureValue(SecureStorageKeys.pendingOnboarding);
+      router.replace({ pathname: '/onboarding/complete', params: { view: state.role } });
     } catch { setFailed(true); }
     finally { locked.current = false; setBusy(false); }
   };

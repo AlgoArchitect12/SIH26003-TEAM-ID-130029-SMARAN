@@ -238,7 +238,9 @@ async function syncChecks() {
     const resolver=load('src/services/active-patient.service.ts',{'@db/repositories/patient.repository':{patientRepository:domain.patient},'./secure-storage.service':secure,'@/src/utils/validation':load('src/utils/validation.ts')});
     const routes=[];const render=screen('app/index.tsx',{'expo-router':{useRouter:()=>({replace:r=>routes.push(r)})},'@services/active-patient.service':resolver,
       '@services/secure-storage.service':secure,'@/src/stores/onboarding.store':{useOnboardingStore:select=>select({language:'en',resetOnboarding(){},setLanguage(){},setRegion(){},setAccessibilityPreferences(){}})}});
-    render();await tick();assert.equal(routes.at(-1),'/patient/home');assert.equal(h.requests.length,0);
+    render();await tick();
+    if (routes.at(-1) !== '/patient/home') console.error('ROUTES:', routes, 'STATUS:', nodes(render()).find(n => n.props?.accessibilityRole === 'alert')?.props?.children);
+    assert.equal(routes.at(-1),'/patient/home');assert.equal(h.requests.length,0);
     await sync.syncNow();assert.equal(calls.length,0,'signed out makes no RPC');
     await auth.accessEmail('a@example.test','synthetic-pass');await sync.syncNow();
     assert.equal(calls.length,0,'sign-in does not grant backup consent');

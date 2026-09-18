@@ -2,7 +2,7 @@ import { patientRepository } from '../db/repositories/patient.repository';
 import type { PatientSettings, UpdatePatientSettingsInput } from '../db/schema.types';
 import { useCognitiveSessionStore } from '../stores/cognitive-session.store';
 import { useOnboardingStore, type ProfileDraft } from '../stores/onboarding.store';
-import { usePatientSessionStore } from '../stores/patient-session.store';
+import { setWorkspace, usePatientSessionStore } from '../stores/patient-session.store';
 import { parseDateOfBirth } from '../utils/date-of-birth';
 import { validateCreatePatientProfile, validateRecordId, validateUpdatePatientSettings } from '../utils/validation';
 import { getDateOfBirth, saveDateOfBirth } from './profile-details.service';
@@ -29,6 +29,7 @@ export function applyPatientSettings(settings: PatientSettings) {
 }
 
 export function leavePatientForSelection() {
+  setWorkspace('patient');
   usePatientSessionStore.setState(state => ({ revision: state.revision + 1, patientId: null }));
   useCognitiveSessionStore.getState().clear();
   useOnboardingStore.getState().resetOnboarding();

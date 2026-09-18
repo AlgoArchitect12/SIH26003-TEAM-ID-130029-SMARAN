@@ -1,4 +1,4 @@
-import { capturePatientRequest } from '@/src/stores/patient-session.store';
+import { capturePatientRequest, setWorkspace } from '@/src/stores/patient-session.store';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { CurrentPerson } from '@components/patient/current-person';
 import { CareOverview } from '@components/caregiver/care-overview';
@@ -50,6 +50,7 @@ export default function CaregiverHomeScreen() {
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!focused) return;
+    setWorkspace('caregiver');
     let active = true;
     const current = capturePatientRequest();
     setStatus('loading'); setData(null);
@@ -143,7 +144,7 @@ export default function CaregiverHomeScreen() {
       </Section>
       <Section title={t(language, 'careRoutine')}>
         <ThemedText>{t(language, 'carePending', { count: number(data.routine.pending) })}</ThemedText>
-        {!data.routine.today.length && <View style={styles.group}><ThemedText>{t(language, 'careNoRoutine')}</ThemedText><SmaranButton label={t(language, 'dayAdd')} accessibilityLabel={t(language, 'dayAdd')} onPress={() => router.push('/patient/my-day-reminder')} variant="outline" /></View>}
+        {!data.routine.today.length && <View style={styles.group}><ThemedText>{t(language, 'careNoRoutine')}</ThemedText><SmaranButton label={t(language, 'dayAdd')} accessibilityLabel={t(language, 'dayAdd')} onPress={() => router.push('/caregiver/reminder')} variant="outline" /></View>}
         {data.routine.today.map(reminder => <SmaranCard key={reminder.id} style={styles.group}>
           <ThemedText type="secondary">{t(language, category[reminder.type].key)} • {timeLabel(language, reminder.timeOfDay)}</ThemedText>
           <ThemedText type="action">{reminder.title}</ThemedText>

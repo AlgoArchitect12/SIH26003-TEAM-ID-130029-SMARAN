@@ -8,6 +8,7 @@ export function t(
   values: Record<string, string> = {}
 ) {
   const template = strings[language ?? 'en']?.[key] ?? strings.en[key];
+  if (!template) return `[${key}]`;
   return template.replace(/\{(\w+)\}/gu, (match, name: string) => values[name] ?? match);
 }
 

@@ -1,4 +1,5 @@
-import { DifficultyLevels, type DifficultyLevel } from '../db/schema.types';
+import { DifficultyLevels, type DifficultyLevel, type Language } from '../db/schema.types';
+import { routineStrings } from '../i18n/routine-strings';
 import type { SelectionTask } from './selection-engine';
 
 export type RoutineStep = { id: string; text: string };
@@ -29,14 +30,27 @@ export const Routines: Record<DifficultyLevel, Routine> = {
   ] },
 };
 
-export function prepareRoutine(level: DifficultyLevel): { routine: Routine; tasks: readonly SelectionTask[] } {
+export function prepareRoutine(level: DifficultyLevel, language: Language = 'en'): { routine: Routine; tasks: readonly SelectionTask[] } {
   if (!DifficultyLevels.includes(level)) throw new Error('Invalid activity level.');
-  const routine = Routines[level];
+  const copy = routineStrings[language][level - 1];
+  const routine = { ...Routines[level], title: copy[0],
+    steps: Routines[level].steps.map((step, index) => ({ ...step, text: copy[index + 1] })) };
   return {
     routine,
     tasks: routine.steps.map((step, index) => {
-      const remaining = routine.steps.slice(index).map(value => value.id);
-      return { id: routine.id + '-' + index, answer: step.id, choices: [...remaining.slice(1).reverse(), remaining[0]] };
+      // MVP-27: The distractor options in Routine Recall should include steps from other routines.
+      const otherRoutines = Object.values(Routines).filter(r => r.id !== routine.id);
+      const crossDistractors = otherRoutines.map(r => r.steps[index % r.steps.length].id);
+      const internalDistractors = routine.steps.filter(value => value.id !== step.id).map(value => value.id);
+      // Combine and take up to 2 distractors (1 internal, 1 external if available)
+      const distractors = [
+        ...internalDistractors.slice(0, 1),
+        ...crossDistractors.slice(0, 2)
+      ].slice(0, 3);
+
+      const choices = [...distractors];
+      choices.splice(index % (choices.length + 1), 0, step.id);
+      return { id: routine.id + '-' + index, answer: step.id, choices };
     }),
   };
 }

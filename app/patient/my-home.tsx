@@ -22,9 +22,9 @@ export default function MyHomeScreen() {
         <ThemedText type="secondary">{t(language, 'regionalIntro')}</ThemedText>
       </View>
       {language !== 'en' && <ThemedText>{t(language, 'regionalEnglish')}</ThemedText>}
-      <ReadScreenButton language={language} speechLanguage="en" text={[
-        t('en', 'homeRegionTitle'), t('en', 'homeRegionContext', { region: getRegionName('en', state) }),
-        t('en', 'regionalIntro'), ...items.map(item => `${item.title}. ${item.shortDescription}`),
+      <ReadScreenButton language={language} text={[
+        t(language, 'homeRegionTitle'), t(language, 'homeRegionContext', { region: getRegionName(language, state) }),
+        t(language, 'regionalIntro'), ...items.map(item => language === 'en' ? `${item.title}. ${item.shortDescription}` : t(language, regionalCategoryKeys[item.category])),
       ].join(' ')} />
       {items.map(item => <SmaranCard key={item.id} style={styles.group}>
         <RegionalImage item={item} language={language} />

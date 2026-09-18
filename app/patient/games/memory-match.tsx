@@ -186,6 +186,7 @@ export default function MemoryMatchScreen() {
   const matchedPairs = game.cards.filter(({ state }) => state === 'matched').length / 2;
   const supportSymbol = game.cards.find(card => card.state !== 'matched')?.symbolId;
   const supportPositions = game.cards.flatMap((card, index) => card.state !== 'matched' && card.symbolId === supportSymbol ? [index] : []);
+  (global as any).lastMemoryMatchRender = { game, coach, supportPositions };
   const hintKey = coachHintKey('memory_match', coach);
   const hintText = hintKey ? t(language, hintKey, { position: String(supportPositions[0] + 1),
     first: String(supportPositions[0] + 1), second: String(supportPositions[1] + 1) }) : '';
@@ -227,7 +228,7 @@ export default function MemoryMatchScreen() {
   };
 
   const handleCardPress = (index: number) => {
-    if (!data.isCurrent() || (coachRef.current.hintLevel === 3 && !supportPositions.includes(index))) return;
+    if (!data.isCurrent() || (coachRef.current.hintLevel >= 3 && !supportPositions.includes(index))) return;
     const next = flipCard(gameRef.current, index);
     if (next.state === gameRef.current) return;
     const now = Date.now();
@@ -257,7 +258,7 @@ export default function MemoryMatchScreen() {
   };
 
   const handleHint = () => {
-    if (!data.isCurrent() || gameRef.current.inputLocked || gameRef.current.firstCardIndex !== null || coachRef.current.hintLevel === 3) return;
+    if (!data.isCurrent() || gameRef.current.inputLocked || gameRef.current.firstCardIndex !== null || coachRef.current.hintLevel >= 3) return;
     const next = coachHint(coachRef.current);
     if (telemetry.current) telemetry.current = recordHint(telemetry.current);
     updateCoach(next);
@@ -307,7 +308,7 @@ export default function MemoryMatchScreen() {
               {game.cards.map((card, index) => {
                 const symbol = getMemorySymbol(card.symbolId);
                 const hinted = coach.hintLevel >= 2 && feedbackCue !== 'match' &&
-                  (coach.hintLevel === 3 ? supportPositions.includes(index) : index === supportPositions[0]);
+                  (coach.hintLevel >= 3 ? supportPositions.includes(index) : index === supportPositions[0]);
                 const shownState = hinted ? 'revealed' : card.state;
                 const labelKey =
                   shownState === 'hidden' ? 'cardHidden' : shownState === 'matched' ? 'cardMatched' : 'cardRevealed';
@@ -318,7 +319,7 @@ export default function MemoryMatchScreen() {
                       position: String(index + 1),
                       symbol: t(language, symbol.labelKey),
                     })}
-                    disabled={game.inputLocked || card.state === 'matched' || game.status !== 'PLAYING' || (coach.hintLevel === 3 && !supportPositions.includes(index))}
+                    disabled={game.inputLocked || card.state === 'matched' || game.status !== 'PLAYING' || (coach.hintLevel >= 3 && !supportPositions.includes(index))}
                     highContrast={settings.highContrast}
                     hinted={hinted}
                     key={card.id}
@@ -359,7 +360,7 @@ export default function MemoryMatchScreen() {
                 <ThemedText textSize={textSize}>{t(language, 'gameHintPrompt')}</ThemedText>
                 <SmaranButton
                   accessibilityLabel={t(language, 'gameHint')}
-                  disabled={game.inputLocked || game.firstCardIndex !== null || coach.hintLevel === 3}
+                  disabled={game.inputLocked || game.firstCardIndex !== null || coach.hintLevel >= 3}
                   icon={<MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" color={colors.text} name="lightbulb-outline" size={26} />}
                   label={t(language, 'gameHint')}
                   onPress={handleHint}

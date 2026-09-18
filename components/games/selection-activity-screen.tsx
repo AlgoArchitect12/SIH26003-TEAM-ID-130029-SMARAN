@@ -88,6 +88,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [selection, setSelection] = useState<SelectionState | null>(null);
+  const [sequencePreviewIndex, setSequencePreviewIndex] = useState(0);
   const current = useRef<SelectionState | null>(null);
   const completed = useRef(false);
   const [finishingFailed, setFinishingFailed] = useState(false);
@@ -110,7 +111,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
       if (!active || !isCurrent()) return;
       const level = history[0]?.recommendedDifficulty ?? 1;
       const patterns = gameType === 'pattern_recognition' ? preparePatterns(level) : null;
-      const preparedRoutine = gameType === 'routine_recall' ? prepareRoutine(level) : null;
+      const preparedRoutine = gameType === 'routine_recall' ? prepareRoutine(level, settings.language) : null;
       const objects = gameType === 'familiar_object' ? prepareFamiliarObjects(level) : null;
       const recall = gameType === 'sequence_memory' ? prepareSequence(level) : gameType === 'picture_recall' ? preparePictures(level) : null;
       const grid = gameType === 'remember_lights' || gameType === 'number_path' ? prepareGridActivity(gameType, level) : null;
@@ -153,7 +154,8 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
   const position = pattern ? (pattern.missingIndex ?? (pattern.kind === 'match' ? 0 : pattern.sequence.length)) + 1 : (selection?.position ?? 0) + 1;
   const prompt = object ? t(language, data && data.level <= 2 ? 'familiarFind' : object.cue, { answer: optionText(object.answer) })
     : gameType === 'sequence_memory' ? t(language, 'sequenceQuestion', { position: String(position) })
-      : gameType === 'picture_recall' ? t(language, 'pictureQuestion') : instructions;
+      : gameType === 'picture_recall' ? t(language, 'pictureQuestion')
+        : data?.routine ? t(language, selection?.position ? 'routineNext' : 'routineFirst') : instructions;
   const hintKey = selection ? coachHintKey(gameType, selection) : null;
   const hintText = hintKey && task ? t(language, hintKey, { answer: optionText(task.answer), position: String(position) }) : '';
   const feedbackText = selection?.feedback ? t(language, selection.feedback === 'correct' ? 'coachCorrect' : selection.wrongAnswers === 1 ? 'coachWrong' : 'coachTogether') : '';
@@ -188,24 +190,32 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
       </View>
       {data.settings.voiceGuidance && <ReadScreenButton language={language} labelKey="activityHear" text={title + '. ' + instructions} />}
       {data.routine && <>
-        {language !== 'en' && <ThemedText type="secondary">{t(language, 'routineEnglish')}</ThemedText>}
-        <ThemedText accessibilityLanguage="en" type="cardHeading">{data.routine.title}</ThemedText>
+        <ThemedText accessibilityLanguage={language} type="cardHeading">{data.routine.title}</ThemedText>
       </>}
       {!selection ? <>
         {data.routine && <SmaranCard style={styles.group}>
           <ThemedText>{t(language, 'routinePreview')}</ThemedText>
-          {data.routine.steps.map((step, index) => <ThemedText key={step.id} accessibilityLanguage="en">{index + 1}. {step.text}</ThemedText>)}
-          {data.settings.voiceGuidance && <ReadScreenButton language={language} speechLanguage="en" labelKey="routineHear"
+          {data.routine.steps.map((step, index) => <ThemedText key={step.id} accessibilityLanguage={language}>{index + 1}. {step.text}</ThemedText>)}
+          {data.settings.voiceGuidance && <ReadScreenButton language={language} labelKey="routineHear"
             text={data.routine.steps.map((step, index) => (index + 1) + '. ' + step.text).join(' ')} />}
         </SmaranCard>}
         {data.recall && <SmaranCard style={styles.group}>
           <ThemedText>{t(language, gameType === 'sequence_memory' ? 'sequencePreview' : 'picturePreview')}</ThemedText>
-          <PictureRow pictures={data.recall.preview} language={language} ordered={gameType === 'sequence_memory'} />
+          {gameType === 'sequence_memory' ? (
+            <PictureRow pictures={[data.recall.preview[sequencePreviewIndex]]} language={language} ordered={false} />
+          ) : (
+            <PictureRow pictures={data.recall.preview} language={language} ordered={false} />
+          )}
           {data.settings.voiceGuidance && <ReadScreenButton language={language} text={data.recall.preview.map((id, index) =>
-            t(language, 'recallItem', { position: String(index + 1), total: String(data.recall?.preview.length), picture: optionText(id) })).join(' ')} />}
+            gameType === 'picture_recall' ? optionText(id) : t(language, 'recallItem', { position: String(index + 1), total: String(data.recall?.preview.length), picture: optionText(id) })).join(' ')} />}
         </SmaranCard>}
-        <SmaranButton testID="activity-start" size="large" label={t(language, data.recall ? 'recallReady' : 'gameStart')} accessibilityLabel={t(language, data.recall ? 'recallReady' : 'gameStart')}
-          onPress={() => { if (data.isCurrent() && !current.current) update(createSelection(data.tasks, Date.now())); }} />
+        {gameType === 'sequence_memory' && sequencePreviewIndex < (data.recall?.preview.length ?? 1) - 1 ? (
+          <SmaranButton testID="activity-next-preview" size="large" label={t(language, 'continue')} accessibilityLabel={t(language, 'continue')}
+            onPress={() => setSequencePreviewIndex(value => value + 1)} />
+        ) : (
+          <SmaranButton testID="activity-start" size="large" label={t(language, data.recall ? 'recallReady' : 'gameStart')} accessibilityLabel={t(language, data.recall ? 'recallReady' : 'gameStart')}
+            onPress={() => { if (data.isCurrent() && !current.current) update(createSelection(data.tasks, Date.now())); }} />
+        )}
       </> : <>
         <ThemedText accessibilityLiveRegion="polite" type="action">{t(language, 'activityProgress', { current: String(selection.correctSelections), total: String(data.tasks.length) })}</ThemedText>
         {data.puzzle ? <PuzzleActivityBoard activity={data.puzzle} selection={selection} level={data.level}
@@ -242,7 +252,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
           {selection.hintLevel === 2 && data.recall && <PictureRow pictures={data.recall.preview} language={language} ordered={gameType === 'sequence_memory'} />}
           {selection.hintLevel === 2 && object && <PictureRow pictures={[object.answer]} language={language} ordered={false} />}
           {selection.hintLevel === 2 && data.routine && data.routine.steps.map((step, index) =>
-            <ThemedText key={step.id} accessibilityLanguage="en">{index + 1}. {step.text}</ThemedText>)}
+            <ThemedText key={step.id} accessibilityLanguage={language}>{index + 1}. {step.text}</ThemedText>)}
         </SmaranCard>}
         {data.settings.voiceGuidance && (feedbackText || hintText) && <ReadScreenButton language={language} labelKey="coachHear" text={feedbackText + ' ' + (selection.awaitingContinue ? '' : hintText)} />}
         {selection.awaitingContinue ? <SmaranButton testID="activity-continue" label={t(language, 'activityContinue')} accessibilityLabel={t(language, 'activityContinue')} onPress={finishOrContinue} /> :

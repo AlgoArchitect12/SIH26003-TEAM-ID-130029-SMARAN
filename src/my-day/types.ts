@@ -63,5 +63,5 @@ export function validateReminder(input: ReminderInput): ReminderInput {
 }
 
 export function timeLabel(language: string, time: string) {
-  return new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(localDateTime('2026-01-01', time));
+  return new Intl.DateTimeFormat(language, { hour: 'numeric', minute: '2-digit' }).format(localDateTime('2026-01-01', time));
 }

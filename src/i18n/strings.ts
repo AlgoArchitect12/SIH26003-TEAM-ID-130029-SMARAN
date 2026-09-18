@@ -1,4 +1,5 @@
 import { uxStrings } from './ux-strings';
+import { stabilizationStrings } from './stabilization-strings';
 import { accountStrings } from './account-strings';
 import { careCircleStrings } from './care-circle-strings';
 import { profileStrings } from './profile-strings';
@@ -23,6 +24,7 @@ const english = {
   ...cognitiveStrings.en,
   ...memoryStrings.en,
   ...myDayStrings.en,
+  ...stabilizationStrings.en,
   accessibilityIntro: 'Choose the reading and movement settings that feel comfortable for you.',
   accessibilitySaved: 'Accessibility preferences saved',
   accessibilityTitle: 'Make Smaran comfortable for you',
@@ -140,9 +142,9 @@ const english = {
   feedbackChallenging: 'A little challenging',
   skip: 'Skip',
   whyLevel: 'Why this level?',
-  recommendationGentler: "We'll make the activity a little gentler.",
+  recommendationGentler: "We'll make the next activity a little easier.",
   recommendationHold: "We'll keep this level.",
-  recommendationChallenge: "We'll add a little challenge.",
+  recommendationChallenge: "We'll make the next activity a little more challenging.",
   whyTitle: 'Why Smaran chose this level',
   explanationColdStart:
     'This is one of your first recorded activities, so Smaran is adjusting gently while it learns what feels comfortable for you.',
@@ -303,6 +305,7 @@ const hindi = {
   ...cognitiveStrings.hi,
   ...memoryStrings.hi,
   ...myDayStrings.hi,
+  ...stabilizationStrings.hi,
   ...hindiGame,
   accessibilityIntro: 'पढ़ने और गति की वे सुविधाएँ चुनें जो आपके लिए आरामदायक हों।',
   accessibilitySaved: 'सुलभता की पसंद सहेजी गई',
@@ -407,6 +410,7 @@ const assamese = {
   ...cognitiveStrings.as,
   ...memoryStrings.as,
   ...myDayStrings.as,
+  ...stabilizationStrings.as,
   ...assameseGame,
   accessibilityIntro: 'পঢ়া আৰু চলনৰ যিবোৰ সুবিধা আপোনাৰ বাবে আৰামদায়ক, সেইবোৰ বাছক।',
   accessibilitySaved: 'সুবিধাৰ পছন্দ সংৰক্ষণ কৰা হৈছে',

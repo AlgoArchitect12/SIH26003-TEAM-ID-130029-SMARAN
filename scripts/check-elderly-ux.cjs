@@ -1,4 +1,4 @@
-﻿const assert = require('node:assert/strict');
+const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
@@ -10,13 +10,41 @@ function load(file, overrides = {}, cache = new Map()) {
   const module = { exports: {} };
   cache.set(file, module);
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    fileName: file,
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   }).outputText;
-  new Function('require', 'module', 'exports', '__DEV__', code)(
-    (name) => overrides[name] ?? (name === 'zustand' ? require(name) : load(path.resolve(path.dirname(file), name + '.ts'), overrides, cache)),
-    module, module.exports, false
-  );
+  try {
+    const ext = (p) => fs.existsSync(p + '.ts') ? p + '.ts' : fs.existsSync(p + '.tsx') ? p + '.tsx' : fs.existsSync(path.join(p, 'index.ts')) ? path.join(p, 'index.ts') : fs.existsSync(path.join(p, 'index.tsx')) ? path.join(p, 'index.tsx') : p;
+    const mapAlias = (name) => {
+      if (name.startsWith('@/')) return name.slice(2);
+      if (name.startsWith('@components/') || name.startsWith('@constants/')) return name.slice(1);
+      if (name.startsWith('@')) return 'src/' + name.slice(1);
+      return null;
+    };
+    new Function('require', 'module', 'exports', '__DEV__', code)(
+      (name) => overrides[name] ?? (name === 'react' ? new Proxy(require('react'), { get: (t, p) => p === 'useEffect' ? () => {} : p === 'useState' ? (i) => [i, () => {}] : p === 'useRef' ? () => ({}) : p === 'useCallback' ? (f) => f : p === 'useMemo' ? (f) => f() : t[p] }) : name === 'react-native' ? require('react-native-web') : ['react/jsx-runtime', 'zustand', '@react-native-async-storage/async-storage'].includes(name) ? require(name) : (name.startsWith('expo-') || name.startsWith('@expo/') || name.startsWith('react-native-') || name === '@supabase/supabase-js') ? new Proxy({}, { get: () => () => null }) : load(mapAlias(name) ? ext(path.resolve(__dirname, '..', mapAlias(name))) : ext(path.resolve(path.dirname(file), name)), overrides, cache)),
+      module, module.exports, false
+    );
+  } catch (e) {
+    console.error('Failed to load file:', file);
+    throw e;
+  }
   return module.exports;
+}
+
+function walk(node) {
+  if (!node) return;
+  if (Array.isArray(node)) {
+    node.forEach(walk);
+    return;
+  }
+  if (typeof node === 'object' && node.props) {
+    let children = node.props.children;
+    if (typeof node.type === 'function') {
+      try { children = walk(node.type(node.props)); } catch (e) { console.error('WALK ERROR', node.type?.name, e); }
+    }
+    walk(children);
+  }
 }
 
 async function main() {
@@ -31,6 +59,8 @@ async function main() {
     assert.ok(!/[{}]/u.test(t(language, 'stepProgress', { current: '2', total: '5' })));
     assert.ok(t(language, 'resultTitle', { name: 'Anima' }).includes('Anima'));
   }
+
+  walk(load('app/_layout.tsx').default());
 
   let resolveVoices;
   const spoken = [];

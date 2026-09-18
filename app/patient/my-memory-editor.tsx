@@ -91,7 +91,8 @@ export default function MemoryEditorScreen() {
       {step === 2 && <Field label={t(language, 'memoryRelationship')} value={relationship} onChangeText={setRelationship} maxLength={100} multiline editable={!busy} />}
       {step === 3 && <>
         <ThemedText>{t(language, 'memoryDetailsHelp')}</ThemedText>
-        <Field label={t(language, 'memoryDescription')} value={description} onChangeText={setDescription} maxLength={500} multiline editable={!busy} />
+        <Field label={t(language, 'memoryDescription')} value={description} onChangeText={setDescription} maxLength={500}
+          multiline style={{ minHeight: 144, maxHeight: 200 }} scrollEnabled editable={!busy} />
       </>}
       <SmaranButton label={t(language, step === 3 ? 'memorySave' : step === 0 && !hasPhoto ? 'memoryWithoutPhoto' : 'continue')}
         accessibilityLabel={t(language, step === 3 ? 'memorySave' : step === 0 && !hasPhoto ? 'memoryWithoutPhoto' : 'continue')}

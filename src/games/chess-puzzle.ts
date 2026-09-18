@@ -13,8 +13,8 @@ export type ChessTask = SelectionTask & {
 export const chessRoundCounts = [6, 4, 4, 3, 3] as const;
 export const pieceKeys = { king: 'chessKing', queen: 'chessQueen', rook: 'chessRook', bishop: 'chessBishop', knight: 'chessKnight', pawn: 'chessPawn' } as const satisfies Record<ChessPiece, TranslationKey>;
 export const movementKeys = { king: 'chessKingHint', queen: 'chessQueenHint', rook: 'chessRookHint', bishop: 'chessBishopHint', knight: 'chessKnightHint', pawn: 'chessPawnHint' } as const satisfies Record<ChessPiece, TranslationKey>;
-export const chessSymbols = { white: { king: '♔', queen: '♕', rook: '♖', bishop: '♗', knight: '♘', pawn: '♙' },
-  black: { king: '♚', queen: '♛', rook: '♜', bishop: '♝', knight: '♞', pawn: '♟' } } as const;
+export const chessSymbols = { white: { king: '♚', queen: '♛', rook: '♜', bishop: '♝', knight: '♞', pawn: '♟' },
+  black: { king: '♔', queen: '♕', rook: '♖', bishop: '♗', knight: '♘', pawn: '♙' } } as const;
 const square = (s: string) => /^[a-h][1-8]$/.test(s);
 const xy = (s: string) => [s.charCodeAt(0) - 97, Number(s[1]) - 1];
 
@@ -69,7 +69,7 @@ export function isChessAnswer(task: ChessTask, choice: string) {
 export function prepareChess(level: DifficultyLevel, random: () => number = Math.random): readonly ChessTask[] {
   if (!DifficultyLevels.includes(level)) throw new Error('Invalid chess level.');
   const board = (kind: ChessPiece, source: string, extra: ChessBoard = {}): ChessBoard => ({
-    a1: { kind: 'king', side: 'white' }, h7: { kind: 'king', side: 'black' },
+    e1: { kind: 'king', side: 'white' }, e8: { kind: 'king', side: 'black' },
     ...(kind === 'king' ? {} : { [source]: { kind, side: 'white' } }), ...extra,
   });
   const make = (piece: ChessPiece, source: string, choices: string[], answer: string, kind: ChessTask['kind'] = 'move', extra: ChessBoard = {}): ChessTask => ({
@@ -77,9 +77,9 @@ export function prepareChess(level: DifficultyLevel, random: () => number = Math
     target: kind === 'capture' ? answer : null, choices: shuffle(choices, random), answer,
   });
   let tasks: ChessTask[];
-  if (level === 1) tasks = chessPieces.map(piece => make(piece, piece === 'king' ? 'a1' : 'd4', [...chessPieces], piece, 'recognize'));
+  if (level === 1) tasks = chessPieces.map(piece => make(piece, piece === 'king' ? 'e1' : 'd4', [...chessPieces], piece, 'recognize'));
   else if (level === 2) tasks = [make('rook', 'd4', ['d6', 'e5', 'c3'], 'd6'), make('bishop', 'd4', ['f6', 'd6', 'e4'], 'f6'),
-    make('queen', 'd4', ['g7', 'e6', 'c6'], 'g7'), make('king', 'a1', ['b2', 'c1', 'c3'], 'b2')];
+    make('queen', 'd4', ['g7', 'e6', 'c6'], 'g7'), make('king', 'e1', ['e2', 'c1', 'c3'], 'e2')];
   else if (level === 3) tasks = [make('knight', 'd4', ['e6', 'd6', 'e5'], 'e6'), make('pawn', 'd3', ['d4', 'e3', 'd2'], 'd4'),
     make('knight', 'b3', ['c5', 'b4', 'c4'], 'c5'), make('pawn', 'e4', ['e5', 'd5', 'e3'], 'e5')];
   else if (level === 4) tasks = [
@@ -93,7 +93,7 @@ export function prepareChess(level: DifficultyLevel, random: () => number = Math
     make('knight', 'd4', ['b5', 'e6', 'd5'], 'b5', 'safe', { b5: { kind: 'pawn', side: 'black' }, e6: { kind: 'pawn', side: 'black' }, h6: { kind: 'rook', side: 'black' } }),
   ];
   for (const task of tasks) {
-    if (!validChessBoard(task.board) || chessSquareAttacked(task.board, 'a1', 'black') || chessSquareAttacked(task.board, 'h7', 'white') ||
+    if (!validChessBoard(task.board) || chessSquareAttacked(task.board, 'e1', 'black') || chessSquareAttacked(task.board, 'e8', 'white') ||
       task.choices.filter(choice => isChessAnswer(task, choice)).join() !== task.answer) throw new Error('Invalid chess puzzle.');
   }
   return shuffle(tasks, random);

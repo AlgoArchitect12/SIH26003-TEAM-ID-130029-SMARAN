@@ -276,7 +276,7 @@ async function getRecentSessions(patientId: string, limit = 5, gameType?: Cognit
     `SELECT * FROM cognitive_sessions
      WHERE patient_id = ? AND ${supportedTypesSQL} AND is_demo_seed = 0
        ${gameType === undefined ? '' : 'AND game_type = ?'} ${before === undefined ? '' : 'AND completed_at < ?'}
-     ORDER BY completed_at DESC LIMIT ?`,
+     ORDER BY completed_at DESC, rowid DESC LIMIT ?`,
     validateRecordId(patientId, 'Patient ID'),
     ...CognitiveActivityTypes,
     ...(gameType === undefined ? [] : [gameType]), ...(before === undefined ? [] : [before]),
@@ -303,7 +303,7 @@ async function countSessions(patientId: string, start: Date, end: Date) {
   return row?.count ?? 0;
 }
 
-async function saveCompletedSession(input: CompletedSessionInput, model?: AdaptiveModelState, isCurrent?: () => boolean) {
+async function saveCompletedSession(input: CompletedSessionInput, model?: AdaptiveModelState, isCurrent?: () => boolean, expectedLatestId?: string | null) {
   const checkCurrent = () => { if (isCurrent && !isCurrent()) throw new Error('Activity patient changed before saving.'); };
   checkCurrent();
   if (model && (model.patientId !== input.patientId || model.gameType !== input.gameType)) {
@@ -317,6 +317,12 @@ async function saveCompletedSession(input: CompletedSessionInput, model?: Adapti
     // Expo opens a separate transaction connection. Check ownership even when its FK pragma is off.
     const patient = await transaction.getFirstAsync('SELECT id FROM patient_profiles WHERE id = ?', validateRecordId(input.patientId, 'Patient ID'));
     if (!patient) throw new Error('Activity patient does not exist.');
+    if (expectedLatestId !== undefined) {
+      const latest = await transaction.getFirstAsync<{ id: string }>(
+        'SELECT id FROM cognitive_sessions WHERE patient_id=? AND game_type=? AND is_demo_seed=0 ORDER BY completed_at DESC, rowid DESC LIMIT 1',
+        input.patientId, input.gameType);
+      if ((latest?.id ?? null) !== expectedLatestId) throw new Error('Activity changed before saving.');
+    }
     checkCurrent();
     const sessionId = await insertSession(transaction, input);
     if (model) await upsertModel(transaction, model);

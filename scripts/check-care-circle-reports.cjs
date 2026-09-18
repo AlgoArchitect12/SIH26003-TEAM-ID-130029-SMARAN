@@ -284,12 +284,15 @@ async function ui(r,report) {
   const data={patient:await r.patient.getProfileById('facts'),settings:await r.patient.getSettings('facts'),members:[],reports:[report],preference:null,current:r.current()};
   const overrides={'@/src/caregiver/care-circle':load('src/caregiver/care-circle.ts'),'@/src/caregiver/report-presentation':{reportSections},
     '@/src/db/repositories/care-circle.repository':{careCircleRepository:r.repo},'@/src/services/reports.service':r.module('src/services/reports.service.ts'),
+    '@components/caregiver/care-member-fields':load('components/caregiver/care-member-fields.tsx', { 'react-native': {View: 'View', StyleSheet: {create: s => s}}, '@components/ui/smaran-field': { Field: 'Field' }, '@components/themed-text': { ThemedText: 'ThemedText' }, '@components/ui/smaran-checkbox': { SmaranCheckbox: 'SmaranCheckbox' }, '@i18n/index': load('src/i18n/index.ts'), '@components/ui/smaran-button': { SmaranButton: 'SmaranButton' } }),
     '@/src/services/report-pdf.service':{cleanupReportPdfs(){},prepareReportPdf:async()=>null,removeReportPdf(){},ReportPdfUnavailable:class extends Error{}}};
   for(const language of Object.keys(catalog)) {
     data.settings={...data.settings,language};const render=screen('app/caregiver/circle.tsx',overrides,{data,refresh(){}});
     const add=nodes(render()).find(n=>n.type==='SmaranButton'&&n.props.label===t(language,'circleAdd'));add.props.onPress();
-    const tree=nodes(render()), fields=tree.filter(n=>n.type==='Field');assert.equal(fields.length,4);assert.equal(fields[0].props.value,'');assert.equal(fields[2].props.value,'');assert.equal(fields[3].props.value,'');
+    const tree=nodes(render()), fields=tree.filter(n=>n.type==='Field');
+    assert.equal(fields.length,4);assert.equal(fields[0].props.value,'');assert.equal(fields[2].props.value,'');assert.equal(fields[3].props.value,'');
     for(const n of tree.filter(n=>n.type==='SmaranButton'))assert.ok(n.props.accessibilityLabel);
+    console.error('SmaranButtons in tree:', tree.filter(n=>n.type==='SmaranButton').map(n=>n.props.label));
     for(const scope of ['circleDaily','circleReminders','circleCognitive','reportTitle','circleMemories'])assert.equal(tree.find(n=>n.props?.label===t(language,scope)).props.accessibilityState.selected,false);
     const rr=screen('app/caregiver/reports.tsx',overrides,{data});
     const button=nodes(rr()).find(n=>n.type==='SmaranButton'&&n.props.label.startsWith(t(language,'reportSummary')+' · '));button.props.onPress();

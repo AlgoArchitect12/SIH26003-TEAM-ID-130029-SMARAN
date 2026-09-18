@@ -1,6 +1,6 @@
 import { useIsFocused } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useThemeColors } from '@/hooks/use-theme-color';
 import { initialCoach, type CoachState } from '@ai/cognitive-coach';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
@@ -9,7 +9,7 @@ import { SmaranButton } from '@components/ui/smaran-button';
 import { Layout, Spacing } from '@constants/layout';
 import type { DifficultyLevel, Language } from '@db/schema.types';
 import { t } from '@i18n/index';
-import { chessSymbols, movementKeys, moveChessPiece, pieceKeys, type ChessPiece, type ChessTask } from '@/src/games/chess-puzzle';
+import { chessSymbols, isLegalChessMove, movementKeys, moveChessPiece, pieceKeys, type ChessPiece, type ChessTask } from '@/src/games/chess-puzzle';
 import { sudokuCandidates, sudokuPeers, type SudokuPuzzle } from '@/src/games/sudoku-lite';
 import type { WordActivity } from '@/src/games/word-match';
 import { chooseSelection, continueSelection, hintSelection, resumeSelection, type SelectionState, type SelectionTask } from '@/src/games/selection-engine';
@@ -127,25 +127,33 @@ export function PuzzleActivityBoard({ activity, selection, level, language, voic
       </>}
     </>}
     {chess && chessBoard && <>
-      <View testID="chess-board" style={[styles.board, { borderColor: colors.text }]}>
+      <ThemedText accessibilityLiveRegion="polite">{t(language, 'chessSelectSource', {
+        piece: t(language, pieceKeys[chess.board[chess.source].kind]), square: chess.source,
+      })}</ThemedText>
+      <ScrollView horizontal contentContainerStyle={{ flexGrow: 1 }}>
+      <View testID="chess-board" style={[styles.board, { width: Math.max(width, 8 * Layout.minTouchTarget), borderColor: colors.text }]}>
         {Array.from({ length: 8 }, (_, r) => <View key={r} style={styles.row}>
           {Array.from({ length: 8 }, (_, c) => {
             const s = String.fromCharCode(97 + c) + (8 - r), piece = chessBoard[s];
             const source = s === chess.source, target = s === chess.target;
-            const legalHint = selection.hintLevel >= 2 && s === chess.answer;
+            const legalHint = selection.hintLevel >= 2 && chess.choices.includes(s) && isLegalChessMove(chess.board, chess.source, s);
             const marked = source || target || legalHint;
             const label = t(language, 'chessSquare', { square: s, piece: piece ? t(language, piece.side === 'white' ? 'chessWhite' : 'chessBlack') + ' ' + t(language, pieceKeys[piece.kind]) : t(language, 'chessEmpty'),
               mark: source ? t(language, 'chessSource') : target ? t(language, 'chessTarget') : legalHint ? t(language, 'chessLegal') : '' });
-            return <View key={s} accessible accessibilityRole="image" accessibilityLabel={label}
+            const playable = chess.kind !== 'recognize' && chess.choices.includes(s);
+            return <Pressable key={s} accessible accessibilityRole={playable ? 'button' : 'image'} accessibilityLabel={label}
+              accessibilityState={{ selected: source, disabled: playable && locked }} disabled={!playable || locked}
+              onPress={() => pick(s)}
               style={[styles.chessCell, { backgroundColor: (r + c) % 2 ? colors.text : colors.surface, borderColor: colors.accent }, marked && styles.selected]}>
               <Text accessible={false} allowFontScaling={false} style={{ fontSize: Math.min(32, Math.max(18, width / 8 * 0.55)), color: (r + c) % 2 ? colors.surface : colors.text }}>
                 {piece ? chessSymbols[piece.side][piece.kind] : marked ? '◇' : ' '}
               </Text>
               <Text accessible={false} allowFontScaling={false} style={{ fontSize: 10, color: (r + c) % 2 ? colors.surface : colors.text }}>{s}</Text>
-            </View>;
+            </Pressable>;
           })}
         </View>)}
       </View>
+      </ScrollView>
       <ThemedText type="secondary">{t(language, 'boardChoices')} {t(language, chess.kind === 'recognize' ? 'chessChoosePiece' : 'chessChooseSquare')}</ThemedText>
     </>}
     {words && <View style={styles.group}>

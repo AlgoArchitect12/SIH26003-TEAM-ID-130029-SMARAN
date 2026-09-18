@@ -3,11 +3,12 @@ import { StyleSheet, View } from 'react-native';
 
 import { OnboardingScreen } from '@components/onboarding/onboarding-screen';
 import { SelectionCard } from '@components/onboarding/selection-card';
-import { SmaranButton } from '@components/ui/smaran-button';
+
 import { Spacing } from '@constants/layout';
 import { Regions } from '@db/schema.types';
 import { getRegionName, t } from '@i18n/index';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
+import { FinishOnboarding } from '@components/onboarding/finish-onboarding';
 
 export default function RegionScreen() {
   const router = useRouter();
@@ -21,8 +22,8 @@ export default function RegionScreen() {
     <OnboardingScreen
       description={t(language, 'regionIntro')}
       language={language}
-      onBack={() => router.dismissTo('/onboarding/profile')}
-      step={4}
+      onBack={() => router.dismissTo(role === 'caregiver' ? '/onboarding/caregiver' : '/onboarding/profile')}
+      step={role === 'caregiver' ? 6 : 5}
       title={t(language, 'regionTitle')}>
       <View style={styles.choices}>
         {Regions.map((option) => (
@@ -37,13 +38,7 @@ export default function RegionScreen() {
         ))}
       </View>
       <View style={styles.actions}>
-        <SmaranButton
-          accessibilityLabel={t(language, 'continue')}
-          disabled={role !== 'patient' || selectedLanguage === null || region === null}
-          label={t(language, 'continue')}
-          onPress={() => router.push('/onboarding/accessibility')}
-          size="large"
-        />
+        <FinishOnboarding />
       </View>
     </OnboardingScreen>
   );

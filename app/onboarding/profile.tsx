@@ -36,18 +36,18 @@ export default function ProfileScreen() {
     try { validateOptionalName(profile.emergencyName); } catch { next.emergencyName = t(language, 'checkDetails'); }
     try { normalizeIndianPhone(profile.emergencyPhone); } catch { next.emergencyPhone = t(language, 'invalidPhone'); }
     if (!parseDateOfBirth(profile.dateOfBirth)) next.dateOfBirth = t(language, 'dobInvalid');
-    if (role !== 'patient' || !selectedLanguage) next.save = t(language, 'checkDetails');
+    if (!role || !selectedLanguage) next.save = t(language, 'checkDetails');
     setErrors(next);
-    if (!Object.keys(next).length) router.push('/onboarding/region');
+    if (!Object.keys(next).length) router.push(role === 'caregiver' ? '/onboarding/caregiver' : '/onboarding/region');
   };
 
   return (
     <OnboardingScreen
       description={t(language, 'profileIntro')}
       language={language}
-      onBack={() => router.dismissTo('/onboarding/language')}
+      onBack={() => router.dismissTo('/onboarding/accessibility')}
       showReadAloud={accessibility.voiceGuidance}
-      step={3}
+      step={4}
       title={t(language, 'profileTitle')}>
       <View style={styles.form}>
         <Field label={t(language, 'preferredName')} autoCapitalize="words" maxLength={80}

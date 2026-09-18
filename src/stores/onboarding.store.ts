@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import type { Language, Region, TextSize } from '@db/schema.types';
+import type { CareMemberInput } from '../caregiver/care-circle';
 
 export type OnboardingRole = 'patient' | 'caregiver';
 
@@ -19,6 +20,8 @@ export type ProfileDraft = {
 };
 
 type OnboardingState = {
+  caregiver: CareMemberInput;
+  setCaregiverDraft: (draft: Partial<CareMemberInput>) => void;
   accessibility: AccessibilityPreferences;
   language: Language | null;
   profile: ProfileDraft;
@@ -54,12 +57,15 @@ const initialState = {
 
 export const useOnboardingStore = create<OnboardingState>()((set) => ({
   ...initialState,
+  caregiver: { display_name: '', relationship: 'family_member', access_role: 'family', email: '', phone: '', scopes: [] },
+  setCaregiverDraft: (draft) => set(state => ({ caregiver: { ...state.caregiver, ...draft } })),
   savedProfileId: null,
   setSavedProfileId: (savedProfileId) => set({ savedProfileId }),
   resetOnboarding: () =>
     set({
       ...initialState,
       savedProfileId: null,
+      caregiver: { display_name: '', relationship: 'family_member', access_role: 'family', email: '', phone: '', scopes: [] },
       accessibility: { ...initialState.accessibility },
       profile: { ...initialState.profile },
     }),

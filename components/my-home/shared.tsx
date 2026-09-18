@@ -11,7 +11,7 @@ import type { Language, Region } from '@db/schema.types';
 import { t, type TranslationKey } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
 import { useThemeColors } from '@/hooks/use-theme-color';
-import { isRegionalState, type RegionalCategory, type RegionalContentItem } from '@/src/my-home/content';
+import { imageCredits, isRegionalState, type RegionalCategory, type RegionalContentItem } from '@/src/my-home/content';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 
 export const regionalCategoryKeys: Record<RegionalCategory, TranslationKey> = {
@@ -61,10 +61,16 @@ export function RegionalRecovery({ status, language, retry }: {
 export function RegionalImage({ item, language }: { item: RegionalContentItem; language: Language }) {
   const colors = useThemeColors();
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const credit = imageCredits[item.imageCredit];
+  useEffect(() => { setFailed(false); setLoaded(false); }, [item.id]);
   return <View style={homeStyles.group}>
-    {!failed && <Image source={item.imageAsset} accessible accessibilityLabel={item.imageDescription}
-      contentFit="contain" transition={0} onError={() => setFailed(true)}
-      style={[homeStyles.image, { backgroundColor: colors.surface, borderColor: colors.border }]} />}
+    {!failed && <View style={[homeStyles.image, { aspectRatio: credit.width / credit.height, backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Image source={item.imageAsset} accessible accessibilityLabel={item.imageDescription}
+        contentFit="contain" contentPosition="center" recyclingKey={item.id} transition={0}
+        onLoad={() => setLoaded(true)} onError={() => setFailed(true)} style={StyleSheet.absoluteFillObject} />
+      {!loaded && <View style={StyleSheet.absoluteFillObject}><SmaranLoading label={t(language, 'memoryPhotoLoading')} /></View>}
+    </View>}
     {failed && <ThemedText accessibilityLiveRegion="polite">{t(language, 'regionalImageMissing')}</ThemedText>}
   </View>;
 }
@@ -73,5 +79,5 @@ export const homeStyles = StyleSheet.create({
   content: PageLayout.content,
   heading: PageLayout.heading,
   group: PageLayout.group,
-  image: { width: '100%', aspectRatio: 4 / 3, borderRadius: Radius.card, borderWidth: 1 },
+  image: { width: '100%', borderRadius: Radius.card, borderWidth: 1, overflow: 'hidden' },
 });

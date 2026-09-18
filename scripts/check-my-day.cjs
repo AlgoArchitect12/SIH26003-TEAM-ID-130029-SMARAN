@@ -29,13 +29,17 @@ async function main() {
   const patient = 'patient-qa-one', other = 'patient-qa-two';
   let selectedPatient = patient;
   const activeBoundary = { resolveActivePatient: async () => ({ status: 'ready', profile: { id: selectedPatient } }) };
-  const overrides = { '../client': { getDatabase: async () => db }, './active-patient.service': activeBoundary };
+  const overrides = {
+    '../client': { getDatabase: async () => db },
+    './active-patient.service': activeBoundary,
+    '../stores/patient-session.store': { capturePatientRequest: () => () => true, captureReminderManagement: () => () => true }
+  };
   const repo = load('src/db/repositories/my-day.repository.ts', overrides).myDayRepository;
   const patientRepo = load('src/db/repositories/patient.repository.ts', overrides).patientRepository;
   const { t, strings } = load('src/i18n/index.ts');
   const { localDay, localDateTime, validateReminder, timeLabel } = load('src/my-day/types.ts');
   const base = { type: 'medicine', title: 'User reminder', note: '', timeOfDay: '08:00', scheduledDate: null, repeatRule: 'daily' };
-  assert.equal(timeLabel('en','00:00'),'00:00');
+  assert.equal(timeLabel('en','00:00'),'12:00 AM');
   const restart = () => { sqlite.close(); open(); };
   try {
     await load('src/db/migrations/001_core_bootstrap.ts').coreBootstrapMigration.up(db);
@@ -299,6 +303,7 @@ async function main() {
       'expo-notifications':native,'react-native':{Platform:{OS:'android'}},
       '../db/repositories/my-day.repository':{myDayRepository:repo},
       '../db/repositories/patient.repository':{patientRepository:{...patientRepo,getSettings:async()=>{throw Error('Injected language read failure');}}},
+      '../stores/patient-session.store': overrides['../stores/patient-session.store']
     }).myDayService;
     const fallbackSaved=await fallback.save(patient,{...base,title:'Saved despite language read failure',note:'Private free text'});
     assert.deepEqual(fallbackSaved.notifications,{permission:'granted',failed:false});

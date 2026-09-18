@@ -40,10 +40,10 @@ export default function RoleScreen() {
       </View>
 
       <SmaranButton
-        accessibilityLabel={t(language, role === 'caregiver' ? 'careOpen' : 'continue')}
+        accessibilityLabel={t(language, 'continue')}
         disabled={!role}
-        label={t(language, role === 'caregiver' ? 'careOpen' : 'continue')}
-        onPress={() => router.push(role === 'caregiver' ? { pathname: '/profiles', params: { view: 'caregiver' } } : '/onboarding/language')}
+        label={t(language, 'continue')}
+        onPress={() => router.push('/onboarding/language')}
         size="large"
       />
     </OnboardingScreen>

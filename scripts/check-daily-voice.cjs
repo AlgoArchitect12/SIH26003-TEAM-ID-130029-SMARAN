@@ -120,7 +120,7 @@ function checkContracts() {
     assert.ok(t(language, 'dayMarkedAt', { time: '10:32' }).includes('10:32'));
     assert.doesNotMatch(t(language, 'dayNotificationTitle') + t(language, 'dayNotificationBody'), /\{.*\}/);
   }
-  assert.match(source('app/patient/my-day.tsx'), /voiceInputUnavailable/);
+  assert.match(source('components/my-day/my-day-content.tsx'), /voiceInputUnavailable/);
   assert.match(source('app/patient/settings.tsx'), /VoiceCapabilities/);
   assert.match(source('src/services/profile-switching.service.ts'), /await stopSpeech\(true\)/);
   assert.match(source('src/services/caregiver.service.ts'), /Event rows do not snapshot/);
@@ -209,16 +209,19 @@ async function main() {
         useLocalSearchParams: () => ({}), useFocusEffect: effect => focus.push(effect) },
       'react-native': { View: 'View', AppState: { addEventListener: () => ({ remove() {} }) } },
       '@components/my-day/shared': { useMyDayPatient: () => ({ patientId: activePatient, language: 'en' }), category: presets.category, dayStyles: {}, Field: 'Field' },
+      '@stores/patient-session.store': { usePatient: () => ({ patientId: activePatient, language: 'en' }) },
       '@expo/vector-icons': { MaterialIcons: 'MaterialIcons' },
       '@/hooks/use-theme-color': { useThemeColors: () => ({}) },
-      '@/src/stores/patient-session.store': sessionModule,
+      '@/src/stores/patient-session.store': { ...sessionModule, usePatient: () => ({ patientId: activePatient, language: 'en' }), usePatientSessionStore: Object.assign((selector) => selector ? selector({ workspace: 'caregiver' }) : { workspace: 'caregiver' }, { getState: () => ({ workspace: 'caregiver', workspaceRevision: 0, revision: 0, switching: false }) }), captureReminderManagement: () => () => true },
       '@/src/my-day/types': types, '@/src/my-day/presets': presets,
       '@db/repositories/my-day.repository': { myDayRepository: repo },
       '@services/my-day.service': { myDayService: service },
     };
+    sessionModule.setWorkspace('caregiver');
     for (const preset of presets.reminderPresets) {
-      const editor = screen('app/patient/my-day-reminder.tsx', common);
+      const editor = screen('app/caregiver/reminder.tsx', common);
       const choice = nodes(editor()).find(node => node.type === 'SelectionCard' && node.props.title === t('en', preset.key));
+      if (!choice) console.dir(nodes(editor()), { depth: null });
       assert.ok(choice && choice.props.icon);
       choice.props.onPress();
       const press = label => nodes(editor()).find(node => node.type === 'SmaranButton' && node.props.label === label).props.onPress();
@@ -231,12 +234,12 @@ async function main() {
           nodes(editor()).find(node => node.type === 'Field' && node.props.label === t('en', key)).props.onChangeText(value);
       }
       press(t('en', 'daySave')); await tick();
-      assert.equal(routes.at(-1), '/patient/my-day');
+      assert.equal(routes.at(-1), '/caregiver/reminders');
       const saved = (await repo.list(activePatient)).filter(row => row.title === t('en', preset.key)).at(-1);
       assert.equal(saved.type, preset.type); assert.equal(saved.timeOfDay, preset.time); assert.equal(saved.repeatRule, preset.repeat);
     }
-    const day = screen('app/patient/my-day.tsx', common);
-    day(); const blur = focus.at(-1)(); await tick();
+    const day = screen('components/my-day/my-day-content.tsx', common);
+    nodes(day()); const blur = focus[focus.length - 1](); await tick();
     try {
       const action = nodes(day()).find(node => node.type === 'SmaranButton' && node.props.label === 'Drank water');
       assert.ok(action); action.props.onPress(); action.props.onPress(); await tick();

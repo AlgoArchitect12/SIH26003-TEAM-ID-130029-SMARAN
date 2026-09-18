@@ -18,6 +18,7 @@ import { t } from '@i18n/index';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import { startAuthLifecycle } from '@/src/cloud/auth';
 import { startSyncLifecycle } from '@/src/cloud/sync';
+import { setWorkspace } from '@/src/stores/patient-session.store';
 
 type BootstrapStatus = 'loading' | 'ready' | 'failed';
 
@@ -28,6 +29,9 @@ function DatabaseBootstrap() {
   const language = useOnboardingStore((state) => state.language) ?? 'en';
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<BootstrapStatus>('loading');
+  useEffect(() => {
+    if (pathname.startsWith('/patient') || pathname === '/profiles' || pathname.startsWith('/onboarding')) setWorkspace('patient');
+  }, [pathname]);
 
   useEffect(() => {
     let active = true;

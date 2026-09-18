@@ -39,9 +39,9 @@ export default function LanguageScreen() {
       <View style={styles.actions}>
         <SmaranButton
           accessibilityLabel={t(activeLanguage, 'continue')}
-          disabled={role !== 'patient' || language === null}
+          disabled={!role || language === null}
           label={t(activeLanguage, 'continue')}
-          onPress={() => router.push('/onboarding/profile')}
+          onPress={() => router.push('/onboarding/accessibility')}
           size="large"
         />
       </View>

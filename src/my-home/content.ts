@@ -289,6 +289,13 @@ export function getRegionalItem(id: unknown): RegionalContentItem | undefined {
   return typeof id === 'string' ? regionalItems.find(item => item.id === id) : undefined;
 }
 
+export function nextRegionalItem(state: unknown, id: string) {
+  const items = getRegionalPack(state);
+  if (items.length < 2) return undefined;
+  const index = items.findIndex(item => item.id === id);
+  return index < 0 ? undefined : items[(index + 1) % items.length];
+}
+
 export function getItemsByCategory(state: unknown, category: RegionalCategory): readonly RegionalContentItem[] {
   return getRegionalPack(state).filter(item => item.category === category);
 }

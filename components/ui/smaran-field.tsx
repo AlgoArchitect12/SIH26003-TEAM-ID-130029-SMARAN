@@ -11,6 +11,8 @@ export function Field({ label, ...props }: TextInputProps & { label: string }) {
   const size = useTextSize();
   const [focused, setFocused] = useState(false);
   const disabled = props.editable === false;
+  // Android's unfocused hint uses native font metrics; a Text lineHeight can clip it.
+  const { lineHeight: _lineHeight, ...inputTypography } = getScaledTypography('body', size);
 
   return <View style={{ gap: Spacing.sm }}>
     <ThemedText type="defaultSemiBold">{label}</ThemedText>
@@ -19,6 +21,7 @@ export function Field({ label, ...props }: TextInputProps & { label: string }) {
       textContentType="none"
       importantForAutofill="no"
       autoCorrect={false}
+      underlineColorAndroid="transparent"
       {...props}
       accessibilityLabel={label}
       accessibilityState={{ ...props.accessibilityState, disabled }}
@@ -34,12 +37,13 @@ export function Field({ label, ...props }: TextInputProps & { label: string }) {
       }}
       style={[
         styles.input,
-        getScaledTypography('body', size),
+        inputTypography,
         {
           color: disabled ? colors.onDisabled : colors.text,
           backgroundColor: disabled ? colors.disabled : colors.surface,
           borderStyle: disabled ? 'dashed' : 'solid',
           textAlignVertical: props.multiline ? 'top' : 'center',
+          includeFontPadding: true,
           borderColor: focused ? colors.focus : colors.border,
         },
         focused && {

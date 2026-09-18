@@ -37,6 +37,9 @@ function screen(file, overrides, props) {
     if (name === '@i18n/index') return load('src/i18n/index.ts');
     if (name === '@constants/layout') return load('constants/layout.ts', { 'react-native': { Platform: { select: s => s.web } } });
     if (name.startsWith('@components/')) return new Proxy({}, { get: (_, key) => String(key) });
+    if (name === '@services/onboarding-recovery.service') return { ensureInitialRoute: () => null };
+    if (name === '@react-navigation/native') return { useIsFocused: () => true };
+    if (name === 'expo-router') return { useRouter: () => ({ push: () => {}, dismissTo: () => {} }) };
     throw Error('Unexpected boundary: ' + name);
   }, module, module.exports, false);
   return () => {
@@ -48,7 +51,12 @@ function screen(file, overrides, props) {
 }
 function nodes(node) {
   if (!node || typeof node !== 'object') return [];
-  return Array.isArray(node) ? node.flatMap(nodes) : [node, ...nodes(node.props?.children)];
+  if (Array.isArray(node)) return node.flatMap(nodes);
+  let children = node.props?.children;
+  if (typeof node.type === 'function') {
+    try { children = node.type(node.props); } catch (e) { console.error('NODES ERROR', node.type?.name, e); }
+  }
+  return [node, ...nodes(children)];
 }
 const tick = () => new Promise(setImmediate);
 
@@ -82,7 +90,7 @@ async function checkPatientRecovery() {
           if (failure && key.includes(interrupted === 'active' ? 'active-profile' : interrupted === 'completed' ? 'onboarding-completed' : 'dob.')) throw Error('Injected secure write failure');
           values.set(key, value);
         },
-        deleteItemAsync: async () => { throw Error('Recovery must not delete flags'); },
+        deleteItemAsync: async (key) => { if (key !== 'smaran.pending-onboarding') throw Error('Recovery must not delete flags'); values.delete(key); },
       } });
       const details = load('src/services/profile-details.service.ts', { './secure-storage.service': secure });
       const resolver = () => load('src/services/active-patient.service.ts', {
@@ -95,13 +103,15 @@ async function checkPatientRecovery() {
         profile: { preferredName: 'Synthetic patient', emergencyName: '', emergencyPhone: '', dateOfBirth: '26/02/1954' } });
       const useStore = Object.assign(selector => selector ? selector(store.getState()) : store.getState(), { getState: store.getState });
       const routes = [];
-      const router = { replace: route => routes.push(route) };
+      const router = { replace: route => routes.push(typeof route === 'string' ? route : (route.pathname || route)) };
       const common = {
         'expo-router': { useRouter: () => router },
         '@db/repositories/patient.repository': { patientRepository: repository },
         '@services/profile-details.service': details, '@services/secure-storage.service': secure,
         '@services/active-patient.service': resolver(), '@/src/utils/date-of-birth': load('src/utils/date-of-birth.ts'),
         '@/src/stores/onboarding.store': { useOnboardingStore: useStore },
+        '@/src/caregiver/care-circle': { validateMember: () => null },
+        '@services/care-circle.service': { saveOnboardingCareMember: async () => {} },
       };
       const render = screen('components/onboarding/finish-onboarding.tsx', common);
       const save = () => nodes(render()).find(n => n.type === 'SmaranButton').props.onPress();

@@ -1,4 +1,5 @@
 import { uxStrings } from './ux-strings';
+import { stabilizationStrings } from './stabilization-strings';
 import { accountStrings } from './account-strings';
 import { careCircleStrings } from './care-circle-strings';
 import { profileStrings } from './profile-strings';
@@ -23,6 +24,7 @@ const bengali = {
   ...cognitiveStrings.bn,
   ...memoryStrings.bn,
   ...myDayStrings.bn,
+  ...stabilizationStrings.bn,
   accessibilityIntro: 'আপনার জন্য আরামদায়ক পড়া ও নড়াচড়ার সেটিং বেছে নিন।',
   accessibilitySaved: 'সহায়ক সেটিং সংরক্ষিত হয়েছে',
   accessibilityTitle: 'স্মরণকে আপনার জন্য আরামদায়ক করুন',
@@ -179,6 +181,7 @@ const meitei = {
   ...cognitiveStrings.mni,
   ...memoryStrings.mni,
   ...myDayStrings.mni,
+  ...stabilizationStrings.mni,
   accessibilityIntro: 'অদোমগীদমক লায়বা পাবা অমসুং শরুক নোংখাইবগী খুদোংচাবশিং খনবিয়ু।',
   accessibilitySaved: 'খুদোংচাবগী অপাম্বশিং থমজরে',
   accessibilityTitle: 'স্মরণবু অদোমগীদমক লায়বা ওইহনবিয়ু',
@@ -335,6 +338,7 @@ const khasi = {
   ...cognitiveStrings.kha,
   ...memoryStrings.kha,
   ...myDayStrings.kha,
+  ...stabilizationStrings.kha,
   accessibilityIntro: 'Jied ïa ki rukom pule bad jingïaid kiba suk ïa phi.',
   accessibilitySaved: 'La buh ïa ki jingjied jingïarap',
   accessibilityTitle: 'Pynsuk ïa ka Smaran na ka bynta jong phi',
@@ -491,6 +495,7 @@ const mizo = {
   ...cognitiveStrings.lus,
   ...memoryStrings.lus,
   ...myDayStrings.lus,
+  ...stabilizationStrings.lus,
   accessibilityIntro: 'I tan a nuam turin chhiarna leh chet dan thlang rawh.',
   accessibilitySaved: 'Tanpuina duhthlanna chu vawn a ni',
   accessibilityTitle: 'Smaran hi i tan nuam tir rawh',

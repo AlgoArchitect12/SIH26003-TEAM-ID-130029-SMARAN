@@ -9,7 +9,7 @@ const screens = [
   'app/patient/games/index.tsx', 'app/patient/games/memory-match.tsx',
   'app/patient/games/result.tsx', 'app/patient/games/why-level.tsx',
   'components/games/selection-activity-screen.tsx', 'app/caregiver/home.tsx',
-  'app/patient/my-day.tsx', 'app/patient/my-day-reminder.tsx',
+  'components/my-day/my-day-content.tsx',
   'app/patient/my-memories.tsx', 'app/patient/my-memory.tsx',
   'app/patient/my-memory-editor.tsx', 'app/patient/my-home.tsx',
   'app/patient/my-home-memory.tsx',
@@ -19,7 +19,7 @@ const options = { routeNames: ['parent', 'detail'], routeParamList: {}, routeGet
 let checked = 0;
 for (const file of screens) {
   const source = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
-  const calls = [...source.matchAll(/router\.(dismissTo|replace)\('\/patient\/(home|games|my-day|my-memories|my-home)'\)/gu)];
+  const calls = [...source.matchAll(/router\.(dismissTo|replace)\(.*?['"\/](patient|caregiver)\/(home|games|my-day|my-memories|my-home)['"].*?\)/gu)];
   assert.ok(calls.length, file + ': parent return action exists');
   for (const [, method, target] of calls) {
     const action = method === 'dismissTo' ? StackActions.popTo('parent') : StackActions.replace('parent');

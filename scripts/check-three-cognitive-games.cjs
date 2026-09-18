@@ -20,9 +20,10 @@ function prepare(gameType, level, random = seeded()) {
   if (gameType === 'chess_puzzle') { const value = chess.prepareChess(level, random); return { gameType, chess: value, tasks: value }; }
   const value = words.prepareWords(level, 'assam', random); return { gameType, words: value, tasks: value.tasks };
 }
+let currentPlayTime = Date.parse(stamp);
 function play(game, level, wrong = true) {
   const { tasks } = prepare(game, level);
-  let now = Date.parse(stamp), state = engine.createSelection(tasks, now);
+  let now = currentPlayTime, state = engine.createSelection(tasks, now);
   assert.throws(() => engine.finalizeSelection(state, game));
   if (wrong) {
     const mistake = tasks[0].choices.find(c => c !== tasks[0].answer);
@@ -46,6 +47,7 @@ function play(game, level, wrong = true) {
   assert.equal(telemetry.hintsUsed, wrong ? 2 : 0); assert.equal(telemetry.repeatedErrors, wrong ? 2 : 0);
   assert.equal(telemetry.accuracy, telemetry.correctSelections / telemetry.attempts);
   assert.equal(telemetry.averageResponseMs, 1000); assert.ok(telemetry.completedAtMs > telemetry.startedAtMs);
+  currentPlayTime = now + 1000;
   return telemetry;
 }
 

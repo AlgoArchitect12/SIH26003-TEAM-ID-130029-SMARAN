@@ -16,6 +16,7 @@ function harness(file, overrides = {}, slots = []) {
     useState: initial => {
       const i = cursor++;
       if (!(i in slots)) slots[i] = initial;
+      console.error('useState', i, initial, slots[i]);
       return [slots[i], value => { slots[i] = value; }];
     },
     useRef: initial => { const i = cursor++; return slots[i] ??= { current: initial }; },
@@ -81,14 +82,14 @@ async function main() {
     assert.ok(pending.length > 0 && pending.every(n => n.props.disabled), section + ' saving choices');
   }
   for (const manage of [false, true]) {
-    const day = harness('app/patient/my-day.tsx', {
+    const day = harness('components/my-day/my-day-content.tsx', {
       'expo-router': { useRouter: () => ({}), useFocusEffect() {} },
       '@components/my-day/shared': { useMyDayPatient: () => patient, dayStyles: {}, category: {} },
       '@db/repositories/my-day.repository': { myDayRepository: {} },
       '@services/my-day.service': { myDayService: {} },
       '@/src/my-day/types': { localDay: () => '2026-09-09' },
     }, [[], [], [], manage, true]);
-    const tree = nodes(day());
+    const tree = nodes(day({ caregiver: manage }));
     const empty = t('en', manage ? 'dayEmpty' : 'careNoRoutine');
     assert.ok(tree.some(n => n.type === 'ThemedText' && n.props.children === empty));
     assert.ok(tree.find(n => n.type === 'ReadScreenButton').props.text.endsWith(empty), 'Spoken empty state must match visible scope');

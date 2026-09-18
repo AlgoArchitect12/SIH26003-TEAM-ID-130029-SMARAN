@@ -1,4 +1,4 @@
-import { FinishOnboarding } from '@components/onboarding/finish-onboarding';
+import { SmaranButton } from '@components/ui/smaran-button';
 import { AppearanceChoices } from '@components/ui/appearance-choices';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
@@ -65,8 +65,8 @@ export default function AccessibilityScreen() {
     <OnboardingScreen
       description={t(language, 'accessibilityIntro')}
       language={language}
-      onBack={() => router.dismissTo('/onboarding/region')}
-      step={5}
+      onBack={() => router.dismissTo('/onboarding/language')}
+      step={3}
       title={t(language, 'accessibilityTitle')}>
       <View style={styles.preference}>
         <ThemedText type="cardHeading">{t(language, 'textSize')}</ThemedText>
@@ -114,7 +114,8 @@ export default function AccessibilityScreen() {
         value={accessibility.reducedMotion}
       />
 
-      <FinishOnboarding />
+      <SmaranButton label={t(language, 'continue')} accessibilityLabel={t(language, 'continue')}
+        onPress={() => router.push('/onboarding/profile')} size="large" />
     </OnboardingScreen>
   );
 }

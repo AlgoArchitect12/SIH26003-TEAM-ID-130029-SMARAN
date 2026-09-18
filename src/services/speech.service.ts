@@ -31,7 +31,8 @@ function findVoice(voices: Speech.Voice[], language: Language) {
   const locales = preferredLocales[language].map(normalizeLocale);
   const suitable = voices.filter(voice => voice.identifier && (language !== 'mni' || normalizeLocale(voice.language).split('-').includes('latn')));
   return (
-    suitable.find((voice) => locales.includes(normalizeLocale(voice.language))) ??
+    // Follow preference order, not the device's arbitrary enumeration order.
+    locales.map(locale => suitable.find(voice => normalizeLocale(voice.language) === locale)).find(Boolean) ??
     suitable.find((voice) => normalizeLocale(voice.language).split('-')[0] === language)
   );
 }
@@ -69,6 +70,8 @@ export async function speakScreenText(
   try {
     await Speech.stop();
     if (request !== speechRequest) return 'failed';
+    // Latin-script Meitei voices cannot read older Bengali/Meetei-script copy.
+    if (language === 'mni' && /[\u0980-\u09ff\uabc0-\uabff]/u.test(spokenText)) return 'unavailable';
     const voice = findVoice(await Speech.getAvailableVoicesAsync(), language);
     if (request !== speechRequest) return 'failed';
     if (!voice) {
