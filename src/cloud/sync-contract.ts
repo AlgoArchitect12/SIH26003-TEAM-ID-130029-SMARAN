@@ -53,6 +53,23 @@ export function validateCloudRecord(value: unknown, owner: string): CloudRecord 
   if (r.entity_type === 'report_preferences' && (!['weekly','monthly'].includes(String(p.frequency)) ||
       ![0,1].includes(Number(p.requested)) || typeof p.requested !== 'number' || p.delivery_status !== 'not_configured' ||
       (p.recipient_id !== null && !id(p.recipient_id)) || (p.requested === 1 && (!p.recipient_id || !p.consented_at || !p.last_requested_at)))) throw new Error('Invalid delivery preference.');
+  if (r.entity_type === 'report_recipients') {
+    if ((p.care_member_id !== null && !id(p.care_member_id)) || p.channel !== 'whatsapp' ||
+        typeof p.normalized_destination !== 'string' || p.normalized_destination.length < 5 || p.normalized_destination.length > 32 ||
+        !['enabled','revoked'].includes(String(p.consent_status)) || !['weekly','monthly','manual'].includes(String(p.frequency)) ||
+        (p.consent_status !== 'enabled' && p.revoked_at === null)) throw new Error('Invalid report recipient.');
+  }
+  if (r.entity_type === 'report_deliveries') {
+    if (!id(p.recipient_id) || !['7-day','30-day','manual'].includes(String(p.report_period)) ||
+        typeof p.report_start !== 'string' || typeof p.report_end !== 'string' || !Number.isFinite(Date.parse(p.report_start)) ||
+        !Number.isFinite(Date.parse(p.report_end)) || p.report_start >= p.report_end || !id(p.report_snapshot_id) ||
+        !['not_configured','queued','sending','sent','delivered','failed','cancelled','share_requested'].includes(String(p.status)) ||
+        (p.provider !== null && !['whatsapp_business','manual_share'].includes(String(p.provider))) ||
+        (p.provider_message_id !== null && typeof p.provider_message_id !== 'string') ||
+        typeof p.attempt_count !== 'number' || p.attempt_count < 0 ||
+        (p.last_error !== null && typeof p.last_error !== 'string') ||
+        typeof p.queued_at !== 'string' || !Number.isFinite(Date.parse(p.queued_at))) throw new Error('Invalid report delivery.');
+  }
   if (r.entity_type === 'patient_profiles') validateCreatePatientProfile({ id: String(p.id), preferredName: p.preferred_name as string,
     ageBracket: p.age_bracket as AgeBracket | null, emergencyName: p.emergency_name as string | null, emergencyPhone: p.emergency_phone as string | null });
   if (r.entity_type === 'adaptive_model_state') {

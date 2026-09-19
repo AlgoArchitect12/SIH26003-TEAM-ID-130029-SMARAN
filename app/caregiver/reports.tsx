@@ -18,8 +18,8 @@ export function ReportsPanel({data}: {data: ActiveCare}) {
   const language = data.settings.language, label = (key:TranslationKey)=>t(language,key);
   const [days,setDays] = useState<7|30>(7), [reports,setReports] = useState(data.reports);
   const [selected,setSelected] = useState<ActivityReport|null>(null), [audience,setAudience] = useState<string|undefined>();
-  const [recipient,setRecipient] = useState<string|null>(data.preference?.recipient_id ?? null);
-  const [frequency,setFrequency] = useState<'weekly'|'monthly'>(data.preference?.frequency ?? 'weekly');
+  const [recipient,setRecipient] = useState<string|null>(data.recipients[0]?.care_member_id ?? null);
+  const [frequency,setFrequency] = useState<'weekly'|'monthly'>(data.recipients[0]?.frequency === 'monthly' ? 'monthly' : 'weekly');
   const [consent,setConsent] = useState(false);
   const [message,setMessage] = useState<TranslationKey|null>(null), [busy,setBusy] = useState(false);
   const lock = useRef(false), artifact = useRef<string|null>(null), live = useRef(true);
@@ -81,23 +81,34 @@ export function ReportsPanel({data}: {data: ActiveCare}) {
       accessibilityLabel={`${label('reportSummary')} · ${new Date(report.generated_at).toLocaleString(language)}`} variant="outline" disabled={busy}
       onPress={()=>{try{clearPdf();setSelected(report);setAudience(undefined);}catch{setMessage('reportFailed');}}} />)}
     <SmaranCard style={PageLayout.group}>
-      <ThemedText type="cardHeading" accessibilityRole="header">{label('reportAutomatic')} · {label('reportNotConfigured')}</ThemedText>
-      <ThemedText>{label('reportAutoNotice')}</ThemedText>
-      <ThemedText type="action">{label('reportRecipient')}</ThemedText>
-      {eligible.filter(m=>m.email).map(m=><SmaranButton key={m.id} label={`${m.display_name} · ${m.email}`} accessibilityLabel={`${m.display_name} · ${m.email}`}
+      <ThemedText type="cardHeading" accessibilityRole="header">WhatsApp Delivery</ThemedText>
+      <ThemedText>Deliver professional care reports automatically via WhatsApp.</ThemedText>
+      <ThemedText type="action">Report Recipients</ThemedText>
+      {data.recipients.map(r=><SmaranButton key={r.id} label={`${data.members.find(m=>m.id===r.care_member_id)?.display_name ?? 'Unknown'} · ${r.normalized_destination} (${r.frequency}, ${r.consent_status})`} accessibilityLabel={`Recipient ${r.normalized_destination}`} variant="outline" disabled={busy} onPress={()=>{setRecipient(r.care_member_id);setFrequency(r.frequency==='manual'?'weekly':r.frequency);setConsent(r.consent_status==='enabled');}} />)}
+      <ThemedText type="action">Add / Update Recipient</ThemedText>
+      {eligible.map(m=><SmaranButton key={m.id} label={`${m.display_name} · ${m.phone || 'No phone'}`} accessibilityLabel={`${m.display_name}`}
         variant="outline" disabled={busy} accessibilityState={{selected:recipient===m.id}} onPress={()=>{setRecipient(m.id);setConsent(false);}} />)}
       {(['weekly','monthly'] as const).map(f=><SmaranButton key={f} label={label(f==='weekly'?'reportWeekly':'reportMonthly')} accessibilityLabel={label(f==='weekly'?'reportWeekly':'reportMonthly')}
         variant="outline" disabled={busy} accessibilityState={{selected:frequency===f}} onPress={()=>{setFrequency(f);setConsent(false);}} />)}
-      <ThemedText>{label('reportConsentText')}</ThemedText>
+      <ThemedText>I consent to SMARAN AI sending care reports via WhatsApp to this number.</ThemedText>
       <SmaranButton label={label('reportConsent')} accessibilityLabel={label('reportConsentText')} variant="outline" disabled={busy||!recipient}
         accessibilityState={{selected:consent}} onPress={()=>setConsent(v=>!v)} />
-      <SmaranButton label={label('circleSave')} accessibilityLabel={label('circleSave')} disabled={busy} onPress={()=>void run(async()=>{
-        await repo.savePreference(data.patient.id,recipient,frequency,consent,current);if(current())setMessage('reportConsentSaved');
-      })} />
-      <SmaranButton label={label('reportManual')} accessibilityLabel={label('reportManual')} variant="outline" disabled={busy} onPress={()=>void run(async()=>{
-        await repo.savePreference(data.patient.id,null,frequency,false,current);if(current()){setRecipient(null);setConsent(false);setMessage('reportConsentSaved');}
+      <SmaranButton label={label('circleSave')} accessibilityLabel={label('circleSave')} disabled={busy||!recipient} onPress={()=>void run(async()=>{
+        if(!recipient)return;
+        const member = data.members.find(m=>m.id===recipient);
+        if(!member||!member.phone){setMessage('reportFailed');return;}
+        await repo.saveRecipient(data.patient.id,recipient,member.phone,frequency,consent,current);
+        if(current()){setMessage('reportConsentSaved');}
       })} />
     </SmaranCard>
+    {selected && data.recipients.filter(r=>r.consent_status==='enabled').length > 0 && <SmaranCard style={PageLayout.group}>
+      <ThemedText type="cardHeading" accessibilityRole="header">Send Report via WhatsApp</ThemedText>
+      <ThemedText>Queue this report for immediate delivery.</ThemedText>
+      {data.recipients.filter(r=>r.consent_status==='enabled').map(r=><SmaranButton key={r.id} label={`Send to ${r.normalized_destination}`} accessibilityLabel={`Send to ${r.normalized_destination}`} disabled={busy} onPress={()=>void run(async()=>{
+        await repo.queueDelivery(data.patient.id,r.id,days===7?'7-day':'30-day',selected.period_start,selected.period_end,selected.id,current);
+        if(current()) setMessage('reportShareRequested');
+      })} />)}
+    </SmaranCard>}
   </>;
 }
 export default function ReportsScreen() {

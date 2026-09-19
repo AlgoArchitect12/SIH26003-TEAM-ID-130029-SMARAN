@@ -48,7 +48,7 @@ async function pending(owner: string) {
   // Snapshot triggers can enqueue children first. Send parents first, retaining
   // sequence order (including failed/backoff events) within each entity.
   return (await getDatabase()).getAllAsync<OutboxEvent>(`SELECT * FROM sync_outbox WHERE owner_id = ?
-    ORDER BY CASE entity_type WHEN 'patient_profiles' THEN 0 WHEN 'reminders' THEN 1 WHEN 'care_circle_members' THEN 1 ELSE 2 END,
+    ORDER BY CASE entity_type WHEN 'patient_profiles' THEN 0 WHEN 'reminders' THEN 1 WHEN 'care_circle_members' THEN 1 WHEN 'activity_reports' THEN 2 WHEN 'report_recipients' THEN 2 WHEN 'report_deliveries' THEN 3 ELSE 4 END,
       sequence LIMIT ?`, owner, BATCH_SIZE);
 }
 async function acknowledge(owner: string, sent: OutboxEvent[], receipts: PushReceipt[], current: () => boolean, now = Date.now()) {
@@ -104,7 +104,7 @@ async function applyRecord(tx: SQLiteDatabase, r: CloudRecord) {
     if (r.entity_type === 'adaptive_model_state') conflict = 'patient_id, game_type';
     if (r.entity_type === 'reminder_events') conflict = '';
     // Cross-patient collisions are rejected before an UPSERT can touch an existing identity.
-    if (['reminders', 'personal_memories', 'cognitive_sessions', 'care_circle_members', 'activity_reports'].includes(r.entity_type)) {
+    if (['reminders', 'personal_memories', 'cognitive_sessions', 'care_circle_members', 'activity_reports', 'report_recipients', 'report_deliveries'].includes(r.entity_type)) {
       const local = await tx.getFirstAsync<{ patient_id: string }>(`SELECT patient_id FROM ${r.entity_type} WHERE id = ?`, r.entity_id);
       if (local && local.patient_id !== r.patient_id) throw new Error('Local record ownership conflict.');
     }
@@ -119,6 +119,16 @@ async function applyRecord(tx: SQLiteDatabase, r: CloudRecord) {
           Date.parse(String(p.consented_at)) < Date.parse(recipient.updated_at))) {
         values[columns.indexOf('requested')] = 0; values[columns.indexOf('consented_at')] = null;
       }
+    }
+    if (r.entity_type === 'report_recipients' && p.care_member_id !== null) {
+      const parent = await tx.getFirstAsync('SELECT id FROM care_circle_members WHERE patient_id=? AND id=?', r.patient_id, p.care_member_id);
+      if (!parent) throw new Error('Missing care circle parent.');
+    }
+    if (r.entity_type === 'report_deliveries') {
+      const parent = await tx.getFirstAsync('SELECT id FROM report_recipients WHERE patient_id=? AND id=?', r.patient_id, p.recipient_id);
+      if (!parent) throw new Error('Missing report recipient parent.');
+      const snapshot = await tx.getFirstAsync('SELECT id FROM activity_reports WHERE patient_id=? AND id=?', r.patient_id, p.report_snapshot_id);
+      if (!snapshot) throw new Error('Missing report snapshot parent.');
     }
     const immutable = ['cognitive_sessions', 'reminder_events'].includes(r.entity_type);
     const changes = columns.filter(column => !['id', 'patient_id', 'created_at'].includes(column)).map(column => `${column} = excluded.${column}`);
@@ -137,13 +147,13 @@ async function apply(owner: string, raw: PullBatch, cursor: number, current: () 
   const parents = raw.parents.map(r => validateCloudRecord(r, owner));
   let last = cursor;
   for (const r of records) { if (r.version <= last) throw new Error('Invalid sync order.'); last = r.version; }
-  if (last !== raw.cursor || (raw.has_more && !records.length) || parents.some(r => !['patient_profiles', 'patient_settings', 'reminders', 'care_circle_members'].includes(r.entity_type))) throw new Error('Invalid sync cursor/parents.');
+  if (last !== raw.cursor || (raw.has_more && !records.length) || parents.some(r => !['patient_profiles', 'patient_settings', 'reminders', 'care_circle_members', 'report_recipients', 'activity_reports'].includes(r.entity_type))) throw new Error('Invalid sync cursor/parents.');
   await (await getDatabase()).withExclusiveTransactionAsync(async tx => {
     check(current);
     const account = await tx.getFirstAsync<{ pull_cursor: number }>('SELECT pull_cursor FROM sync_accounts WHERE owner_id = ?', owner);
     if (account?.pull_cursor !== cursor || await tx.getFirstAsync('SELECT sequence FROM sync_outbox WHERE owner_id = ? LIMIT 1', owner)) throw new Error('Local changes are waiting.');
     await tx.runAsync('UPDATE sync_installation SET applying_pull = 1 WHERE singleton = 1');
-    const rank = (r: CloudRecord) => ['patient_profiles', 'patient_settings', 'reminders', 'care_circle_members'].indexOf(r.entity_type);
+    const rank = (r: CloudRecord) => ['patient_profiles', 'patient_settings', 'reminders', 'care_circle_members', 'activity_reports', 'report_recipients'].indexOf(r.entity_type);
     for (const r of parents.sort((a, b) => rank(a) - rank(b) || a.version - b.version)) await applyRecord(tx, r);
     for (const r of records) await applyRecord(tx, r);
     await tx.runAsync('UPDATE sync_accounts SET pull_cursor = ? WHERE owner_id = ?', raw.cursor, owner);

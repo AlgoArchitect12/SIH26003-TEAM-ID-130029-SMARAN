@@ -17,8 +17,8 @@ export async function loadActiveCare() {
   const active = await resolveActivePatient();
   checkCareRequest(current);
   if (active.status !== 'ready') return null;
-  const [members,reports,preference] = await Promise.all([repo.list(active.profile.id),repo.reports(active.profile.id),repo.preference(active.profile.id)]);
+  const [members,reports,recipients,deliveries] = await Promise.all([repo.list(active.profile.id),repo.reports(active.profile.id),repo.recipients(active.profile.id),repo.deliveries(active.profile.id)]);
   checkCareRequest(current);
-  return {patient:active.profile,settings:active.settings,members,reports,preference,current};
+  return {patient:active.profile,settings:active.settings,members,reports,recipients,deliveries,current};
 }
 export type ActiveCare = NonNullable<Awaited<ReturnType<typeof loadActiveCare>>>;

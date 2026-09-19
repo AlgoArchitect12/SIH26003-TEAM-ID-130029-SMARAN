@@ -223,7 +223,7 @@ async function migrationChecks() {
       assert.deepEqual(r.sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(),fks[table],table+' FKs');
     }
     for (const item of beforeSchema.filter(row=>row.type==='index'||row.type==='trigger')) assert.deepEqual(schema().find(row=>row.name===item.name),item);
-    const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(),after); assert.equal(r.rows('schema_migrations').length,12);
+    const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(),after); assert.equal(r.rows('schema_migrations').length, 13);
     assert.equal((await care.report('one',report.id)).snapshot,report.snapshot);
     assert.ok(r.module('src/caregiver/report-presentation.ts').reportSections(report,'en').length);
     for (const game of extra) for (let level=1;level<=5;level++) {
@@ -241,7 +241,7 @@ async function migrationChecks() {
     }
     assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok'); assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
   } finally {r.sqlite.close();}
-  for (const fk of [0,1]) { const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length,12);assert.equal(r.rows('cognitive_sessions').length,0);}finally{r.sqlite.close();} }
+  for (const fk of [0,1]) { const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length, 13);assert.equal(r.rows('cognitive_sessions').length,0);}finally{r.sqlite.close();} }
   console.log('PASS migration 012: production runner, populated 011 upgrade, all history/models/sync/consent/Care Circle/reports/rowids/indexes/triggers/FKs preserved; six rollback boundaries; exact new completion constraints; fresh install and idempotence.');
 }
 
@@ -393,7 +393,7 @@ async function preparationChecks() {
 }
 
 function sourceChecks() {
-  for(const file of [...fs.readdirSync('src/db/migrations').filter(f=>/^0(0[1-9]|1[01])_/.test(f)).map(f=>'src/db/migrations/'+f),
+  for(const file of [...fs.readdirSync('src/db/migrations').filter(f=>/^0(0[1-9]|11)_/.test(f)).map(f=>'src/db/migrations/'+f),
     ...fs.readdirSync('supabase/migrations').filter(f=>f<'20260916000000').map(f=>'supabase/migrations/'+f),'package.json','package-lock.json','src/db/client.web.ts']) {
     assert.equal(fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n'),execFileSync('git',['show','a030ac8:'+file],{encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' protected');
   }

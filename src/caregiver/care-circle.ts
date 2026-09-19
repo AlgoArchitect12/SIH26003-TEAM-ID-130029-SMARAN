@@ -24,9 +24,16 @@ export function validateMember(input: CareMemberInput): CareMemberInput {
     return value.trim();
   };
   if (!CareRoles.includes(input.access_role)) throw new Error('Invalid access role.');
-  const email = text(input.email ?? '', 254), phone = text(input.phone ?? '', 32);
+  const email = text(input.email ?? '', 254);
+  let phone: string | null = null;
+  if (input.phone) {
+    phone = input.phone.trim().replace(/[\s()-]/gu, '');
+    if (/^[0-9]{10}$/.test(phone)) phone = `+91${phone}`;
+    else if (/^0([0-9]{10})$/.test(phone)) phone = `+91${phone.slice(1)}`;
+    else if (/^[0-9]+$/.test(phone) && phone.length >= 5 && phone.length <= 15) phone = `+${phone}`;
+    if (!/^\+[1-9]\d{4,14}$/.test(phone)) throw new Error('Invalid phone.');
+  }
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Invalid email.');
-  if (phone && !/^\+?[0-9 ()-]{5,32}$/.test(phone)) throw new Error('Invalid phone.');
   return { display_name: text(input.display_name, 80, true), relationship: text(input.relationship, 100, true),
     access_role: input.access_role, email: email || null, phone: phone || null, scopes: parseScopes(JSON.stringify(input.scopes)) };
 }

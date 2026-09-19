@@ -70,7 +70,7 @@ async function migrations() {
       await migration11.up(tx);
     }}}}).runMigrations;
     await runThrough11(r.db);
-    assert.equal(r.rows('schema_migrations').length,12);
+    assert.equal(r.rows('schema_migrations').length, 13);
     for(const table of tables) assert.deepEqual(r.sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(),fks[table],table+' FKs');
     assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
     const after=snapshot();await r.run(r.db);assert.deepEqual(snapshot(),after);
@@ -79,7 +79,7 @@ async function migrations() {
     assert.equal(r.rows('sync_outbox').at(-1).sequence,before.sqlite_sequence.find(s=>s.name==='sync_outbox').seq+1);
   } finally {r.sqlite.close();}
   for(const fk of ['ON','OFF']) {
-    const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length,12);
+    const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length, 13);
       assert.deepEqual(await r.repo.list('one'),[]);await assert.rejects(r.repo.save('missing',memberInput,()=>true),/Missing patient/);
     } finally{r.sqlite.close();}
   }
@@ -281,7 +281,7 @@ async function ui(r,report) {
   const catalog=load('src/i18n/care-circle-strings.ts').careCircleStrings;
   const slots=s=>[...s.matchAll(/\{(\w+)\}/g)].map(m=>m[1]).sort();
   for(const [language,values] of Object.entries(catalog)){assert.deepEqual(Object.keys(values),Object.keys(catalog.en));for(const [key,value] of Object.entries(values)){assert.ok(value.trim());assert.equal(strings[language][key],value);assert.deepEqual(slots(value),slots(catalog.en[key]));}}
-  const data={patient:await r.patient.getProfileById('facts'),settings:await r.patient.getSettings('facts'),members:[],reports:[report],preference:null,current:r.current()};
+  const data={patient:await r.patient.getProfileById('facts'),settings:await r.patient.getSettings('facts'),members:[],reports:[report],recipients:[],deliveries:[],preference:null,current:r.current()};
   const overrides={'@/src/caregiver/care-circle':load('src/caregiver/care-circle.ts'),'@/src/caregiver/report-presentation':{reportSections},
     '@/src/db/repositories/care-circle.repository':{careCircleRepository:r.repo},'@/src/services/reports.service':r.module('src/services/reports.service.ts'),
     '@components/caregiver/care-member-fields':load('components/caregiver/care-member-fields.tsx', { 'react-native': {View: 'View', StyleSheet: {create: s => s}}, '@components/ui/smaran-field': { Field: 'Field' }, '@components/themed-text': { ThemedText: 'ThemedText' }, '@components/ui/smaran-checkbox': { SmaranCheckbox: 'SmaranCheckbox' }, '@i18n/index': load('src/i18n/index.ts'), '@components/ui/smaran-button': { SmaranButton: 'SmaranButton' } }),

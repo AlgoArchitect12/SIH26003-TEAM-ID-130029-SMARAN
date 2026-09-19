@@ -11,7 +11,7 @@ function createDatabase() {
   sqlite.exec('PRAGMA foreign_keys = ON');
   const db = {
     fault: null,
-    execAsync: async sql => {
+    execAsync: async (sql, ...args) => {
       const statements = db.fault && sql.includes('CREATE TABLE cognitive_sessions_v7') ? sql.split(';') : [sql];
       for (const statement of statements.filter(value => value.trim())) {
         sqlite.exec(statement);
@@ -125,7 +125,10 @@ async function main() {
     assert.deepEqual(sqlite.prepare('PRAGMA foreign_key_check').all(), []);
     assert.equal(sqlite.prepare('PRAGMA integrity_check').get().integrity_check, 'ok');
     assert.equal(sqlite.prepare('PRAGMA foreign_keys').get().foreign_keys, 1);
-    assert.equal(rows('schema_migrations').length, 12);
+    assert.equal(rows('schema_migrations').length, 13);
+    const latest = rows('schema_migrations').slice(-1)[0];
+    assert.strictEqual(latest.version, 13);
+    assert.strictEqual(latest.name, 'report_delivery');
     const after = schema();
     await runner(db);
     assert.deepEqual(schema(), after);
@@ -165,7 +168,7 @@ async function main() {
     try {
       fresh.sqlite.exec(`PRAGMA foreign_keys = ${foreignKeys}`);
       await runner(fresh.db); await runner(fresh.db);
-      assert.equal(fresh.sqlite.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 12);
+      assert.equal(fresh.sqlite.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 13);
       assert.equal(fresh.sqlite.prepare('SELECT COUNT(*) AS n FROM cognitive_sessions').get().n, 0);
       assert.equal(fresh.sqlite.prepare('SELECT COUNT(*) AS n FROM adaptive_model_state').get().n, 0);
       assert.deepEqual(fresh.sqlite.prepare('PRAGMA foreign_key_check').all(), []);

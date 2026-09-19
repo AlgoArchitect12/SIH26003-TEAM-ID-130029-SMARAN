@@ -166,7 +166,7 @@ async function migrationChecks() {
     } } } }).runMigrations;
     await runThrough11(r.db);
     const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(), after, 'registry replay is idempotent');
-    assert.equal(r.rows('schema_migrations').length, 12);
+    assert.equal(r.rows('schema_migrations').length, 13);
     for (const game of extra) {
       const count = prepare(game, 1).tasks.length;
       const row = { ...rowFor('sequence_memory', 'new-' + game, 'one', 1), game_type: game, steps_completed: count,
@@ -187,7 +187,7 @@ async function migrationChecks() {
   for (const fk of [0, 1]) {
     const r = await runtime();
     try { r.sqlite.exec(`PRAGMA foreign_keys=${fk}`); await r.run(r.db); await r.run(r.db);
-      assert.equal(r.rows('schema_migrations').length, 12); assert.equal(r.rows('cognitive_sessions').length, 0);
+      assert.equal(r.rows('schema_migrations').length, 13); assert.equal(r.rows('cognitive_sessions').length, 0);
       assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(), []);
     } finally { r.sqlite.close(); }
   }

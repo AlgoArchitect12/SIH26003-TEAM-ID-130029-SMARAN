@@ -11,9 +11,21 @@ export type ActivityReport = {
   id: string; patient_id: string; period_start: string; period_end: string; generated_at: string;
   report_version: 1; snapshot: string; delivery_state: 'generated' | 'share_requested'; updated_at: string;
 };
-export type ReportPreference = {
-  patient_id: string; recipient_id: string | null; frequency: 'weekly' | 'monthly'; requested: 0 | 1;
-  consented_at: string | null; last_requested_at: string | null; delivery_status: 'not_configured'; updated_at: string;
+export type ReportRecipient = {
+  id: string; patient_id: string; care_member_id: string | null;
+  channel: 'whatsapp'; normalized_destination: string;
+  consent_status: 'enabled' | 'revoked'; frequency: 'weekly' | 'monthly' | 'manual';
+  created_at: string; updated_at: string; revoked_at: string | null;
+};
+export type ReportDelivery = {
+  id: string; patient_id: string; recipient_id: string;
+  report_period: '7-day' | '30-day' | 'manual'; report_start: string; report_end: string;
+  report_snapshot_id: string;
+  status: 'not_configured'|'queued'|'sending'|'sent'|'delivered'|'failed'|'cancelled'|'share_requested';
+  provider: 'whatsapp_business'|'manual_share'|null; provider_message_id: string | null;
+  attempt_count: number; last_error: string | null;
+  queued_at: string; sent_at: string | null; delivered_at: string | null; failed_at: string | null;
+  created_at: string; updated_at: string;
 };
 export function parseReportFacts(snapshot: string): ReportFacts {
   const value = JSON.parse(snapshot) as ReportFacts;
