@@ -1,4 +1,5 @@
-import { SYNC_COLUMNS as SYNC_COLUMNS_V1, type SyncEntity } from './care-sync-columns';
+import { SYNC_COLUMNS as SYNC_COLUMNS_V1, type SyncEntity } from './location-sync-columns';
+import { validateLocation, type PatientLocation } from '../location/types';
 import { validateMember, parseScopes } from '../caregiver/care-circle';
 import { parseReportFacts } from '../caregiver/reports';
 import { CognitiveActivityTypes, type AgeBracket } from '../db/schema.types';
@@ -38,6 +39,7 @@ export function validateCloudRecord(value: unknown, owner: string): CloudRecord 
     throw new Error('Invalid sync fields.');
   }
   const p = r.payload;
+  if (r.entity_type === 'patient_locations') validateLocation(p as unknown as PatientLocation);
   if (r.entity_type === 'care_circle_members') {
     const scopes = parseScopes(String(p.scopes));
     validateMember({ display_name: p.display_name as string, relationship: p.relationship as string,

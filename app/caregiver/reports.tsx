@@ -12,7 +12,7 @@ import type { ActivityReport } from '@/src/caregiver/reports';
 import { careCircleRepository as repo } from '@/src/db/repositories/care-circle.repository';
 import type { ActiveCare } from '@/src/services/care-circle.service';
 import { generateActivityReport } from '@/src/services/reports.service';
-import { cleanupReportPdfs, prepareReportPdf, removeReportPdf, ReportPdfUnavailable } from '@/src/services/report-pdf.service';
+import { cleanupReportPdfs, prepareReportPdf, removeReportPdf, ReportPdfUnavailable, ReportEmailUnavailable } from '@/src/services/report-pdf.service';
 
 export function ReportsPanel({data}: {data: ActiveCare}) {
   const language = data.settings.language, label = (key:TranslationKey)=>t(language,key);
@@ -33,20 +33,20 @@ export function ReportsPanel({data}: {data: ActiveCare}) {
   const run = async(work:()=>Promise<void>)=>{
     if(lock.current || !current())return;
     lock.current=true;setBusy(true);setMessage(null);
-    try {clearPdf();await work();} catch(error) {if(current())setMessage(error instanceof ReportPdfUnavailable?'reportUnavailable':'reportFailed');}
+    try {clearPdf();await work();} catch(error) {if(current())setMessage(error instanceof ReportEmailUnavailable?'reportEmailUnavailable':error instanceof ReportPdfUnavailable?'reportUnavailable':'reportFailed');}
     finally {lock.current=false;if(current())setBusy(false);}
   };
   const member = audience ? data.members.find(m=>m.id===audience) : null;
   const scopes = member ? effectiveScopes(member) : CareScopes;
   const canReport = !audience || !!member && scopes.includes('reports');
   const eligible = data.members.filter(m=>m.status==='local' && effectiveScopes(m).includes('reports'));
-  const pdf = (share:boolean)=>void run(async()=>{
+  const pdf = (share:boolean,email=false)=>void run(async()=>{
     if(!selected)return;
-    const uri = await prepareReportPdf(data.patient.id,selected.id,language,current,audience,share);
+    const uri = await prepareReportPdf(data.patient.id,selected.id,language,current,audience,share,email);
     if(!current()){if(uri)removeReportPdf(uri);return;}
     artifact.current=uri;
-    setMessage(share?'reportShareRequested':'reportPdfReady');
-    if(share){
+    setMessage(email?'reportEmailOpened':share?'reportShareRequested':'reportPdfReady');
+    if(share||email){
       const rows=await repo.reports(data.patient.id);
       if(current()){setSelected({...selected,delivery_state:'share_requested'});setReports(rows);}
     }
@@ -74,6 +74,8 @@ export function ReportsPanel({data}: {data: ActiveCare}) {
       <ThemedText>{label('reportShareNotice')}</ThemedText>
       <SmaranButton label={label('reportPdf')} accessibilityLabel={label('reportPdf')} disabled={busy||!canReport} onPress={()=>pdf(false)} />
       <SmaranButton label={label('reportShare')} accessibilityLabel={label('reportShare')} variant="outline" disabled={busy||!canReport} onPress={()=>pdf(true)} />
+      <SmaranButton label={label('reportEmail')} accessibilityLabel={label('reportEmail')} variant="outline" disabled={busy||!canReport||!member?.email} onPress={()=>pdf(false,true)} />
+      {!member?.email && <ThemedText type="secondary">{label('reportRecipient')}: {label('circleEmail')}</ThemedText>}
     </SmaranCard>}
     <ThemedText type="cardHeading" accessibilityRole="header">{label('reportTitle')}</ThemedText>
     {!reports.length && <ThemedText>{label('reportEmpty')}</ThemedText>}

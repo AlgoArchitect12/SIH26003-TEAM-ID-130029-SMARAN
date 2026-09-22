@@ -34,9 +34,9 @@ async function loadVoices(force = false): Promise<VoiceLookup> {
     // Keep the cache short so settings changes become visible quickly.
     voiceCache = { value, expiresAt: now + 30_000 };
     return value;
-  } catch (error) {
+  } catch {
     if (__DEV__) {
-      console.warn('[SMARAN][TTS] Could not enumerate device voices.', error);
+      console.warn('[SMARAN][TTS] Could not enumerate device voices');
     }
     const value = { voices: [], checked: false };
     voiceCache = { value, expiresAt: now + 5_000 };
@@ -220,14 +220,7 @@ export async function speakScreenText(
           });
 
           if (__DEV__) {
-            console.warn('[SMARAN][TTS] Speech engine error.', {
-              language,
-              requestedLocale: preferredLanguage,
-              voice: voice?.identifier ?? null,
-              voiceLanguage: voice?.language ?? null,
-              errorName: error?.name,
-              errorMessage: error?.message,
-            });
+            console.warn('[SMARAN][TTS] Speech engine error');
           }
 
           // Some Android TTS engines enumerate a voice successfully but
@@ -256,12 +249,9 @@ export async function speakScreenText(
                   speak(false);
                 });
               })
-              .catch((retryError) => {
+              .catch(() => {
                 if (__DEV__) {
-                  console.warn(
-                    '[SMARAN][TTS] Language-only fallback failed.',
-                    retryError,
-                  );
+                  console.warn('[SMARAN][TTS] Language-only fallback failed');
                 }
 
                 if (request === speechRequest) {
@@ -283,13 +273,9 @@ export async function speakScreenText(
     speak(!!voice);
 
     return 'started';
-  } catch (error) {
+  } catch {
     if (__DEV__) {
-      console.warn('[SMARAN][TTS] Speech invocation failed.', {
-        language,
-        voice: voice?.identifier ?? null,
-        error,
-      });
+      console.warn('[SMARAN][TTS] Speech invocation failed');
     }
 
     return 'failed';

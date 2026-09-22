@@ -15,10 +15,12 @@ export type TtsDiagnosticEvent = {
 let lastEvent: TtsDiagnosticEvent | null = null;
 
 export function recordTtsDiagnostic(event: TtsDiagnosticEvent) {
+  // Retain useful diagnostic state in memory only. Never log patient text,
+  // coordinates, report contents, contacts, credentials, or runtime payloads.
   lastEvent = event;
 
   if (__DEV__) {
-    console.log('[SMARAN][TTS]', event);
+    console.log('[SMARAN][TTS] diagnostic recorded');
   }
 }
 

@@ -1,6 +1,7 @@
 import { capturePatientRequest } from '@/src/stores/patient-session.store';
+import { useGameTransition } from '@/hooks/use-game-transition';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 
@@ -82,10 +83,12 @@ function PictureRow({ pictures, language, ordered }: { pictures: readonly Memory
 
 export function SelectionActivityScreen({ gameType }: { gameType: SelectionActivity }) {
   const router = useRouter();
+  const { auto } = useLocalSearchParams<{ auto?: string }>();
   const colors = useThemeColors();
   const language = useOnboardingStore(state => state.language) ?? 'en';
   const [data, setData] = useState<ActivityData | null>(null);
   const [failed, setFailed] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [selection, setSelection] = useState<SelectionState | null>(null);
   const [sequencePreviewIndex, setSequencePreviewIndex] = useState(0);
@@ -97,6 +100,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
   useEffect(() => {
     let active = true;
     const isCurrent = capturePatientRequest();
+    setPaused(false); setSequencePreviewIndex(0); setFinishingFailed(false);
     setFailed(false); setData(null); setSelection(null); current.current = null; completed.current = false;
     useCognitiveSessionStore.getState().clear();
     void (async () => {
@@ -130,9 +134,12 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
       });
       setData({ patientId: profile.id, settings, level, history, model: stored ?? createInitialAdaptiveModel(profile.id, gameType),
         tasks, patterns, routine: preparedRoutine?.routine ?? null, objects, recall, grid, puzzle, isCurrent: () => active && isCurrent() });
+      if (auto === '1' && !recall && !preparedRoutine && !grid) {
+        const state = createSelection(tasks, Date.now()); current.current = state; setSelection(state);
+      }
     })().catch(() => { if (active && isCurrent()) setFailed(true); });
     return () => { active = false; };
-  }, [attempt, gameType, router]);
+  }, [auto, attempt, gameType, router]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', state => {
@@ -177,6 +184,8 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
     }
   };
 
+  useGameTransition(selection?.awaitingContinue && !data?.puzzle ? 1400 : null, finishOrContinue, paused);
+
   return <ScreenWrapper scroll><View style={styles.content}>
     <SmaranButton accessibilityLabel={t(language, 'activitiesBack')} label={t(language, 'activitiesBack')} onPress={back} variant="outline" />
     <ThemedText accessibilityRole="header" type="screenTitle">{title}</ThemedText>
@@ -184,6 +193,10 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
       {failed ? <ThemedText accessibilityRole="alert">{t(language, 'activityPrepareFailed')}</ThemedText> : <SmaranLoading label={t(language, 'gameLoading')} />}
       {failed && <SmaranButton accessibilityLabel={t(language, 'retry')} label={t(language, 'retry')} onPress={() => setAttempt(value => value + 1)} />}
     </> : <>
+      {selection && <View style={styles.group}>
+        <SmaranButton label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')} variant="outline" onPress={() => setPaused(value => !value)} />
+        <SmaranButton label={t(language, 'gameRestart')} accessibilityLabel={t(language, 'gameRestart')} variant="outline" onPress={() => setAttempt(value => value + 1)} />
+      </View>}
       <View style={styles.group}>
         <ThemedText type="secondary">{t(language, 'gameLevel', { level: String(data.level) })}</ThemedText>
         <ThemedText>{instructions}</ThemedText>
@@ -218,11 +231,11 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
         )}
       </> : <>
         <ThemedText accessibilityLiveRegion="polite" type="action">{t(language, 'activityProgress', { current: String(selection.correctSelections), total: String(data.tasks.length) })}</ThemedText>
-        {data.puzzle ? <PuzzleActivityBoard activity={data.puzzle} selection={selection} level={data.level}
+        {data.puzzle ? <PuzzleActivityBoard paused={paused} activity={data.puzzle} selection={selection} level={data.level}
           language={language} voice={data.settings.voiceGuidance} isCurrent={data.isCurrent} onContinue={finishOrContinue}
-          onChange={change => { if (data.isCurrent() && current.current) update(change(current.current)); }} /> : data.grid ? <GridActivityBoard key={Math.floor(selection.position / data.grid.roundLength)} activity={data.grid} selection={selection}
+          onChange={change => { if (!paused && data.isCurrent() && current.current) update(change(current.current)); }} /> : data.grid ? <GridActivityBoard paused={paused} key={Math.floor(selection.position / data.grid.roundLength)} activity={data.grid} selection={selection}
           language={language} voice={data.settings.voiceGuidance} isCurrent={data.isCurrent} onContinue={finishOrContinue}
-          onChange={change => { if (data.isCurrent() && current.current) update(change(current.current)); }} /> : <>
+          onChange={change => { if (!paused && data.isCurrent() && current.current) update(change(current.current)); }} /> : <>
         {pattern && <View style={styles.group}>
           {pattern.kind !== 'match' && <>
             <ThemedText>{t(language, 'patternRepeat')}</ThemedText>
@@ -238,7 +251,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
           {task?.choices.map(choice => <SmaranButton key={choice} testID={'choice-' + choice} size="large"
             label={optionText(choice)}
             accessibilityLabel={t(language, data.routine ? 'routineOption' : pattern ? 'patternOption' : 'pictureOption', { step: optionText(choice), shape: optionText(choice), picture: optionText(choice) })}
-            disabled={selection.awaitingContinue || (selection.hintLevel === 3 && choice !== task.answer)} variant="outline"
+            disabled={paused || selection.awaitingContinue || (selection.hintLevel === 3 && choice !== task.answer)} variant="outline"
             accessibilityHint={selection.hintLevel === 3 && choice === task.answer ? hintText : undefined}
             icon={!data.routine ? <MaterialIcons name={pattern ? shapeIcons[choice as PatternShape] : getMemorySymbol(choice as MemorySymbolId).icon} size={36} color={colors.text}
               accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" /> : undefined}
@@ -255,11 +268,11 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
             <ThemedText key={step.id} accessibilityLanguage={language}>{index + 1}. {step.text}</ThemedText>)}
         </SmaranCard>}
         {data.settings.voiceGuidance && (feedbackText || hintText) && <ReadScreenButton language={language} labelKey="coachHear" text={feedbackText + ' ' + (selection.awaitingContinue ? '' : hintText)} />}
-        {selection.awaitingContinue ? <SmaranButton testID="activity-continue" label={t(language, 'activityContinue')} accessibilityLabel={t(language, 'activityContinue')} onPress={finishOrContinue} /> :
+        {!selection.awaitingContinue &&
           <SmaranButton testID="activity-hint" variant="outline" label={t(language, 'gameHint')} accessibilityLabel={t(language, 'gameHint')}
-            disabled={selection.hintLevel === 3} onPress={() => { if (data.isCurrent() && current.current) update(hintSelection(current.current)); }} />}
+            disabled={paused || selection.hintLevel === 3} onPress={() => { if (!paused && data.isCurrent() && current.current) update(hintSelection(current.current)); }} />}
         </>}
-        {finishingFailed && <ThemedText accessibilityRole="alert">{t(language, 'activityPrepareFailed')}</ThemedText>}
+        {finishingFailed && <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={finishOrContinue} />}
       </>}
     </>}
   </View></ScreenWrapper>;

@@ -19,6 +19,8 @@ import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import { startAuthLifecycle } from '@/src/cloud/auth';
 import { startSyncLifecycle } from '@/src/cloud/sync';
 import { setWorkspace } from '@/src/stores/patient-session.store';
+import { startLocationLifecycle } from '@/src/services/location.service';
+import { startAdminLifecycle } from '@/src/services/admin.service';
 
 type BootstrapStatus = 'loading' | 'ready' | 'failed';
 
@@ -31,6 +33,7 @@ function DatabaseBootstrap() {
   const [status, setStatus] = useState<BootstrapStatus>('loading');
   useEffect(() => {
     if (pathname.startsWith('/patient') || pathname === '/profiles' || pathname.startsWith('/onboarding')) setWorkspace('patient');
+    else if (pathname.startsWith('/caregiver')) setWorkspace('caregiver');
   }, [pathname]);
 
   useEffect(() => {
@@ -88,7 +91,9 @@ export default function RootLayout() {
   useEffect(() => {
     const stopAuth = startAuthLifecycle();
     const stopSync = startSyncLifecycle();
-    return () => { stopAuth(); stopSync(); };
+    const stopLocation = startLocationLifecycle();
+    const stopAdmin = startAdminLifecycle();
+    return () => { stopAuth(); stopSync(); stopLocation(); stopAdmin(); };
   }, []);
   return (
     <ErrorBoundary>

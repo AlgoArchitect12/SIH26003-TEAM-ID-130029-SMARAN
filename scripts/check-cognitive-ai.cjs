@@ -247,7 +247,7 @@ async function screenChecks() {
           cards = nodes(tree).filter(node => node.type === 'MemoryCard'); press(cards[first]);
           cards = nodes(tree).filter(node => node.type === 'MemoryCard'); press(cards[wrong]);
           assert.ok(nodes(tree).some(node => node.type === 'EncouragementBanner' && node.props.message === t(language, n === 1 ? 'coachWrong' : 'coachTogether')));
-          press(byId('memory-continue'));
+          render.advance(); tree = render();
           if (n === 2 && level === 5) {
             press(byLabel('gameHint'));
             assert.equal(nodes(tree).filter(node => node.type === 'MemoryCard' && node.props.hinted).length, 1, 'second hint focuses one visible card');
@@ -260,7 +260,7 @@ async function screenChecks() {
           const a = cards.findIndex(card => !card.props.disabled && card.props.state === 'hidden');
           const b = cards.findIndex((card, index) => index !== a && card.props.symbol.id === cards[a].props.symbol.id && card.props.state !== 'matched');
           press(cards[a]); cards = nodes(tree).filter(node => node.type === 'MemoryCard'); press(cards[b]);
-          if (byId('memory-continue')) press(byId('memory-continue'));
+          render.advance(); tree = render();
         }
         const value = r.cognitive.getState().pending.telemetry;
         assert.equal(value.attempts, value.totalPairs + 3); assert.equal(value.repeatedMistakes, 2); assert.equal(value.hintsUsed, level === 5 ? 3 : 2);
@@ -287,7 +287,7 @@ async function screenChecks() {
           const answer = byId('choice-' + task.answer); press(answer);
           answer.props.onPress(); tree = render(); // stale callback / rapid duplicate.
           assert.ok(text().includes(t(language, 'coachCorrect')));
-          press(byId('activity-continue'));
+          render.advance(); tree = render();
         }
         const pending = r.cognitive.getState().pending;
         assert.equal(pending.telemetry.attempts, tasks.length + 3); assert.equal(pending.telemetry.hintsUsed, level === 5 ? 3 : 2);
@@ -295,7 +295,7 @@ async function screenChecks() {
         // Start/answer/finish handlers from the old mounted screen cannot restore a cleared session.
         r.session.usePatientSessionStore.setState(s => ({ revision: s.revision + 2 }));
         r.cognitive.getState().clear();
-        byId('activity-continue')?.props.onPress();
+        render.advance(); tree = render();
         assert.equal(r.cognitive.getState().pending, null);
       }
       assert.deepEqual(navigation, ['/patient/games/result']);

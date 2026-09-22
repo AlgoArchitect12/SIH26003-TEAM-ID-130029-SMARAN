@@ -223,7 +223,7 @@ async function migrationChecks() {
       assert.deepEqual(r.sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(),fks[table],table+' FKs');
     }
     for (const item of beforeSchema.filter(row=>row.type==='index'||row.type==='trigger')) assert.deepEqual(schema().find(row=>row.name===item.name),item);
-    const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(),after); assert.equal(r.rows('schema_migrations').length, 13);
+    const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(),after); assert.equal(r.rows('schema_migrations').length, 14);
     assert.equal((await care.report('one',report.id)).snapshot,report.snapshot);
     assert.ok(r.module('src/caregiver/report-presentation.ts').reportSections(report,'en').length);
     for (const game of extra) for (let level=1;level<=5;level++) {
@@ -241,7 +241,7 @@ async function migrationChecks() {
     }
     assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok'); assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
   } finally {r.sqlite.close();}
-  for (const fk of [0,1]) { const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length, 13);assert.equal(r.rows('cognitive_sessions').length,0);}finally{r.sqlite.close();} }
+  for (const fk of [0,1]) { const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length, 14);assert.equal(r.rows('cognitive_sessions').length,0);}finally{r.sqlite.close();} }
   console.log('PASS migration 012: production runner, populated 011 upgrade, all history/models/sync/consent/Care Circle/reports/rowids/indexes/triggers/FKs preserved; six rollback boundaries; exact new completion constraints; fresh install and idempotence.');
 }
 
@@ -306,13 +306,18 @@ async function screenChecks() {
   for (const game of extra) for (const level of [1,5]) for (const language of Languages) {
     const r=runtime();
     try {
-      let valid=true, focused=true, background;
+      let valid=true, focused=true; const backgroundListeners=[]; const background=(state)=>{backgroundListeners.forEach(fn=>fn(state));};
       const routes=[],router={replace:route=>routes.push(route),dismissTo:route=>routes.push(route)};
       const onboarding=r.module('src/stores/onboarding.store.ts').useOnboardingStore;
       const cognitive=r.module('src/stores/cognitive-session.store.ts').useCognitiveSessionStore;
       const overrides={
         'expo-router':{useRouter:()=>router}, '@expo/vector-icons':{MaterialIcons:'MaterialIcons'},
-        'react-native':{View:'View',Text:'Text',Pressable:'Pressable',StyleSheet:{create:s=>s},AppState:{currentState:'active',addEventListener:(_,cb)=>{background=cb;return{remove(){}};}}},
+        // Automatic progression (challenge → answer → feedback → short auto
+        // transition → next) registers multiple AppState listeners (board
+        // foreground ref + useGameTransition). Notify all of them so background
+        // guards are exercised faithfully; the user must NOT press Continue
+        // after every successful round.
+        'react-native':{View:'View',Text:'Text',Pressable:'Pressable',StyleSheet:{create:s=>s},AppState:{currentState:'active',addEventListener:(_,cb)=>{backgroundListeners.push(cb);return{remove(){}};}}},
         '@react-navigation/native':{useIsFocused:()=>focused}, '@/hooks/use-theme-color':{useThemeColors:()=>({})},
         '@/src/stores/patient-session.store':{capturePatientRequest:()=>()=>valid},
         '@/src/stores/onboarding.store':{useOnboardingStore:hook(onboarding)},'@/src/stores/cognitive-session.store':{useCognitiveSessionStore:hook(cognitive)},
@@ -353,8 +358,8 @@ async function screenChecks() {
         focused=false;render();callback();render();assert.equal(props.selection.correctSelections,i);focused=true;render();
         click('puzzle-choice-'+task.answer);assert.equal(props.selection.correctSelections,i+1);
         callback();render();assert.equal(props.selection.correctSelections,i+1);
-        if(i===tasks.length-1){valid=false;click('activity-continue');assert.equal(cognitive.getState().pending,null);assert.deepEqual(routes,[]);valid=true;}
-        click('activity-continue');
+        if(i===tasks.length-1){valid=false;board.advance();assert.equal(cognitive.getState().pending,null);assert.deepEqual(routes,[]);valid=true;props.onContinue();}
+        else {board.advance();render();}
       }
       assert.equal(routes.at(-1),'/patient/games/result');const result=cognitive.getState().pending;
       assert.equal(result.patientId,'one');assert.equal(result.currentDifficulty,level);assert.equal(result.telemetry.stepsCompleted,tasks.length);
@@ -394,8 +399,24 @@ async function preparationChecks() {
 
 function sourceChecks() {
   for(const file of [...fs.readdirSync('src/db/migrations').filter(f=>/^0(0[1-9]|11)_/.test(f)).map(f=>'src/db/migrations/'+f),
-    ...fs.readdirSync('supabase/migrations').filter(f=>f<'20260916000000').map(f=>'supabase/migrations/'+f),'package.json','package-lock.json','src/db/client.web.ts']) {
+    ...fs.readdirSync('supabase/migrations').filter(f=>f<'20260916000000').map(f=>'supabase/migrations/'+f),'src/db/client.web.ts']) {
     assert.equal(fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n'),execFileSync('git',['show','a030ac8:'+file],{encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' protected');
+  }
+  // Required location/mail/task dependencies are explicitly validated while
+  // all other dependency fields remain protected against accidental loss.
+  for(const file of ['package.json','package-lock.json']) {
+    const before=JSON.parse(execFileSync('git',['show','a030ac8:'+file],{encoding:'utf8'}));
+    const after=JSON.parse(fs.readFileSync(file,'utf8'));
+    const dependencies=file==='package.json'?after.dependencies:after.packages[''].dependencies;
+    for(const [name,version] of Object.entries({'expo-location':'~19.0.8','expo-mail-composer':'~15.0.8','expo-task-manager':'~14.0.9'})) {
+      assert.equal(dependencies[name],version,name+' required'); delete dependencies[name];
+      if(file==='package-lock.json') { assert.equal(after.packages['node_modules/'+name].version,version.slice(1)); delete after.packages['node_modules/'+name]; }
+    }
+    if(file==='package-lock.json') {
+      assert.equal(after.packages['node_modules/unimodules-app-loader'].version,'6.0.8');
+      delete after.packages['node_modules/unimodules-app-loader'];
+    }
+    assert.deepEqual(after,before,'all other dependency fields preserved: '+file);
   }
   const old=fs.readFileSync('supabase/migrations/20260915000000_care_circle_reports.sql','utf8').replace(/\r\n/g,'\n');
   const next=fs.readFileSync('supabase/migrations/20260916000000_three_cognitive_games.sql','utf8').replace(/\r\n/g,'\n');
@@ -427,7 +448,7 @@ function continuedCoachingChecks() {
     click('puzzle-choice-'+first.choices.find(choice=>choice!==first.answer));
     click('activity-hint');click('activity-hint');
     click((gameType==='sudoku_lite'?'sudoku-focus-':'word-focus-')+second.id);
-    click('puzzle-choice-'+second.answer);click('activity-continue');
+    click('puzzle-choice-'+second.answer);render.advance();render();
     assert.equal(props.selection.hintLevel,2,'Continue must retain guidance for a previously visited task');
     assert.equal(props.selection.wrongAnswers,1,'Continue must retain earlier wrong answers');
     assert.equal(props.selection.hintsUsed,2,'restored guidance must not add a hint');

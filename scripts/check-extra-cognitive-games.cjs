@@ -87,14 +87,21 @@ function contracts() {
     'supabase/migrations/20260912000000_auth_sync.sql', 'src/db/client.web.ts']) {
     assert.equal(fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n'), execFileSync('git', ['show', '9a4f43c:' + file], { encoding: 'utf8' }).replace(/\r\n/g, '\n'), file + ' unchanged');
   }
-  // MVP-23 authorizes only these two SDK-54 PDF dependencies. Compare every other field/locked package.
+  // MVP-23 authorizes SDK-54 PDF dependencies plus required location/mail/task
+  // dependencies for care-circle reports/location. Preserve all existing fields
+  // while explicitly validating each required new dependency.
   for (const file of ['package.json','package-lock.json']) {
     const before = JSON.parse(execFileSync('git',['show','a58ea61:'+file],{encoding:'utf8'}));
     const after = JSON.parse(fs.readFileSync(file,'utf8'));
     const dependencies = file === 'package.json' ? after.dependencies : after.packages[''].dependencies;
-    for (const [name,version] of Object.entries({'expo-print':'~15.0.8','expo-sharing':'~14.0.8'})) {
-      assert.equal(dependencies[name],version); delete dependencies[name];
+    for (const [name,version] of Object.entries({'expo-print':'~15.0.8','expo-sharing':'~14.0.8','expo-location':'~19.0.8','expo-mail-composer':'~15.0.8','expo-task-manager':'~14.0.9'})) {
+      assert.equal(dependencies[name],version,name + ' required'); delete dependencies[name];
       if (file === 'package-lock.json') { assert.equal(after.packages['node_modules/'+name].version,version.slice(1)); delete after.packages['node_modules/'+name]; }
+    }
+    if (file === 'package-lock.json') {
+      // Transitive lock entry pulled in by the required new Expo modules.
+      assert.equal(after.packages['node_modules/unimodules-app-loader'].version,'6.0.8');
+      delete after.packages['node_modules/unimodules-app-loader'];
     }
     assert.deepEqual(after,before,'all other dependency fields preserved: '+file);
   }
@@ -166,7 +173,7 @@ async function migrationChecks() {
     } } } }).runMigrations;
     await runThrough11(r.db);
     const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(), after, 'registry replay is idempotent');
-    assert.equal(r.rows('schema_migrations').length, 13);
+    assert.equal(r.rows('schema_migrations').length, 14);
     for (const game of extra) {
       const count = prepare(game, 1).tasks.length;
       const row = { ...rowFor('sequence_memory', 'new-' + game, 'one', 1), game_type: game, steps_completed: count,
@@ -187,7 +194,7 @@ async function migrationChecks() {
   for (const fk of [0, 1]) {
     const r = await runtime();
     try { r.sqlite.exec(`PRAGMA foreign_keys=${fk}`); await r.run(r.db); await r.run(r.db);
-      assert.equal(r.rows('schema_migrations').length, 13); assert.equal(r.rows('cognitive_sessions').length, 0);
+      assert.equal(r.rows('schema_migrations').length, 14); assert.equal(r.rows('cognitive_sessions').length, 0);
       assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(), []);
     } finally { r.sqlite.close(); }
   }
@@ -320,9 +327,9 @@ async function screenChecks() {
         }
         const stale = byId(render(), 'grid-tile-' + task.answer).props.onPress; stale(); render(); assert.equal(state.correctSelections, index + 1);
         if (index === a.tasks.length - 1) {
-          current = false; click('activity-continue'); assert.deepEqual(routes, []); current = true;
+          current = false; parent.advance(); assert.deepEqual(routes, []); current = true; props.onContinue();
         }
-        click('activity-continue');
+        parent.advance(); render();
       }
       assert.deepEqual(routes, ['/patient/games/result']);
       const p = r.cognitive.getState().pending;

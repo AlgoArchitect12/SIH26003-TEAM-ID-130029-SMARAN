@@ -1,4 +1,5 @@
 import { useIsFocused } from '@react-navigation/native';
+import { useGameTransition } from '@/hooks/use-game-transition';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useThemeColors } from '@/hooks/use-theme-color';
@@ -20,11 +21,12 @@ export type PuzzleActivity = { tasks: readonly SelectionTask[] } & (
   { gameType: 'word_match'; words: WordActivity }
 );
 type Props = {
+  paused?: boolean;
   activity: PuzzleActivity; selection: SelectionState; level: DifficultyLevel; language: Language; voice: boolean;
   isCurrent: () => boolean; onChange: (change: (state: SelectionState) => SelectionState) => void; onContinue: () => void;
 };
 
-export function PuzzleActivityBoard({ activity, selection, level, language, voice, isCurrent, onChange, onContinue }: Props) {
+export function PuzzleActivityBoard({ paused = false, activity, selection, level, language, voice, isCurrent, onChange, onContinue }: Props) {
   const colors = useThemeColors(), focused = useIsFocused();
   const [width, setWidth] = useState(0);
   const order = useRef([...activity.tasks]);
@@ -50,7 +52,7 @@ export function PuzzleActivityBoard({ activity, selection, level, language, voic
 
   const task = order.current[selection.position];
   const done = new Set(order.current.slice(0, selection.correctSelections).map(item => item.id));
-  const locked = selection.awaitingContinue || !focused;
+  const locked = paused || selection.awaitingContinue || !focused;
   const focusTask = (id: string) => {
     if (!canAct()) return;
     onChange(state => {
@@ -97,6 +99,15 @@ export function PuzzleActivityBoard({ activity, selection, level, language, voic
   const interactiveSudoku = sudoku && (width - 4) / sudoku.size >= Layout.minTouchTarget;
   const chessBoard = chess && selection.awaitingContinue && chess.kind !== 'recognize' ? moveChessPiece(chess.board, chess.source, chess.answer) : chess?.board;
 
+  useGameTransition(selection.awaitingContinue ? 1400 : null, () => {
+    if (!canAct()) return;
+    if (selection.completedAtMs !== null) { onContinue(); return; }
+    onChange(state => {
+      const next = continueSelection(state, Date.now());
+      return next === state ? state : { ...next, ...(coaches.current[order.current[next.position].id] ?? initialCoach) };
+    });
+  }, paused);
+
   return <View style={styles.group} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
     <ThemedText accessibilityLiveRegion="polite" type="cardHeading">{prompt}</ThemedText>
     {sudoku && values && <>
@@ -127,7 +138,7 @@ export function PuzzleActivityBoard({ activity, selection, level, language, voic
       </>}
     </>}
     {chess && chessBoard && <>
-      <ThemedText accessibilityLiveRegion="polite">{t(language, 'chessSelectSource', {
+      <ThemedText accessibilityLiveRegion="polite">{chess.kind === 'recognize' ? t(language, 'chessChoosePiece') : t(language, 'chessSelectSource', {
         piece: t(language, pieceKeys[chess.board[chess.source].kind]), square: chess.source,
       })}</ThemedText>
       <ScrollView horizontal contentContainerStyle={{ flexGrow: 1 }}>
@@ -172,15 +183,7 @@ export function PuzzleActivityBoard({ activity, selection, level, language, voic
     {!!feedback && <ThemedText type="cardHeading" accessibilityLiveRegion="polite">{feedback}</ThemedText>}
     {!!guidance && <ThemedText accessibilityLiveRegion="polite">{guidance}</ThemedText>}
     {voice && !!(feedback || guidance) && <ReadScreenButton language={language} labelKey="coachHear" text={feedback + ' ' + guidance} />}
-    {selection.awaitingContinue ? <SmaranButton testID="activity-continue" label={t(language, 'activityContinue')} accessibilityLabel={t(language, 'activityContinue')}
-      onPress={() => {
-        if (!canAct()) return;
-        if (selection.completedAtMs !== null) { onContinue(); return; }
-        onChange(state => {
-          const next = continueSelection(state, Date.now());
-          return next === state ? state : { ...next, ...(coaches.current[order.current[next.position].id] ?? initialCoach) };
-        });
-      }} /> : <SmaranButton testID="activity-hint" variant="outline" label={t(language, 'gameHint')} accessibilityLabel={t(language, 'gameHint')}
+    {!selection.awaitingContinue && <SmaranButton testID="activity-hint" variant="outline" label={t(language, 'gameHint')} accessibilityLabel={t(language, 'gameHint')}
       disabled={selection.hintLevel === 3} onPress={hint} />}
   </View>;
 }

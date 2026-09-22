@@ -1,4 +1,6 @@
 import { capturePatientRequest } from '@/src/stores/patient-session.store';
+import { useGameTransition } from '@/hooks/use-game-transition';
+import type { Href } from 'expo-router';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
@@ -57,7 +59,14 @@ export default function CognitiveResultScreen() {
   const [status, setStatus] = useState<ResultStatus>('loading');
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [paused, setPaused] = useState(false);
   const submissionLocked = useRef(false);
+  const automaticSave = useRef<() => void>(() => {});
+  useGameTransition(status === 'ready' && pending && !saved && !saving && !saveFailed ? 6000 : null, () => automaticSave.current(), paused);
+  useGameTransition(status === 'ready' && saved ? 2400 : null, () => {
+    if (!saved || useCognitiveSessionStore.getState().saved !== saved) return;
+    router.replace({ pathname: `/patient/games/${saved.session.gameType.replaceAll('_', '-')}`, params: { auto: '1' } } as Href);
+  }, paused);
 
   useEffect(() => {
     if (!focused) return;
@@ -148,6 +157,7 @@ export default function CognitiveResultScreen() {
       if (current()) setSaving(false);
     }
   };
+  automaticSave.current = () => { void submit(null); };
 
   const readText = [
     t(language, 'resultTitle', { name: preferredName }), activity,
@@ -160,6 +170,10 @@ export default function CognitiveResultScreen() {
   return (
     <ScreenWrapper contentContainerStyle={styles.screen} scroll>
       <View style={styles.content}>
+        <SmaranButton label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')}
+          variant="outline" onPress={() => setPaused(value => !value)} />
+        <SmaranButton label={t(language, 'activitiesBack')} accessibilityLabel={t(language, 'activitiesBack')} variant="outline" disabled={saving}
+          onPress={() => { setPaused(true); router.dismissTo('/patient/games'); }} />
         <ThemedText accessibilityRole="header" textSize={textSize} type="screenTitle">
           {t(language, 'resultTitle', { name: preferredName })}
         </ThemedText>

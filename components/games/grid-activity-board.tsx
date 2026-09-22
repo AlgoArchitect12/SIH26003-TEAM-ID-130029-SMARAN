@@ -15,13 +15,14 @@ import { chooseSelection, hintSelection, resumeSelection, type SelectionState } 
 
 type Phase = 'preview' | 'playback' | 'ready' | 'answer';
 type Props = {
+  paused?: boolean;
   activity: GridActivity; selection: SelectionState; language: Language; voice: boolean;
   isCurrent: () => boolean; onChange: (change: (state: SelectionState) => SelectionState) => void;
   onContinue: () => void;
 };
 
 // The parent keys this board by round. Selection metrics remain in the shared engine.
-export function GridActivityBoard({ activity, selection, language, voice, isCurrent, onChange, onContinue }: Props) {
+export function GridActivityBoard({ paused = false, activity, selection, language, voice, isCurrent, onChange }: Props) {
   const colors = useThemeColors(), reducedMotion = useReducedMotion(), focused = useIsFocused();
   const lights = activity.gameType === 'remember_lights';
   const [phase, setPhase] = useState<Phase>(lights ? 'preview' : 'answer');
@@ -61,7 +62,7 @@ export function GridActivityBoard({ activity, selection, language, voice, isCurr
   }, [focused]);
 
   useEffect(() => {
-    if (phase !== 'playback' || atMyPace || !focused || !foreground) return;
+    if (paused || phase !== 'playback' || atMyPace || !focused || !foreground) return;
     // Long, steady emphasis with a quiet gap; no animation or flashing.
     const timer = setTimeout(() => {
       const current = latest.current;
@@ -70,7 +71,7 @@ export function GridActivityBoard({ activity, selection, language, voice, isCurr
       else changeFrame(frame + 1);
     }, frame % 2 ? 700 : selection.hintLevel ? 2400 : activity.presentationMs);
     return () => clearTimeout(timer);
-  }, [phase, frame, atMyPace, focused, foreground, activity.roundLength, activity.presentationMs, selection.hintLevel]);
+  }, [paused, phase, frame, atMyPace, focused, foreground, activity.roundLength, activity.presentationMs, selection.hintLevel]);
 
   const replay = () => { if (canAct()) { changeFrame(0); changePhase('playback'); } };
   const requestHint = () => {
@@ -110,7 +111,7 @@ export function GridActivityBoard({ activity, selection, language, voice, isCurr
         const guided = phase === 'answer' && !selection.awaitingContinue && tile === task.answer &&
           (selection.hintLevel >= (lights ? 2 : 1) || activity.markNext);
         const emphasized = tile === activeLight || guided;
-        const disabled = phase !== 'answer' || selection.awaitingContinue || done || !focused || !foreground ||
+        const disabled = paused || phase !== 'answer' || selection.awaitingContinue || done || !focused || !foreground ||
           (selection.hintLevel === 3 && tile !== task.answer);
         return <SmaranButton key={tile} testID={'grid-tile-' + tile} size="large" label={`${tile === activeLight ? '◆ ' : done ? '✓ ' : ''}${tile}`}
           accessibilityLabel={t(language, lights ? 'lightTile' : done ? 'numberDone' : 'numberTile', {
@@ -140,11 +141,8 @@ export function GridActivityBoard({ activity, selection, language, voice, isCurr
       }} />}
     {phase === 'ready' && <SmaranButton testID="lights-ready" label={t(language, 'lightsReady')} accessibilityLabel={t(language, 'lightsReady')}
       onPress={() => { if (!canAct() || phaseRef.current !== 'ready') return; changePhase('answer'); onChange(state => resumeSelection(state, Date.now())); }} />}
-    {phase === 'answer' && (selection.awaitingContinue
-      ? <SmaranButton testID="activity-continue" label={t(language, 'activityContinue')} accessibilityLabel={t(language, 'activityContinue')}
-        onPress={() => { if (canAct()) onContinue(); }} />
-      : <SmaranButton testID="activity-hint" variant="outline" disabled={selection.hintLevel === 3}
-        label={t(language, 'gameHint')} accessibilityLabel={t(language, 'gameHint')} onPress={requestHint} />)}
+    {phase === 'answer' && !selection.awaitingContinue && <SmaranButton testID="activity-hint" variant="outline" disabled={paused || selection.hintLevel === 3}
+      label={t(language, 'gameHint')} accessibilityLabel={t(language, 'gameHint')} onPress={requestHint} />}
     {lights && phase === 'answer' && selection.hintLevel > 0 && !selection.awaitingContinue && <SmaranButton testID="lights-replay" variant="outline"
       label={t(language, 'lightsReplay')} accessibilityLabel={t(language, 'lightsReplay')}
       onPress={() => { if (!canAct()) return; onChange(state => ({ ...state, hintsUsed: state.hintsUsed + 1 })); replay(); }} />}

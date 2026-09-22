@@ -14,4 +14,4 @@ export const MemoryDifficulties: Record<DifficultyLevel, MemoryDifficulty> = {
   5: { columns: 4, minimumCardSize: 56, pairs: 8 },
 };
 
-export const INITIAL_MEMORY_DIFFICULTY: DifficultyLevel = 2;
+export const INITIAL_MEMORY_DIFFICULTY: DifficultyLevel = 1;

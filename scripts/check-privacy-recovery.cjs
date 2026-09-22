@@ -10,7 +10,9 @@ const { load } = require('./check-elderly-ux.cjs');
 // Execute the actual screens with native/UI boundaries replaced, as in product-hardening checks.
 function screen(file, overrides, props) {
   let cursor = 0;
-  const slots = [], effects = [];
+  const slots = [], effects = [], cleanups = [], timers = new Map();
+  let timerId = 0;
+  const clock = { setTimeout: fn => { timers.set(++timerId, fn); return timerId; }, clearTimeout: id => timers.delete(id) };
   const react = {
     useState: initial => {
       const i = cursor++;
@@ -21,7 +23,7 @@ function screen(file, overrides, props) {
     useCallback: fn => fn,
     useEffect: (fn, deps) => {
       const i = cursor++, previous = slots[i];
-      if (!previous || deps.some((value, index) => value !== previous[index])) effects.push(fn);
+      if (!previous || deps.some((value, index) => value !== previous[index])) effects.push(() => { cleanups[i]?.(); cleanups[i] = fn(); });
       slots[i] = deps;
     },
   };
@@ -30,6 +32,9 @@ function screen(file, overrides, props) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   }).outputText;
   new Function('require', 'module', 'exports', '__DEV__', code)(name => {
+    if (name === 'expo-router') return { useLocalSearchParams: () => ({}), useRouter: () => ({ push() {}, dismissTo() {} }), ...overrides[name] };
+    if (name === '@/hooks/use-game-transition') return load('hooks/use-game-transition.ts', { ...overrides, react,
+      '@react-navigation/native': overrides['@react-navigation/native'] ?? { useIsFocused: () => true }, $timers: clock });
     if (name in overrides) return overrides[name];
     if (name === 'react') return react;
     if (name === 'react/jsx-runtime') return require(name);
@@ -42,12 +47,15 @@ function screen(file, overrides, props) {
     if (name === 'expo-router') return { useRouter: () => ({ push: () => {}, dismissTo: () => {} }) };
     throw Error('Unexpected boundary: ' + name);
   }, module, module.exports, false);
-  return () => {
+  const render = () => {
     cursor = 0;
     const tree = Object.values(module.exports).find(value => typeof value === 'function')(props);
     effects.splice(0).forEach(fn => fn());
     return tree;
   };
+  render.advance = () => { const pending = [...timers.values()]; timers.clear(); pending.forEach(fn => fn()); };
+  render.unmount = () => { cleanups.forEach(fn => fn?.()); timers.clear(); };
+  return render;
 }
 function nodes(node) {
   if (!node || typeof node !== 'object') return [];

@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase } from '../client';
-import { SYNC_COLUMNS as SYNC_COLUMNS_V1 } from '../../cloud/care-sync-columns';
+import { SYNC_COLUMNS as SYNC_COLUMNS_V1 } from '../../cloud/location-sync-columns';
 import { assertOwner, BATCH_SIZE, validateCloudRecord, type CloudRecord, type OutboxEvent, type PullBatch, type PushReceipt } from '../../cloud/sync-contract';
 
 function check(current: () => boolean) { if (!current()) throw new Error('Account request expired.'); }
@@ -130,7 +130,7 @@ async function applyRecord(tx: SQLiteDatabase, r: CloudRecord) {
       const snapshot = await tx.getFirstAsync('SELECT id FROM activity_reports WHERE patient_id=? AND id=?', r.patient_id, p.report_snapshot_id);
       if (!snapshot) throw new Error('Missing report snapshot parent.');
     }
-    const immutable = ['cognitive_sessions', 'reminder_events'].includes(r.entity_type);
+    const immutable = ['cognitive_sessions', 'reminder_events', 'patient_locations'].includes(r.entity_type);
     const changes = columns.filter(column => !['id', 'patient_id', 'created_at'].includes(column)).map(column => `${column} = excluded.${column}`);
     if (r.entity_type === 'reminders') changes.push('revision = reminders.revision + 1');
     await tx.runAsync(`INSERT INTO ${r.entity_type} (${columns.join(',')}) VALUES(${columns.map(() => '?').join(',')})

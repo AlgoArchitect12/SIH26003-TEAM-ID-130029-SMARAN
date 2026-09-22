@@ -12,11 +12,13 @@ import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import { accessEmail, accessGoogle, initializeAuth, logout, retryAuth, useAuthStore } from '@/src/cloud/auth';
 import { AccountError, cloudConfig } from '@/src/cloud/config';
 import { enableCloudSync, pauseCloudSync, refreshSyncStatus, syncNow, useSyncStore } from '@/src/cloud/sync';
+import { enterAdmin, exitAdmin, useAdminStore } from '@/src/services/admin.service';
 
 export default function AccountScreen() {
   const router = useRouter();
   const language = useOnboardingStore(s => s.language) ?? 'en';
   const auth = useAuthStore();
+  const admin = useAdminStore();
   const sync = useSyncStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,19 +27,23 @@ export default function AccountScreen() {
   const [busy, setBusy] = useState(false);
   const locked = useRef(false);
   useEffect(() => { void initializeAuth(); void refreshSyncStatus().catch(() => {}); }, []);
-  useEffect(() => { setEmail(''); setPassword(''); }, [auth.ownerId, auth.revision]);
+  const operation = useRef(0);
+  useEffect(() => { operation.current++; setEmail(''); setPassword(''); setMessage(null); setBusy(false); locked.current = false; }, [auth.ownerId]);
+  useEffect(() => () => { operation.current++; }, []);
   const available = !!cloudConfig && Platform.OS !== 'web';
   const disabled = busy || auth.busy || auth.status === 'restoring';
   const run = async (work: () => Promise<unknown>) => {
     if (locked.current) return;
     locked.current = true; setBusy(true); setMessage(null);
+    const request = ++operation.current;
     try {
       const result = await work();
+      if (request !== operation.current) return;
       if (result === 'check-email') setMessage('accountCheckEmail');
       if (result === 'cancelled') setMessage('accountCancelled');
       if (result === 'local-offline') setMessage('accountOfflineLogout');
-    } catch (error) { setMessage(error instanceof AccountError ? error.key : 'accountFailure'); }
-    finally { setPassword(''); locked.current = false; setBusy(false); }
+    } catch (error) { if (request === operation.current) setMessage(error instanceof AccountError ? error.key : 'accountFailure'); }
+    finally { if (request === operation.current) { setPassword(''); locked.current = false; setBusy(false); } }
   };
   const action = (key: TranslationKey, work: () => Promise<unknown>, variant: 'primary' | 'outline' = 'primary') =>
     <SmaranButton key={key} label={t(language, key)} accessibilityLabel={t(language, key)} disabled={disabled}
@@ -81,6 +87,8 @@ export default function AccountScreen() {
       {sync.linked && sync.unlinked > 0 && action('accountAddProfiles', enableCloudSync, 'outline')}
       {sync.linked && action('accountPause', pauseCloudSync, 'outline')}
       {action('accountLogout', logout, 'outline')}
+      <SmaranButton label={admin.mode === 'admin' ? 'Exit admin mode' : 'Admin'} accessibilityLabel={admin.mode === 'admin' ? 'Exit admin mode' : 'Admin'} variant="outline" disabled={disabled}
+        onPress={() => { if (admin.mode === 'admin') exitAdmin(); else void run(async () => { if (await enterAdmin()) router.push('/admin'); else throw new Error('Admin authorization required.'); }); }} />
     </>}
     {(message || auth.message) && <ThemedText accessibilityRole="alert" accessibilityLiveRegion="polite">{t(language, message ?? auth.message!)}</ThemedText>}
     <ThemedText type="secondary">{t(language, 'accountMedia')}</ThemedText>

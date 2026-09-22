@@ -39,6 +39,13 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      ["expo-location", {
+        "locationAlwaysAndWhenInUsePermission": "Allow Smaran to record the consenting patient's location in the background for their caregiver.",
+        "locationWhenInUsePermission": "Allow Smaran to record the consenting patient's location.",
+        "isIosBackgroundLocationEnabled": true,
+        "isAndroidBackgroundLocationEnabled": true,
+        "isAndroidForegroundServiceEnabled": true
+      }],
       "expo-router",
       [
         "expo-splash-screen",
@@ -63,7 +70,9 @@
       ],
       [
         "expo-secure-store",
-        { "configureAndroidBackup": false }
+        {
+          "configureAndroidBackup": false
+        }
       ],
       "./plugins/with-private-backup.cjs",
       "expo-notifications",
@@ -74,7 +83,8 @@
           "cameraPermission": false,
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-mail-composer"
     ],
     "experiments": {
       "typedRoutes": true,

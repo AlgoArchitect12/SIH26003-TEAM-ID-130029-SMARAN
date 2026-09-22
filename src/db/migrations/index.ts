@@ -13,6 +13,7 @@ import { careCircleReportsMigration } from './010_care_circle_reports';
 import { syncConsentMigration } from './011_sync_consent';
 import { threeCognitiveGamesMigration } from './012_three_cognitive_games';
 import { reportDeliveryMigration } from './013_report_delivery';
+import { patientLocationMigration } from './014_patient_location';
 
 const migrations = [
   coreBootstrapMigration,
@@ -28,6 +29,7 @@ const migrations = [
   syncConsentMigration,
   threeCognitiveGamesMigration,
   reportDeliveryMigration,
+  patientLocationMigration,
 ] as const;
 
 type AppliedMigrationRow = { version: number };

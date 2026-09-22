@@ -1,8 +1,9 @@
 import { capturePatientRequest } from '@/src/stores/patient-session.store';
+import { useGameTransition } from '@/hooks/use-game-transition';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { createInitialAdaptiveModel, recommendDifficulty } from '@ai/adaptive-engine';
@@ -61,6 +62,7 @@ function textSizeFor(settings: PatientSettings): TextSizePreference {
 
 export default function MemoryMatchScreen() {
   const router = useRouter();
+  const { auto } = useLocalSearchParams<{ auto?: string }>();
   const { width } = useWindowDimensions();
   const [contentWidth, setContentWidth] = useState(0);
   const colors = useThemeColors();
@@ -80,16 +82,25 @@ export default function MemoryMatchScreen() {
   const coachRef = useRef(coach);
   const updateCoach = (next: CoachState) => { coachRef.current = next; setCoach(next); };
   const [feedbackCue, setFeedbackCue] = useState<FeedbackCue>(null);
+  const [paused, setPaused] = useState(false);
   const telemetry = useRef<MemoryTelemetryState | null>(null);
   const completionStarted = useRef(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useGameTransition(game.status === 'SESSION_COMPLETE' ? 700 : null, () => {
+    if (data?.isCurrent() && completionStarted.current) router.replace('/patient/games/result');
+  }, paused);
 
-  const schedule = useCallback((task: () => void, delay: number) => {
-    const timer = setTimeout(task, delay);
-    timers.current.push(timer);
-  }, []);
-
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useGameTransition(game.status === 'PREVIEW' ? 4000 : feedbackCue && game.status !== 'SESSION_COMPLETE' ? 1400 : null, () => {
+    if (!data?.isCurrent()) return;
+    if (gameRef.current.status === 'PREVIEW') {
+      telemetry.current = createTelemetry(Date.now());
+      updateGame(startPlaying(gameRef.current));
+    } else {
+      if (gameRef.current.status === 'MATCH_CELEBRATION') updateCoach(initialCoach);
+      updateGame(resolveComparison(gameRef.current));
+      if (telemetry.current) telemetry.current = resumeTelemetry(telemetry.current, Date.now());
+      setFeedbackCue(null);
+    }
+  }, paused);
 
   useEffect(() => {
     let active = true;
@@ -117,10 +128,10 @@ export default function MemoryMatchScreen() {
         });
         const nextDifficulty = history[0]?.recommendedDifficulty ?? INITIAL_MEMORY_DIFFICULTY;
         setDifficulty(nextDifficulty);
-        const prepared = createMemoryGame(nextDifficulty);
+        const prepared = auto === '1' ? startPreview(createMemoryGame(nextDifficulty)) : createMemoryGame(nextDifficulty);
         gameRef.current = prepared; setGame(prepared);
         setData({
-          isCurrent: current,
+          isCurrent: () => active && current(),
           history,
           model: savedModel ?? createInitialAdaptiveModel(resolution.profile.id, 'memory_match'),
           patientId: resolution.profile.id,
@@ -136,7 +147,7 @@ export default function MemoryMatchScreen() {
     return () => {
       active = false;
     };
-  }, [clearSession, loadAttempt, router, setAccessibility, setLanguage]);
+  }, [auto, clearSession, loadAttempt, router, setAccessibility, setLanguage]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
@@ -186,7 +197,6 @@ export default function MemoryMatchScreen() {
   const matchedPairs = game.cards.filter(({ state }) => state === 'matched').length / 2;
   const supportSymbol = game.cards.find(card => card.state !== 'matched')?.symbolId;
   const supportPositions = game.cards.flatMap((card, index) => card.state !== 'matched' && card.symbolId === supportSymbol ? [index] : []);
-  (global as any).lastMemoryMatchRender = { game, coach, supportPositions };
   const hintKey = coachHintKey('memory_match', coach);
   const hintText = hintKey ? t(language, hintKey, { position: String(supportPositions[0] + 1),
     first: String(supportPositions[0] + 1), second: String(supportPositions[1] + 1) }) : '';
@@ -224,11 +234,10 @@ export default function MemoryMatchScreen() {
       patientId: data.patientId,
       telemetry: completed,
     });
-    schedule(() => { if (data.isCurrent()) router.replace('/patient/games/result'); }, settings.reducedMotion ? 0 : 700);
   };
 
   const handleCardPress = (index: number) => {
-    if (!data.isCurrent() || (coachRef.current.hintLevel >= 3 && !supportPositions.includes(index))) return;
+    if (paused || !data.isCurrent() || (coachRef.current.hintLevel >= 3 && !supportPositions.includes(index))) return;
     const next = flipCard(gameRef.current, index);
     if (next.state === gameRef.current) return;
     const now = Date.now();
@@ -283,6 +292,14 @@ export default function MemoryMatchScreen() {
         </View>
 
         {settings.voiceGuidance ? <ReadScreenButton language={language} text={speechText} /> : null}
+        {game.status !== 'IDLE' && <View style={styles.heading}>
+          <SmaranButton label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')}
+            variant="outline" onPress={() => setPaused(value => !value)} />
+          <SmaranButton label={t(language, 'gameRestart')} accessibilityLabel={t(language, 'gameRestart')} variant="outline" onPress={() => {
+            completionStarted.current = false; telemetry.current = null;
+            setPaused(false); setFeedbackCue(null); updateCoach(initialCoach); updateGame(createMemoryGame(difficulty));
+          }} />
+        </View>}
 
         {game.status === 'IDLE' ? (
           <SmaranButton
@@ -319,7 +336,7 @@ export default function MemoryMatchScreen() {
                       position: String(index + 1),
                       symbol: t(language, symbol.labelKey),
                     })}
-                    disabled={game.inputLocked || card.state === 'matched' || game.status !== 'PLAYING' || (coach.hintLevel >= 3 && !supportPositions.includes(index))}
+                    disabled={paused || game.inputLocked || card.state === 'matched' || game.status !== 'PLAYING' || (coach.hintLevel >= 3 && !supportPositions.includes(index))}
                     highContrast={settings.highContrast}
                     hinted={hinted}
                     key={card.id}
@@ -346,14 +363,6 @@ export default function MemoryMatchScreen() {
                 if (!data.isCurrent() || gameRef.current.status !== 'PREVIEW') return;
                 telemetry.current = createTelemetry(Date.now());
                 updateGame(startPlaying(gameRef.current));
-              }} />}
-            {feedbackCue && game.status !== 'SESSION_COMPLETE' && <SmaranButton testID="memory-continue"
-              label={t(language, 'activityContinue')} accessibilityLabel={t(language, 'activityContinue')} onPress={() => {
-                if (!data.isCurrent() || !gameRef.current.inputLocked) return;
-                if (gameRef.current.status === 'MATCH_CELEBRATION') updateCoach(initialCoach);
-                updateGame(resolveComparison(gameRef.current));
-                if (telemetry.current) telemetry.current = resumeTelemetry(telemetry.current, Date.now());
-                setFeedbackCue(null);
               }} />}
             {game.status === 'PLAYING' ? (
               <View style={[styles.hintPanel, { backgroundColor: colors.surface, borderColor: colors.border }]}>

@@ -1,5 +1,6 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as MailComposer from 'expo-mail-composer';
 import { Directory, File, Paths } from 'expo-file-system';
 import { Platform } from 'react-native';
 import { validateRecordId } from '../utils/validation';
@@ -9,6 +10,7 @@ import { reportHtml } from '../caregiver/report-presentation';
 import type { Language } from '../db/schema.types';
 
 export class ReportPdfUnavailable extends Error {}
+export class ReportEmailUnavailable extends Error {}
 // One native print/share operation at a time; repeated taps must not share another patient's artifact.
 let busy = false;
 export function removeReportPdf(uri: string) {
@@ -25,7 +27,7 @@ export function cleanupReportPdfs(now = Date.now()) {
     if (!dir.list().length) dir.delete();
   }
 }
-export async function prepareReportPdf(patientId: string, reportId: string, language: Language, current: () => boolean, recipientId?: string, share = false) {
+export async function prepareReportPdf(patientId: string, reportId: string, language: Language, current: () => boolean, recipientId?: string, share = false, email = false) {
   if (Platform.OS === 'web') throw new ReportPdfUnavailable();
   if (busy) throw new Error('A report is being prepared.');
   busy = true;
@@ -38,6 +40,8 @@ export async function prepareReportPdf(patientId: string, reportId: string, lang
     const member = recipientId ? await repo.get(patientId,recipientId) : null;
     if (recipientId && !member) throw new Error('Missing recipient.');
     const scopes = member ? effectiveScopes(member) : CareScopes;
+    if (email && (!member?.email || !scopes.includes('reports'))) throw new Error('Choose an authorized recipient with an email address.');
+    if (email && !await MailComposer.isAvailableAsync()) throw new ReportEmailUnavailable();
     if (share && !await Sharing.isAvailableAsync()) throw new ReportPdfUnavailable();
     checkCareRequest(current); cleanupReportPdfs();
     const result = await Print.printToFileAsync({html:reportHtml(report,language,scopes),width:595,height:842});
@@ -53,13 +57,15 @@ export async function prepareReportPdf(patientId: string, reportId: string, lang
     // Recheck permissions immediately before export, including revocation during printing.
     if (member) {
       const latest = await repo.get(patientId,member.id);
-      if (!latest || latest.updated_at !== member.updated_at || latest.scopes !== member.scopes || latest.status !== member.status) throw new Error('Recipient access changed.');
+      if (!latest || latest.updated_at !== member.updated_at || latest.scopes !== member.scopes || latest.status !== member.status || latest.email !== member.email) throw new Error('Recipient access changed.');
     }
     checkCareRequest(current);
-    if (!share) { const uri = artifact.uri; artifact = null; return uri; }
+    if (!share && !email) { const uri = artifact.uri; artifact = null; return uri; }
     await repo.shareRequested(patientId,reportId,current);
     checkCareRequest(current);
-    await Sharing.shareAsync(artifact.uri,{mimeType:'application/pdf',UTI:'com.adobe.pdf',dialogTitle:undefined});
+    if (email) await MailComposer.composeAsync({ recipients: [member!.email!], subject: 'SMARAN AI care activity report',
+      body: 'Attached is the requested factual care activity report.', attachments: [artifact.uri] });
+    else await Sharing.shareAsync(artifact.uri,{mimeType:'application/pdf',UTI:'com.adobe.pdf',dialogTitle:undefined});
     // Android resolves when the chooser returns, before a recipient necessarily reads the URI.
     // Keep its private copy until the next >24h cache sweep; this is not delivery confirmation.
     if (Platform.OS === 'android') artifact = null;

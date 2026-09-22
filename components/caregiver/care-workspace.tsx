@@ -18,7 +18,7 @@ import { applyPatientSettings } from '@/src/services/profile-switching.service';
 export function CareNavigation({language}: {language: Language}) {
   const router = useRouter();
   const links = [['circleOverview','/caregiver/home'],['circleActivity','/caregiver/activity'],['circleReminders','/caregiver/reminders'],
-    ['circleCognitive','/caregiver/activity'],['reportTitle','/caregiver/reports'],['circleTitle','/caregiver/circle']] as const;
+    ['locationTitle','/caregiver/location'],['reportTitle','/caregiver/reports'],['circleTitle','/caregiver/circle']] as const;
   return <View style={{flexDirection:'row',flexWrap:'wrap',gap:12}}>{links.map(([key,path]) =>
     <SmaranButton key={key} label={t(language,key)} accessibilityLabel={t(language,key)} variant="outline"
       style={{flexGrow:1,flexBasis:180}} onPress={()=>router.replace(path)} />)}</View>;
