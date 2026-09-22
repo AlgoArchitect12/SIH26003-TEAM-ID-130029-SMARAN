@@ -10,7 +10,11 @@ import { SmaranButton } from '@components/ui/smaran-button';
 import { Spacing } from '@constants/layout';
 import type { Language } from '@db/schema.types';
 import { t, type TranslationKey } from '@i18n/index';
-import { speakScreenText, stopSpeech, type SpeechOutcome } from '@services/speech.service';
+import {
+  speakScreenText,
+  stopSpeech,
+  type SpeechOutcome,
+} from '@services/speech.service';
 import { useThemeColors } from '@/hooks/use-theme-color';
 
 type ReadScreenButtonProps = {
@@ -20,91 +24,191 @@ type ReadScreenButtonProps = {
   labelKey?: TranslationKey;
 };
 
-export function ReadScreenButton({ language, speechLanguage = language, text, labelKey = 'readScreen' }: ReadScreenButtonProps) {
+const START_TIMEOUT_MS = 5000;
+
+export function ReadScreenButton({
+  language,
+  speechLanguage = language,
+  text,
+  labelKey = 'readScreen',
+}: ReadScreenButtonProps) {
   const colors = useThemeColors();
-  const voiceGuidance = useOnboardingStore(s => s.accessibility.voiceGuidance);
+  const voiceGuidance = useOnboardingStore(
+    (s) => s.accessibility.voiceGuidance,
+  );
+
   const [isStarting, setIsStarting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [outcome, setOutcome] = useState<SpeechOutcome | null>(null);
+
   const requestId = useRef(0);
   const reading = useRef(false);
+  const startTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentPatient = useRef(capturePatientRequest()).current;
 
-  useEffect(() => {
-    setIsStarting(false);
-    setIsSpeaking(false);
-    setOutcome(null);
-    reading.current = false;
-    return () => {
-      requestId.current += 1;
-      reading.current = false;
-      void stopSpeech();
-    };
-  }, [language, speechLanguage, text, voiceGuidance]);
+  const clearStartTimer = useCallback(() => {
+    if (startTimer.current) {
+      clearTimeout(startTimer.current);
+      startTimer.current = null;
+    }
+  }, []);
 
-  useFocusEffect(useCallback(() => {
+  const resetReadingState = useCallback(() => {
+    clearStartTimer();
+    reading.current = false;
     setIsStarting(false);
     setIsSpeaking(false);
+  }, [clearStartTimer]);
+
+  const invalidateReading = useCallback(() => {
+    requestId.current += 1;
+    resetReadingState();
+    void stopSpeech();
+  }, [resetReadingState]);
+
+  useEffect(() => {
     setOutcome(null);
-    reading.current = false;
-    const subscription = AppState.addEventListener('change', state => {
-      if (state !== 'active') {
-        requestId.current += 1;
-        reading.current = false;
-        setIsStarting(false); setIsSpeaking(false);
-        void stopSpeech();
-      }
-    });
+    resetReadingState();
+
     return () => {
       requestId.current += 1;
-      reading.current = false;
-      subscription.remove();
+      resetReadingState();
       void stopSpeech();
     };
-  }, []));
+  }, [
+    language,
+    speechLanguage,
+    text,
+    voiceGuidance,
+    resetReadingState,
+  ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setOutcome(null);
+      resetReadingState();
+
+      const subscription = AppState.addEventListener(
+        'change',
+        (state) => {
+          if (state !== 'active') {
+            invalidateReading();
+          }
+        },
+      );
+
+      return () => {
+        subscription.remove();
+        invalidateReading();
+      };
+    }, [invalidateReading, resetReadingState]),
+  );
 
   const handlePress = async () => {
-    if (!currentPatient()) return;
+    if (!currentPatient()) {
+      return;
+    }
+
     const request = ++requestId.current;
+
     if (reading.current) {
-      reading.current = false;
-      setIsStarting(false);
-      setIsSpeaking(false);
-      await stopSpeech();
+      invalidateReading();
       return;
     }
 
     setOutcome(null);
     reading.current = true;
     setIsStarting(true);
-    let finished = false;
-    const nextOutcome = await speakScreenText(text, speechLanguage, {
-      onStart: () => {
-        if (request === requestId.current) { setIsStarting(false); setIsSpeaking(true); }
-      },
-      onDone: () => {
-        finished = true;
-        if (request === requestId.current) { reading.current = false; setIsStarting(false); setIsSpeaking(false); }
-      },
-      onError: () => {
-        finished = true;
-        if (request === requestId.current) {
+    setIsSpeaking(false);
+
+    let terminalCallback = false;
+
+    const isCurrent = () =>
+      request === requestId.current && currentPatient();
+
+    startTimer.current = setTimeout(() => {
+      if (!isCurrent() || !reading.current) {
+        return;
+      }
+
+      terminalCallback = true;
+      reading.current = false;
+      setIsStarting(false);
+      setIsSpeaking(false);
+      setOutcome('failed');
+
+      if (__DEV__) {
+        console.warn(
+          '[SMARAN][TTS] Native speech did not report onStart within 5 seconds.',
+        );
+      }
+
+      void stopSpeech();
+    }, START_TIMEOUT_MS);
+
+    const nextOutcome = await speakScreenText(
+      text,
+      speechLanguage,
+      {
+        onStart: () => {
+          if (!isCurrent()) {
+            return;
+          }
+
+          clearStartTimer();
+          setIsStarting(false);
+          setIsSpeaking(true);
+        },
+
+        onDone: () => {
+          if (!isCurrent()) {
+            return;
+          }
+
+          terminalCallback = true;
+          clearStartTimer();
+          reading.current = false;
+          setIsStarting(false);
+          setIsSpeaking(false);
+        },
+
+        onError: () => {
+          if (!isCurrent()) {
+            return;
+          }
+
+          terminalCallback = true;
+          clearStartTimer();
           reading.current = false;
           setIsStarting(false);
           setIsSpeaking(false);
           setOutcome('failed');
-        }
+        },
       },
-    });
-    if (request === requestId.current && !finished) {
+    );
+
+    if (!isCurrent() || terminalCallback) {
+      return;
+    }
+
+    if (nextOutcome !== 'started') {
+      clearStartTimer();
+      reading.current = false;
+      setIsStarting(false);
+      setIsSpeaking(false);
       setOutcome(nextOutcome);
-      if (nextOutcome !== 'started') { reading.current = false; setIsSpeaking(false); setIsStarting(false); }
     }
   };
 
-  if (!voiceGuidance) return null;
+  if (!voiceGuidance) {
+    return null;
+  }
 
-  const label = t(language, isSpeaking || isStarting ? 'stopReading' : labelKey);
+  const active = isStarting || isSpeaking;
+  const label = t(
+    language,
+    active ? 'stopReading' : labelKey,
+  );
 
   return (
     <View style={styles.container}>
@@ -113,7 +217,10 @@ export function ReadScreenButton({ language, speechLanguage = language, text, la
         loading={isStarting}
         icon={
           <MaterialIcons
-            accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+            accessible={false}
+            aria-hidden
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
             color={colors.text}
             name={isSpeaking ? 'volume-off' : 'volume-up'}
             size={24}
@@ -123,9 +230,19 @@ export function ReadScreenButton({ language, speechLanguage = language, text, la
         onPress={() => void handlePress()}
         variant="outline"
       />
+
       {outcome === 'unavailable' || outcome === 'failed' ? (
-        <ThemedText accessibilityLiveRegion="polite" style={styles.status} type="secondary">
-          {t(language, outcome === 'unavailable' ? 'speechUnavailable' : 'speechFailed')}
+        <ThemedText
+          accessibilityLiveRegion="polite"
+          style={styles.status}
+          type="secondary"
+        >
+          {t(
+            language,
+            outcome === 'unavailable'
+              ? 'speechUnavailable'
+              : 'speechFailed',
+          )}
         </ThemedText>
       ) : null}
     </View>
