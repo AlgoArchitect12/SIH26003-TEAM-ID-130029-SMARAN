@@ -2,6 +2,7 @@ import { capturePatientRequest, setWorkspace } from '@/src/stores/patient-sessio
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { CurrentPerson } from '@components/patient/current-person';
 import { CareOverview } from '@components/caregiver/care-overview';
+import { SyncStatus } from '@components/caregiver/sync-status';
 import { useIsFocused } from '@react-navigation/native';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { Stack, useRouter } from 'expo-router';
@@ -99,6 +100,7 @@ export default function CaregiverHomeScreen() {
       <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeCareTitle')}</ThemedText>
       <ThemedText type="secondary">{t(language, 'careLocal')}</ThemedText>
       <CurrentPerson name={data?.patient.preferredName} language={language} caregiver />
+      <SyncStatus language={language} patientId={status === 'ready' ? data?.patient.id ?? null : null} />
     </View>
     {status === 'loading' && <SmaranLoading label={t(language, 'loadingSetup')} />}
     {status === 'failed' && <View style={styles.group} accessibilityRole="alert">

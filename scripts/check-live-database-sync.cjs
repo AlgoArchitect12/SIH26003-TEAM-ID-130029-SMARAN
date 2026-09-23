@@ -128,7 +128,7 @@ async function runtime(filename) {
   r.snapshot = () => Object.fromEntries(r.sqlite.prepare("SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name").all().map(({name}) => [name,r.rows(name)]));
   r.hash = () => createHash('sha256').update(JSON.stringify(r.snapshot())).digest('hex');
   r.integrity = () => { assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok'); assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(),[]); };
-  assert.equal(r.rows('schema_migrations').length, 13); r.integrity();
+  assert.equal(r.rows('schema_migrations').length, 14); r.integrity();
   return r;
 }
 function attachSync(r, h) {
@@ -411,6 +411,7 @@ async function statusChecks() {
       const render=screen('app/account.tsx',{'react-native':{Platform:{OS:'android'},View:'View'},'expo-router':{useRouter:()=>({canGoBack:()=>false,replace(){}})},
         '@/src/stores/onboarding.store':{useOnboardingStore:select=>select({language})},'@/src/cloud/config':{cloudConfig:{},AccountError:load('src/cloud/config.ts').AccountError},
         '@/src/cloud/auth':{useAuthStore:()=>h.auth.useAuthStore.getState(),initializeAuth:async()=>{}},
+        '@/src/services/admin.service':{useAdminStore:()=>({mode:'caregiver'})},
         '@/src/cloud/sync':{useSyncStore:()=>state,refreshSyncStatus:async()=>{}}});
       for(const [status,key] of [['local','accountLocalStatus'],['waiting','accountPending'],['current','accountCurrent'],['attention','accountAttention'],['paused','accountPaused']]) {
         state.status=status;assert.ok(nodes(render()).some(n=>n.props?.children===t(language,key,{count:String(state.pending)})),language+' '+status);
@@ -453,8 +454,9 @@ async function hostedAudit() {
 }
 function sourceChecks() {
   const files=execFileSync('git',['ls-files','--cached','--others','--exclude-standard','-z'],{cwd:root,encoding:'utf8'}).split('\0').filter(Boolean);
-  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&!f.includes('013_')&&!f.includes('report_delivery')&&!f.includes('010_'))) {
-    assert.equal(source(file).replace(/\r\n/g,'\n'),execFileSync('git',['show','6ce8df9:'+file],{cwd:root,encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' historical migration unchanged');
+  // Freeze every migration at the release preceding Sync Status, including 014.
+  for(const file of files.filter(f=>/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))) {
+    assert.equal(source(file).replace(/\r\n/g,'\n'),execFileSync('git',['show','1dfccf1:'+file],{cwd:root,encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' historical migration unchanged');
   }
   const patterns=[['private key',/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],['AI provider key',/\b(?:sk-proj-|sk-ant-|AIza)[A-Za-z0-9_-]{24,}/],
     ['Supabase privileged key',/\bsb_secret_[A-Za-z0-9_-]{20,}/],['Google client secret',/\bGOCSPX-[A-Za-z0-9_-]{20,}/],

@@ -94,7 +94,7 @@ function contracts() {
     const before = JSON.parse(execFileSync('git',['show','a58ea61:'+file],{encoding:'utf8'}));
     const after = JSON.parse(fs.readFileSync(file,'utf8'));
     const dependencies = file === 'package.json' ? after.dependencies : after.packages[''].dependencies;
-    for (const [name,version] of Object.entries({'expo-print':'~15.0.8','expo-sharing':'~14.0.8','expo-location':'~19.0.8','expo-mail-composer':'~15.0.8','expo-task-manager':'~14.0.9'})) {
+    for (const [name,version] of Object.entries({'expo-network':'~8.0.8','expo-print':'~15.0.8','expo-sharing':'~14.0.8','expo-location':'~19.0.8','expo-mail-composer':'~15.0.8','expo-task-manager':'~14.0.9'})) {
       assert.equal(dependencies[name],version,name + ' required'); delete dependencies[name];
       if (file === 'package-lock.json') { assert.equal(after.packages['node_modules/'+name].version,version.slice(1)); delete after.packages['node_modules/'+name]; }
     }

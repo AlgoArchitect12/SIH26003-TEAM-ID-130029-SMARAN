@@ -7,6 +7,7 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { CurrentPerson } from '@components/patient/current-person';
+import { SyncStatus } from '@components/caregiver/sync-status';
 import { PageLayout } from '@constants/layout';
 import { t, type TranslationKey } from '@i18n/index';
 import { usePatientSessionStore } from '@/src/stores/patient-session.store';
@@ -40,6 +41,7 @@ export function CareWorkspace({title,children}: {title: TranslationKey; children
   return <ScreenWrapper scroll><View style={PageLayout.content}>
     <ThemedText type="screenTitle" accessibilityRole="header">{t(language,title)}</ThemedText>
     <CurrentPerson name={visible?.patient.preferredName} language={language} caregiver />
+    <SyncStatus language={language} patientId={visible?.patient.id ?? null} />
     <CareNavigation language={language} />
     {failed ? <View style={PageLayout.group}><ThemedText accessibilityRole="alert">{t(language,'circleFailed')}</ThemedText>
       <SmaranButton label={t(language,'retry')} accessibilityLabel={t(language,'retry')} onPress={()=>setAttempt(n=>n+1)} /></View>

@@ -1,24 +1,73 @@
 import { AppState } from 'react-native';
+import * as Network from 'expo-network';
 import { create } from 'zustand';
 import { captureAccount, getCloudClient, invalidateCloudWork, sessionExpired, useAuthStore, validateSession } from './auth';
 import { syncRepository as repo } from '../db/repositories/sync.repository';
 import type { PullBatch, PushReceipt } from './sync-contract';
+import { deriveSyncStatus, initialSyncState, type SyncState } from './sync-status';
 
-type SyncStatus = 'local' | 'paused' | 'signed-in' | 'offline' | 'syncing' | 'current' | 'waiting' | 'attention';
-export const useSyncStore = create<{
-  status: SyncStatus; linked: boolean; unlinked: number; pending: number; lastSuccess: string | null;
-}>(() => ({ status: 'local', linked: false, unlinked: 0, pending: 0, lastSuccess: null }));
+export const useSyncStore = create<SyncState>(() => ({ ...initialSyncState }));
+function updateStatus(patch: Partial<SyncState>) {
+  useSyncStore.setState(previous => {
+    const next = { ...previous, ...patch };
+    const status = deriveSyncStatus(next);
+    if (status === previous.status && (Object.keys(patch) as (keyof SyncState)[]).every(key => next[key] === previous[key])) return previous;
+    return { ...next, status };
+  });
+}
+function resetStatus() {
+  refreshRevision++;
+  updateStatus({ ...initialSyncState, connected: useSyncStore.getState().connected });
+}
 let running: Promise<void> | null = null;
+let runningOwner: string | null = null;
+let runningRevision = -1;
+let refreshRevision = 0;
 let pausing = false;
 
+// Authoritative success commit. A routine 2s metadata poll that starts during
+// the final read must never discard the error clearing that proves the outbox
+// drained and the full pull applied. Invalidate in-flight polls before the
+// read, then invalidate polls started during the read and write
+// unconditionally (still gated on the same signed-in account). SQLite remains
+// the source of truth; this only publishes the already-committed DB state.
+async function commitSyncSuccess(owner: string, account: { current: () => boolean }) {
+  refreshRevision++;
+  const committed = await repo.status(owner);
+  if (!account.current()) return;
+  refreshRevision++;
+  if (!account.current() || useAuthStore.getState().ownerId !== owner) return;
+  updateStatus({ ownerId: owner, linked: committed.linked, paused: committed.paused,
+    unlinked: committed.unlinked, pending: committed.pending, failed: committed.failed,
+    lastSuccess: committed.lastSuccess, error: null, needsSync: committed.pending > 0 });
+}
+
 export async function refreshSyncStatus(completed = false) {
+  const { ownerId, revision, status } = useAuthStore.getState();
   const account = captureAccount();
-  if (!account.current()) { useSyncStore.setState({ status: 'local', linked: false, unlinked: 0, pending: 0, lastSuccess: null }); return; }
-  const state = await repo.status(account.ownerId!);
-  const previous = useSyncStore.getState().status;
-  if (account.current()) useSyncStore.setState({ linked: state.linked, unlinked: state.unlinked, pending: state.pending, lastSuccess: state.lastSuccess,
-    status: !state.linked ? state.paused ? 'paused' : 'local' : state.failed ? 'attention' : state.pending ? 'waiting'
-      : !completed && ['attention', 'offline', 'syncing'].includes(previous) ? previous : state.lastSuccess ? 'current' : 'signed-in' });
+  // Reading local queue metadata is safe during an offline session. Cloud writes
+  // still require captureAccount().current() and a validated signed-in session.
+  if (!ownerId || !['signed-in', 'offline', 'unavailable'].includes(status) ||
+      (status === 'signed-in' && !account.current())) { resetStatus(); return; }
+  if (completed) {
+    if (status !== 'signed-in' || !account.current()) { resetStatus(); return; }
+    await commitSyncSuccess(ownerId, account);
+    return;
+  }
+  const request = ++refreshRevision;
+  const current = () => request === refreshRevision && ownerId === useAuthStore.getState().ownerId &&
+    revision === useAuthStore.getState().revision && status === useAuthStore.getState().status &&
+    (status !== 'signed-in' || account.current());
+  try {
+    const state = await repo.status(ownerId);
+    if (current()) updateStatus({ ownerId, linked: state.linked, paused: state.paused,
+      unlinked: state.unlinked, pending: state.pending, failed: state.failed, lastSuccess: state.lastSuccess,
+      ...(status === 'offline' ? { error: 'network' } : status === 'unavailable' ? { error: 'sync' } : {}),
+    });
+  } catch {
+    // No exception text or payload enters the UI or diagnostics.
+    if (current()) updateStatus({ ownerId, error: 'sync', needsSync: true });
+  }
 }
 export async function pauseCloudSync() {
   pausing = true;
@@ -38,6 +87,7 @@ export async function enableCloudSync() {
 }
 async function synchronize(manual: boolean) {
   if (useAuthStore.getState().busy) return;
+  if (useSyncStore.getState().connected === false) { await refreshSyncStatus(); return; }
   if (['offline', 'unavailable'].includes(useAuthStore.getState().status)) await validateSession();
   const account = captureAccount();
   if (!account.current()) return;
@@ -48,7 +98,9 @@ async function synchronize(manual: boolean) {
     if (!status.linked) { await refreshSyncStatus(); return; }
     await repo.activate(owner, account.current);
     if (manual) await repo.retry(owner, account.current);
-    useSyncStore.setState({ status: 'syncing', linked: true });
+    if (!account.current()) return;
+    updateStatus({ ownerId: owner, active: true, linked: true, pending: status.pending,
+      failed: status.failed, lastSuccess: status.lastSuccess, needsSync: true });
     const cloud = getCloudClient();
     // ponytail: at most 10 batches per pass; the foreground timer resumes large backlogs without monopolizing SQLite.
     for (let i = 0; i < 10 && account.current(); i++) {
@@ -67,7 +119,7 @@ async function synchronize(manual: boolean) {
         const reason = result.status === 401 || result.status === 403 ? 'auth' : result.status === 0 ? 'network' : 'server';
         await repo.fail(owner, events, reason, account.current);
         await refreshSyncStatus();
-        if (account.current()) useSyncStore.setState({ status: reason === 'network' ? 'offline' : 'attention' });
+        if (account.current()) updateStatus({ error: reason === 'network' ? 'network' : 'sync' });
         if (reason === 'auth' && account.current()) sessionExpired();
         return;
       }
@@ -86,7 +138,7 @@ async function synchronize(manual: boolean) {
       if (!account.current()) return;
       if (result.error) {
         await refreshSyncStatus();
-        if (account.current()) useSyncStore.setState({ status: result.status === 0 ? 'offline' : 'attention' });
+        if (account.current()) updateStatus({ error: result.status === 0 ? 'network' : 'sync' });
         if ((result.status === 401 || result.status === 403) && account.current()) sessionExpired();
         return;
       }
@@ -100,30 +152,79 @@ async function synchronize(manual: boolean) {
         return;
       }
     }
-    if (account.current()) useSyncStore.setState({ status: 'waiting' });
+    if (account.current()) updateStatus({ needsSync: true });
   } catch {
     if (account.current()) {
       await refreshSyncStatus().catch(() => {});
-      if (account.current()) useSyncStore.setState({ status: 'attention' });
+      if (account.current()) updateStatus({ error: 'sync' });
     }
+  } finally {
+    if (account.current()) updateStatus({ active: false });
   }
 }
-export function syncNow(manual = false) {
+export function syncNow(manual = false): Promise<void> {
   if (pausing) return Promise.resolve();
-  running ??= synchronize(manual).finally(() => { running = null; });
+  const { ownerId, revision } = useAuthStore.getState();
+  if (running && (ownerId !== runningOwner || revision !== runningRevision)) {
+    // A new account waits for cancellation of the old pass, then gets its own
+    // pass. Never run two writers, or lose the new account's sign-in trigger.
+    return running.then(() => {
+      const now = useAuthStore.getState();
+      if (now.ownerId === ownerId && now.revision === revision) return syncNow(manual);
+    });
+  }
+  if (!running) {
+    runningOwner = ownerId; runningRevision = revision;
+    // Install the lock before validation can synchronously notify auth listeners.
+    running = Promise.resolve().then(() => synchronize(manual)).finally(() => { running = null; });
+  }
   return running;
 }
 export function startSyncLifecycle() {
-  const run = () => { if (AppState.currentState === 'active') void syncNow(); };
+  let live = true;
+  let networkRevision = 0;
+  let refreshing = false;
+  const run = () => { if (live && AppState.currentState === 'active') void syncNow().catch(() => {}); };
+  const refresh = () => {
+    if (!live || refreshing || AppState.currentState !== 'active') return;
+    refreshing = true;
+    void refreshSyncStatus().finally(() => { refreshing = false; });
+  };
+  const networkChanged = (state: Network.NetworkState) => {
+    if (!live) return;
+    networkRevision++;
+    const connected = state.isConnected === false || state.isInternetReachable === false ? false
+      : state.isConnected === true || state.isInternetReachable === true ? true : null;
+    const previous = useSyncStore.getState().connected;
+    updateStatus({ connected, ...(connected === false ? { needsSync: true } : {}) });
+    refresh();
+    if (connected === true && previous !== true) run();
+  };
+  const readNetwork = async () => {
+    const revision = networkRevision;
+    try {
+      const state = await Network.getNetworkStateAsync();
+      if (state && live && revision === networkRevision) networkChanged(state);
+    } catch { /* Unknown connectivity never means successful sync. The RPC can still be retried. */ }
+  };
   const auth = useAuthStore.subscribe((next, before) => {
-    if (next.revision !== before.revision || next.status === 'storage-error') {
-      useSyncStore.setState({ status: 'local', linked: false, unlinked: 0, pending: 0, lastSuccess: null });
+    if (next.revision !== before.revision || next.ownerId !== before.ownerId ||
+        !['signed-in', 'offline', 'unavailable'].includes(next.status)) {
+      resetStatus();
     }
+    if (next.status === 'offline' || next.status === 'unavailable') {
+      updateStatus({ active: false, needsSync: true, error: next.status === 'offline' ? 'network' : 'sync' });
+    }
+    refresh();
     if (next.ownerId && !next.busy && next.status === 'signed-in') run();
   });
-  const app = AppState.addEventListener('change', state => { if (state === 'active') run(); });
-  // Native AppState plus bounded polling handles reconnect without another native networking dependency.
+  const app = AppState.addEventListener('change', state => {
+    if (state === 'active') void readNetwork().finally(() => { refresh(); run(); });
+  });
+  const network = Network.addNetworkStateListener(networkChanged);
+  // Metadata reads continue offline, independent of the cloud pass/backoff.
+  const statusTimer = setInterval(refresh, 2000);
   const timer = setInterval(run, 30000);
-  run();
-  return () => { clearInterval(timer); auth(); app.remove(); };
+  void readNetwork().finally(() => { refresh(); run(); });
+  return () => { live = false; refreshRevision++; clearInterval(timer); clearInterval(statusTimer); auth(); app.remove(); network?.remove(); };
 }
