@@ -8,6 +8,7 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+.eas-prebuild-inspect/
 
 # Native
 .kotlin/
@@ -25,6 +26,10 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
+
+# Supabase CLI local metadata
+/supabase/.temp/
 
 # macOS
 .DS_Store
