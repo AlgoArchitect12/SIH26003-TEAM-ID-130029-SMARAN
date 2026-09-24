@@ -155,6 +155,8 @@ async function pgChecks() {
     let limited;for(let i=0;i<21;i++)limited=call('claim_pairing_code',q('0000000000000000'),B);
     assert.equal(limited.error,'rate_limited','claim limit persists across RPCs');
     console.log('PASS remote SQL: bounded edits, field validation, optimistic conflicts, owner pull compatibility, A→B→A isolation, AI scopes, revoked reads/writes/context and durable claim rate limit.');
+    sql(fs.readFileSync(path.join(root,'supabase/tests/location.sql'),'utf8'));
+    console.log('PASS location PostgreSQL: patient isolation, unpaired/revoked caregiver, consent epochs, bounded history, entry/exit, deduplication and RLS.');
     console.log('PASS pairing PostgreSQL: hashed expiring single-use codes, owner-only mint, claim/revoke/list, scope-filtered snapshots, no cross-patient leakage, expiry and rate limits.');
   } finally { stop(); assert.ok(path.resolve(dir).startsWith(path.resolve(os.tmpdir())+path.sep) && path.basename(dir).startsWith('smaran-pairing-')); fs.rmSync(dir, { recursive: true, force: true }); }
 }
@@ -219,7 +221,7 @@ function clientChecks() {
 }
 
 async function uiChecks() {
-  const scopeKeys = { daily_activity: 'circleDaily', reminders: 'circleReminders', cognitive_activity: 'circleCognitive', reports: 'reportTitle', memories: 'circleMemories' };
+  const scopeKeys = { daily_activity: 'circleDaily', reminders: 'circleReminders', cognitive_activity: 'circleCognitive', reports: 'reportTitle', memories: 'circleMemories', location: 'gpsPatientTitle' };
   for (const language of ['en','hi','as','bn','mni','kha','lus']) {
     let links = { received: [{ patientId: 'two', accessRole: 'family', scopes: ['reports'], label: 'Son', displayName: 'Synthetic elder' }], granted: [] };
     let snapshot = null;
@@ -232,7 +234,7 @@ async function uiChecks() {
       'react-native': {View:'View',AppState:{addEventListener:()=>({remove(){}})}},
       '@/src/cloud/auth': { useAuthStore: fn => fn({revision:0}), captureAccount: () => ({current:()=>true}) },
       '@/src/caregiver/care-circle': load('src/caregiver/care-circle.ts'),
-      '@/src/services/pairing.service': { pairingService: {
+      '@/src/services/pairing.service': { PairingScopes: ['daily_activity','reminders','cognitive_activity','reports','memories','location'], pairingService: {
         generate: async (patientId, scopes, label) => { calls.push({ op: 'generate', patientId, scopes, label }); return { code: 'ABCDEF0123456789', expiresAt: new Date(Date.now() + 900000).toISOString() }; },
         claim: async code => { calls.push({ op: 'claim', code }); return { patientId: 'two', accessRole: 'family', scopes: ['reports'], label: 'Son' }; },
         list: async () => JSON.parse(JSON.stringify(links)),
@@ -249,7 +251,7 @@ async function uiChecks() {
     for (const scope of Object.values(scopeKeys)) { button(t(language,scope)).props.onPress(); tree=nodes(render()); }
     button(t(language, 'pairingGenerate')).props.onPress(); await tick(); tree = nodes(render());
     assert.ok(tree.some(n => n.props?.children === 'ABCDEF0123456789'), language + ' code shown once for sharing');
-    assert.deepEqual(calls[0], { op: 'generate', patientId: 'one', scopes: ['daily_activity', 'reminders', 'cognitive_activity', 'reports', 'memories'], label: '' });
+    assert.deepEqual(calls[0], { op: 'generate', patientId: 'one', scopes: ['daily_activity', 'reminders', 'cognitive_activity', 'reports', 'memories', 'location'], label: '' });
     field(t(language, 'pairingEnterCode')).props.onChangeText('abcdef0123456789');
     tree = nodes(render());
     button(t(language, 'pairingClaim')).props.onPress(); await tick(); tree = nodes(render());

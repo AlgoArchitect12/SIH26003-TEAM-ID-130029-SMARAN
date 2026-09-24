@@ -26,6 +26,7 @@ let pendingCallback: string | null = null;
 let restoring = false;
 let validation: Promise<void> | null = null;
 let authOperation = 0;
+let sessionExpiry: ReturnType<typeof setTimeout> | undefined;
 const requests = new Set<AbortController>();
 let accountAbort = new AbortController();
 
@@ -41,6 +42,14 @@ function storageFailed() {
 }
 function acceptSession(session: Session | null) {
   if (restoring || signingOut || logoutPending || useAuthStore.getState().status === 'storage-error') return;
+  clearTimeout(sessionExpiry);
+  if (session?.expires_at) {
+    const remaining = session.expires_at * 1000 - Date.now();
+    if (remaining <= 0) { sessionExpired(); return; }
+    sessionExpiry = setTimeout(() => sessionExpired(), remaining);
+    // Node regression harnesses must not stay alive solely for this native lifecycle timer.
+    (sessionExpiry as unknown as { unref?: () => void }).unref?.();
+  }
   const ownerId = session?.user.id ?? null;
   if (useAuthStore.getState().ownerId !== ownerId) invalidateCloudWork();
   useAuthStore.setState({ ownerId, email: session?.user.email ?? null, status: session ? 'signed-in' : 'local', message: null });
@@ -267,6 +276,7 @@ export async function accessGoogle() {
 export async function logout() {
   if (signingOut) return;
   signingOut = true;
+  clearTimeout(sessionExpiry);
   authOperation++;
   logoutPending = true;
   completedCallback = null;

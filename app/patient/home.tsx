@@ -26,6 +26,8 @@ import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import { getRegionalPack } from '@/src/my-home/content';
 import type { PersonalMemory } from '@/src/memories/types';
 import { timeLabel, type TodayReminder } from '@/src/my-day/types';
+import { useLocationStore } from '@/src/services/location.service';
+import { freshness } from '@/src/location/live';
 
 type HomeData = { profile: PatientProfile; settings: PatientSettings; reminders: TodayReminder[]; memory: PersonalMemory | null; now: Date };
 export default function PatientHomeScreen() {
@@ -34,6 +36,7 @@ export default function PatientHomeScreen() {
   const textSize = useTextSize();
   const { patientId, language, failed: patientFailed, retry } = useMyDayPatient();
   const preferences = useOnboardingStore(s => s.accessibility);
+  const location = useLocationStore();
   const [data, setData] = useState<HomeData | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -89,6 +92,12 @@ export default function PatientHomeScreen() {
     <HomeActionCard featured title={t(language, 'homeTrainTitle')} description={t(language, 'homeTrainDescription')}
       accessibilityHint={t(language, 'activitiesOpen')} icon="psychology" highContrast={preferences.highContrast}
       reducedMotion={preferences.reducedMotion} textSize={textSize} onPress={() => router.navigate('/patient/games')} />
+    <SmaranCard style={styles.group}>
+      <ThemedText type="cardHeading">{t(language,'gpsPatientTitle')}</ThemedText>
+      <ThemedText>{t(language,location.patientId===patientId?location.status:'gpsPaused')}</ThemedText>
+      {location.patientId===patientId&&location.point&&<ThemedText>{t(language,freshness(location.point))}</ThemedText>}
+      {button(t(language, 'gpsPatientTitle'), () => router.navigate('/patient/location'))}
+    </SmaranCard>
     <View style={styles.group}>
       <ThemedText type="cardHeading">{t(language, 'familiarMemory')}</ThemedText>
       {memory ? <SmaranCard style={styles.group}>

@@ -79,7 +79,7 @@ function postgresChecks(pg) {
     GRANT EXECUTE ON FUNCTION auth.uid() TO anon, authenticated;`);
   const grants = () => pg.sql(`SELECT json_agg(x ORDER BY table_name,grantee,privilege_type) FROM
     (SELECT table_name,grantee,privilege_type FROM information_schema.role_table_grants WHERE table_schema='public'
-    AND table_name NOT IN ('pairing_codes','patient_memberships','pairing_attempts')) x;`);
+    AND table_name NOT IN ('pairing_codes','patient_memberships','pairing_attempts','location_sharing','location_points','location_signals')) x;`);
   let originalGrants;
   for (const file of fs.readdirSync(path.join(root,'supabase/migrations')).filter(f => f.endsWith('.sql')).sort()) {
     pg.sql(source('supabase/migrations/' + file));
@@ -91,6 +91,10 @@ function postgresChecks(pg) {
   assert.equal(pg.sql(`SELECT count(*) FROM pg_class WHERE relname IN ('pairing_codes','patient_memberships','pairing_attempts') AND relrowsecurity`), '3');
   assert.equal(pg.sql(`SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='public'
     AND table_name IN ('pairing_codes','patient_memberships','pairing_attempts') AND grantee IN ('anon','authenticated','PUBLIC')`), '0');
+  assert.equal(pg.sql(`SELECT count(*) FROM pg_class WHERE relname IN ('location_sharing','location_points','location_signals') AND relrowsecurity`),'3');
+  assert.equal(pg.sql(`SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='public'
+    AND table_name IN ('location_sharing','location_points','location_signals') AND grantee IN ('anon','authenticated','PUBLIC')
+    AND NOT(grantee='authenticated' AND privilege_type='SELECT')`),'0','location clients have SELECT only under RLS');
   for (const file of fs.readdirSync(path.join(root,'supabase/tests')).filter(f => f.endsWith('.sql')).sort()) {
     pg.sql(source('supabase/tests/' + file)); console.log('PASS PostgreSQL fixture ' + file);
   }
@@ -133,7 +137,7 @@ async function runtime(filename) {
   r.snapshot = () => Object.fromEntries(r.sqlite.prepare("SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name").all().map(({name}) => [name,r.rows(name)]));
   r.hash = () => createHash('sha256').update(JSON.stringify(r.snapshot())).digest('hex');
   r.integrity = () => { assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok'); assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(),[]); };
-  assert.equal(r.rows('schema_migrations').length, 14); r.integrity();
+  assert.equal(r.rows('schema_migrations').length, 15); r.integrity();
   return r;
 }
 function attachSync(r, h) {
@@ -466,7 +470,7 @@ function sourceChecks() {
   const files=execFileSync('git',['ls-files','--cached','--others','--exclude-standard','-z'],{cwd:root,encoding:'utf8'}).split('\0').filter(Boolean);
   // Freeze every migration at the release preceding Sync Status, including 014.
   // The family-pairing migration is a new forward file, verified separately.
-  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&f!=='supabase/migrations/20260924000000_family_pairing.sql')) {
+  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&!['supabase/migrations/20260924000000_family_pairing.sql','supabase/migrations/20260925000000_realtime_location.sql','src/db/migrations/015_live_location.ts'].includes(f))) {
     assert.equal(source(file).replace(/\r\n/g,'\n'),execFileSync('git',['show','1dfccf1:'+file],{cwd:root,encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' historical migration unchanged');
   }
   const patterns=[['private key',/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],['AI provider key',/\b(?:sk-proj-|sk-ant-|AIza)[A-Za-z0-9_-]{24,}/],

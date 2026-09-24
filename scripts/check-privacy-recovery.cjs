@@ -231,11 +231,12 @@ function checkPrivacyCopyAndLogs() {
   const { strings, t } = load('src/i18n/index.ts');
   for (const language of Object.keys(strings)) for (const section of ['about', 'help']) {
     const render = screen('app/patient/support.tsx', {
+      'expo-constants': { default: { expoConfig: { version: '1.0.1' } } },
       'expo-router': { useLocalSearchParams: () => ({ section }) },
       '@components/my-day/shared': { useMyDayPatient: () => ({ language, patientId: 'fixture' }) },
     });
     const tree = nodes(render()), speech = tree.find(n => n.type === 'ReadScreenButton').props.text;
-    for (const key of ['privacyTitle', 'privacyLocal', 'privacyLoss', 'privacySharing']) {
+    for (const key of ['privacyTitle', 'privacyLocal', 'privacyLoss', 'privacySharing','gpsConsent']) {
       assert.ok(tree.some(n => n.props?.children === t(language, key)));
       assert.ok(speech.includes(t(language, key)));
     }

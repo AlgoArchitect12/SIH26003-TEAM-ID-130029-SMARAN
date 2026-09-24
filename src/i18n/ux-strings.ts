@@ -105,7 +105,7 @@ export const uxStrings = {
   },
   kha: {
     privacyTitle: 'Ka jinglong kyrpang ha kane ka kor',
-    privacyLocal: 'Ha kane ka rukom pyrshang, ki jingthoh bad ki dur shimet jong phi ki sah ha kane ka kor.',
+    privacyLocal: 'Ki jingthoh bad ki dur shimet jong phi ki sah ha kane ka kor. Ka account sync ka long katba phi mon.',
     privacyLoss: 'Lada weng ia Smaran ne duh ia kane ka kor, phi lah ban duh ia ki jingtip. Account sync is optional; photos and dates of birth stay on this device.',
     privacySharing: 'Uwei pa uwei ba pyndonkam ia kane ka kor ba la plie lah ban plie ka jingsumar jong nga. Ym don sign-in ba kyrpang.',
     profileSaveFailed: 'Lah ban la kynshew katto katne ki jingtip. Pyrshang kynshew biang. Lada plie biang ia Smaran, peit ia ka jingtip shaphang jong nga.',
@@ -125,7 +125,7 @@ export const uxStrings = {
   },
   lus: {
     privacyTitle: 'He phone a mimal himna',
-    privacyLocal: 'He prototype ah i chanchin leh mimal thlalakte he phone ah dah a ni.',
+    privacyLocal: 'I chanchin leh mimal thlalakte he phone-ah dah a ni. Account sync hi duh chuan hman theih a ni.',
     privacyLoss: 'Smaran paih emaw he phone bo emaw chuan i chanchin a bo thei. Account sync is optional; photos and dates of birth stay on this device.',
     privacySharing: 'He phone unlock sa hmang tu tupawhin Ka enkawlna a hawng thei. Sign-in hran a awm lo.',
     profileSaveFailed: 'Chanchin thenkhat dahthat a ni tawh thei. Dahthat han ti leh rawh. Smaran i hawn leh chuan Ka chanchin en rawh.',

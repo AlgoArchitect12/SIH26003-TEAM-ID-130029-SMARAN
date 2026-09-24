@@ -70,7 +70,7 @@ async function migrations() {
       await migration11.up(tx);
     }}}}).runMigrations;
     await runThrough11(r.db);
-    assert.equal(r.rows('schema_migrations').length, 14);
+    assert.equal(r.rows('schema_migrations').length, 15);
     for(const table of tables) assert.deepEqual(r.sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(),fks[table],table+' FKs');
     assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
     const after=snapshot();await r.run(r.db);assert.deepEqual(snapshot(),after);
@@ -79,7 +79,7 @@ async function migrations() {
     assert.equal(r.rows('sync_outbox').at(-1).sequence,before.sqlite_sequence.find(s=>s.name==='sync_outbox').seq+1);
   } finally {r.sqlite.close();}
   for(const fk of ['ON','OFF']) {
-    const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length, 14);
+    const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length, 15);
       assert.deepEqual(await r.repo.list('one'),[]);await assert.rejects(r.repo.save('missing',memberInput,()=>true),/Missing patient/);
     } finally{r.sqlite.close();}
   }
@@ -313,7 +313,9 @@ async function ui(r,report) {
     '@/src/cloud/auth':{useAuthStore:()=>0},
     '@react-navigation/native':{useIsFocused:()=>true},'@/src/stores/patient-session.store':{usePatientSessionStore:()=>0},
     '@/src/stores/onboarding.store':{useOnboardingStore:()=> 'en'},'@/src/services/care-circle.service':{},'@/src/services/profile-switching.service':{}},{language:'en'});
-  assert.equal(nodes(navigation()).filter(n=>n.type==='SmaranButton').length,6);
+  const destinations=nodes(navigation()).filter(n=>n.type==='SmaranButton');
+  assert.equal(destinations.length,7);
+  assert.ok(destinations.some(n=>n.props.label===t('en','gpsTitle')),'location is discoverable from caregiver navigation');
   console.log('PASS J/K/I: seven complete catalogs/interpolation, actual create forms with empty contact fields and no selected scopes, accessible button names/states, report viewer/disclaimer, consent off, five dashboard destinations, shared ≥56px controls and wrapping contracts.');
 }
 async function main(){await migrations();const r=await domain();try{const report=await reports(r);await pdf(r,report);await cloud(r,report);await ui(r,report);}finally{r.sqlite.close();}}

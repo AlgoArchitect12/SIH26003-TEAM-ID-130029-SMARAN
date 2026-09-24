@@ -95,13 +95,18 @@ function contracts() {
     const before = JSON.parse(execFileSync('git',['show','a58ea61:'+file],{encoding:'utf8'}));
     const after = JSON.parse(fs.readFileSync(file,'utf8'));
     const dependencies = file === 'package.json' ? after.dependencies : after.packages[''].dependencies;
-    for (const [name,version] of Object.entries({'expo-network':'~8.0.8','expo-print':'~15.0.8','expo-sharing':'~14.0.8','expo-mail-composer':'~15.0.8'})) {
+    for (const [name,version] of Object.entries({'expo-network':'~8.0.8','expo-print':'~15.0.8','expo-sharing':'~14.0.8','expo-mail-composer':'~15.0.8','expo-location':'~19.0.8','react-native-maps':'1.20.1'})) {
       assert.equal(dependencies[name],version,name + ' required'); delete dependencies[name];
-      if (file === 'package-lock.json') { assert.equal(after.packages['node_modules/'+name].version,version.slice(1)); delete after.packages['node_modules/'+name]; }
+      if (file === 'package-lock.json') { assert.equal(after.packages['node_modules/'+name].version,version.replace(/^~/,'')); delete after.packages['node_modules/'+name]; }
     }
     // GPS left the product surface, so its packages and their transitive lock
     // entries are gone; the remaining required Expo modules pull no extra entries.
-    if (file === 'package-lock.json') assert.equal(after.packages['node_modules/unimodules-app-loader'],undefined);
+    assert.equal(after.version,'1.0.1');before.version='1.0.1';
+    if (file === 'package-lock.json') {
+      assert.equal(after.packages['node_modules/unimodules-app-loader'],undefined);
+      assert.equal(after.packages['node_modules/@types/geojson'].version,'7946.0.16');delete after.packages['node_modules/@types/geojson'];
+      before.packages[''].version='1.0.1';
+    }
     assert.deepEqual(after,before,'all other dependency fields preserved: '+file);
   }
   console.log('PASS extra games: eight-game catalog/routes, seeded playable rounds at all five levels, full 1–10, coaching/hints/completion, truthful telemetry, seven catalogs, original UI, historical source preservation.');
@@ -172,7 +177,7 @@ async function migrationChecks() {
     } } } }).runMigrations;
     await runThrough11(r.db);
     const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(), after, 'registry replay is idempotent');
-    assert.equal(r.rows('schema_migrations').length, 14);
+    assert.equal(r.rows('schema_migrations').length, 15);
     for (const game of extra) {
       const count = prepare(game, 1).tasks.length;
       const row = { ...rowFor('sequence_memory', 'new-' + game, 'one', 1), game_type: game, steps_completed: count,
@@ -193,7 +198,7 @@ async function migrationChecks() {
   for (const fk of [0, 1]) {
     const r = await runtime();
     try { r.sqlite.exec(`PRAGMA foreign_keys=${fk}`); await r.run(r.db); await r.run(r.db);
-      assert.equal(r.rows('schema_migrations').length, 14); assert.equal(r.rows('cognitive_sessions').length, 0);
+      assert.equal(r.rows('schema_migrations').length, 15); assert.equal(r.rows('cognitive_sessions').length, 0);
       assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(), []);
     } finally { r.sqlite.close(); }
   }

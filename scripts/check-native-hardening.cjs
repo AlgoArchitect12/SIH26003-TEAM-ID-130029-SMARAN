@@ -19,8 +19,8 @@ async function main() {
   assert.equal(config.name, 'SMARAN AI');
   assert.equal(config.slug, 'smaran-ai');
   assert.equal(config.android.package, 'com.smaran.ai');
-  assert.equal(config.version, '1.0.0');
-  assert.equal(config.android.versionCode, 1);
+  assert.equal(config.version, '1.0.1');
+  assert.equal(config.android.versionCode, 2);
   assert.equal(config.orientation, 'portrait');
   assert.equal(config.newArchEnabled, true);
   assert.equal(pkg.main, 'expo-router/entry');
@@ -33,8 +33,9 @@ async function main() {
     '004_my_day.ts', '005_my_memories.ts', '006_cognitive_expansion.ts', '007_cognitive_ai_expansion.ts', '008_auth_sync.ts', '009_extra_cognitive_games.ts', '010_care_circle_reports.ts', '011_sync_consent.ts',    '012_three_cognitive_games.ts',
     '013_report_delivery.ts',
     '014_patient_location.ts',
+    '015_live_location.ts',
     'index.ts',
-  ], 'Only authorized migrations 001–014; retired location history stays intact');
+  ], 'Only authorized migrations 001–015; historical migrations stay intact');
   require('./check-mvp22-boundaries.cjs').checkMvp22Boundaries();
   for (const file of migrations.filter(file => /\/00[1-6]_/.test(file))) {
     assert.equal(read(file).replace(/\r\n/gu, '\n').trim(), git('show', '6b1c0f5:' + file), file + ' must preserve stable base');
@@ -76,10 +77,11 @@ async function main() {
   for (const name of ['CAMERA', 'RECORD_AUDIO', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE', 'USE_BIOMETRIC', 'USE_FINGERPRINT', 'SYSTEM_ALERT_WINDOW']) {
     assert.ok(permissions.some(item => item['android:name'] === 'android.permission.' + name && item['tools:node'] === 'remove'), name);
   }
-  assert.ok(!permissions.some(item => /SCHEDULE_EXACT_ALARM|USE_EXACT_ALARM|READ_MEDIA_|CONTACTS|LOCATION/u.test(item['android:name']) && item['tools:node'] !== 'remove'));
+  assert.ok(!permissions.some(item => /SCHEDULE_EXACT_ALARM|USE_EXACT_ALARM|READ_MEDIA_|CONTACTS|BACKGROUND_LOCATION|FOREGROUND_SERVICE_LOCATION/u.test(item['android:name']) && item['tools:node'] !== 'remove'));
+  for(const name of ['ACCESS_FINE_LOCATION','ACCESS_COARSE_LOCATION'])assert.ok(permissions.some(item=>item['android:name']==='android.permission.'+name));
   const metadata = native.manifest.manifest.application[0]['meta-data'];
   assert.ok(metadata.some(item => item.$['android:name'] === 'expo.modules.updates.ENABLED' && item.$['android:value'] === 'false'));
-  for (const directory of ['android', 'ios']) assert.ok(!fs.existsSync(path.join(root, directory)), 'Managed workflow: ' + directory);
+  for (const directory of ['android', 'ios']) assert.equal(git('ls-files',directory),'','Generated native folders must stay untracked: '+directory);
   for (const file of [config.icon, ...Object.values(config.android.adaptiveIcon).filter(value => value.startsWith('./')), plugins.get('expo-splash-screen').image]) {
     const bytes = fs.readFileSync(path.join(root, file));
     assert.equal(bytes.subarray(1, 4).toString(), 'PNG', file);
@@ -135,7 +137,7 @@ async function main() {
   assert.equal(files('assets/my-home').length, 32);
   for (const asset of assets) assert.ok(fs.statSync(asset).size > 0);
   for (const file of files('src/games')) assert.ok(!/https?:\/\//u.test(read(file)), file);
-  assert.equal(files('src/db/migrations').filter(file => /\/\d{3}_/u.test(file)).length, 14);
+  assert.equal(files('src/db/migrations').filter(file => /\/\d{3}_/u.test(file)).length, 15);
   for (const route of ['index', '_layout', 'patient/home', 'patient/games/index', 'patient/games/memory-match', 'patient/games/pattern-recognition',
     'patient/games/routine-recall', 'patient/games/result', 'patient/games/why-level', 'patient/my-day', 'patient/my-day-reminder',
     'patient/my-memories', 'patient/my-memory', 'patient/my-memory-editor', 'patient/my-home', 'patient/my-home-memory', 'caregiver/home']) assert.ok(fs.existsSync(path.join(root, 'app', route + '.tsx')), route);
@@ -199,7 +201,7 @@ async function checkConnectionSafety() {
   try {
     const db = adapter(sql), runner = load('src/db/migrations/index.ts').runMigrations;
     await runner(db); await runner(db);
-    assert.equal(sql.prepare('SELECT count(*) AS n FROM schema_migrations').get().n, 14);
+    assert.equal(sql.prepare('SELECT count(*) AS n FROM schema_migrations').get().n, 15);
     for (const table of ['patient_profiles', 'cognitive_sessions', 'adaptive_model_state', 'personal_memories', 'reminders']) assert.equal(sql.prepare('SELECT count(*) AS n FROM ' + table).get().n, 0);
     const overrides = { '../client': { getDatabase: async () => db } };
     const memories = load('src/db/repositories/memories.repository.ts', overrides).memoriesRepository;

@@ -8,7 +8,7 @@ import { CareRelationships, CareRoles, CareScopes, type CareMemberInput } from '
 
 export const roleKeys = {family:'circleFamily',caregiver:'circleCaregiver',healthcare_worker:'circleWorker'} as const;
 export const relationshipKeys = {daughter:'circleDaughter',son:'circleSon',spouse:'circleSpouse',family_member:'circleFamily',caregiver:'circleCaregiver',healthcare_worker:'circleWorker'} as const;
-export const scopeKeys = {daily_activity:'circleDaily',reminders:'circleReminders',cognitive_activity:'circleCognitive',reports:'reportTitle',memories:'circleMemories'} as const;
+export const scopeKeys = {daily_activity:'circleDaily',reminders:'circleReminders',cognitive_activity:'circleCognitive',reports:'reportTitle',memories:'circleMemories',location:'gpsPatientTitle'} as const;
 
 export function CareMemberFields({ language, value, onChange, busy = false }: {
   language: Language; value: CareMemberInput; onChange: (value: CareMemberInput) => void; busy?: boolean;

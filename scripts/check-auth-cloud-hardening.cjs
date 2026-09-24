@@ -191,7 +191,7 @@ async function migrationChecks() {
     }
     assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
     assert.throws(()=>r.sqlite.exec('UPDATE sync_accounts SET enabled=2'),/CHECK constraint failed/);
-    assert.equal(r.sqlite.prepare('SELECT count(*) n FROM schema_migrations').get().n, 14);
+    assert.equal(r.sqlite.prepare('SELECT count(*) n FROM schema_migrations').get().n, 15);
     console.log('PASS migration 011: populated 010 upgrade, rollback at four distinct boundaries, all patient data/owners/queue/nonzero cursors/retries preserved, constrained paused consent, replay and integrity.');
   }finally{r.sqlite.close();}
 }
@@ -358,7 +358,7 @@ async function contractChecks() {
   for(const file of files.filter(f=>/\.(?:[cm]?[jt]sx?|json|sql|md|toml|ya?ml|example)$/.test(f))){const source=fs.readFileSync(file,'utf8');for(const [type,pattern]of patterns)if(pattern.test(source))findings.push({path:file,type});}
   assert.deepEqual(findings,[],'secret scan reports path/type only');
   for(const name of ['.env','.env.local','credentials.json','synthetic.key','synthetic.pem'])assert.ok(execFileSync('git',['check-ignore',name],{encoding:'utf8'}).trim());
-  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&f!=='supabase/migrations/20260924000000_family_pairing.sql')){
+  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&!['supabase/migrations/20260924000000_family_pairing.sql','supabase/migrations/20260925000000_realtime_location.sql','src/db/migrations/015_live_location.ts'].includes(f))){
     assert.equal(fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n'),execFileSync('git',['show','1dfccf1:'+file],{encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' historical source unchanged');
   }
   console.log('PASS contracts: seven complete translated catalogs/interpolation, actual Account controls/status/offline action, email/password autofill, screen-reader labels, source secret scan, ignored credentials and frozen historical migrations.');

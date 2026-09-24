@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { scopeKeys } from '@components/caregiver/care-member-fields';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
@@ -9,14 +10,14 @@ import { Field } from '@components/ui/smaran-field';
 import { AiAssistant } from '@components/ai-assistant';
 import { PageLayout } from '@constants/layout';
 import { t, type TranslationKey } from '@i18n/index';
-import { CareScopes } from '@/src/caregiver/care-circle';
-import { pairingService, type GrantedSnapshot, type MembershipLink, type PairingRole } from '@/src/services/pairing.service';
+import { PairingScopes, pairingService, type GrantedSnapshot, type MembershipLink, type PairingRole } from '@/src/services/pairing.service';
 import type { ActiveCare } from '@/src/services/care-circle.service';
 import { captureAccount, useAuthStore } from '@/src/cloud/auth';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import { stopSpeech } from '@/src/services/speech.service';
 
 export default function PairingPanel({ data }: { data?: ActiveCare }) {
+  const router=useRouter();
   const language = useOnboardingStore(s=>s.language) ?? 'en';
   const authRevision = useAuthStore(s=>s.revision), focused = useIsFocused();
   const [label,setLabel] = useState(''), [scopes,setScopes] = useState<string[]>([]);
@@ -74,7 +75,7 @@ export default function PairingPanel({ data }: { data?: ActiveCare }) {
         label={t(language,value==='family'?'circleFamily':value==='caregiver'?'circleCaregiver':'circleWorker')}
         accessibilityLabel={t(language,value==='family'?'circleFamily':value==='caregiver'?'circleCaregiver':'circleWorker')}
         variant="outline" disabled={busy} accessibilityState={{selected:role===value}} onPress={()=>setRole(value)}/>)}
-      {CareScopes.map(scope=><SmaranButton key={scope} label={t(language,scopeKeys[scope])} accessibilityLabel={t(language,scopeKeys[scope])}
+      {PairingScopes.map(scope=><SmaranButton key={scope} label={t(language,scopeKeys[scope])} accessibilityLabel={t(language,scopeKeys[scope])}
         variant="outline" disabled={busy} accessibilityState={{selected:scopes.includes(scope)}}
         onPress={()=>setScopes(old=>old.includes(scope)?old.filter(s=>s!==scope):[...old,scope])}/>)}
       <SmaranButton label={t(language,'pairingGenerate')} accessibilityLabel={t(language,'pairingGenerate')} disabled={busy||!scopes.length}
@@ -101,6 +102,8 @@ export default function PairingPanel({ data }: { data?: ActiveCare }) {
     <SmaranButton label={t(language,'retry')} accessibilityLabel={t(language,'retry')} disabled={busy} variant="outline"
       onPress={()=>void run(async()=>{setViewed(null);setEdit(null);})}/>
     {links?.received.map(link=><SmaranCard key={link.patientId} style={PageLayout.group}>
+      {link.scopes.includes('location')&&<SmaranButton label={t(language,'gpsTitle')} accessibilityLabel={t(language,'gpsTitle')+': '+(link.displayName??link.patientId)}
+        variant="outline" onPress={()=>router.push({pathname:'/caregiver/location',params:{patientId:link.patientId}})}/>}
       <ThemedText type="cardHeading">{link.displayName??link.patientId}</ThemedText>
       <ThemedText>{t(language,link.accessRole==='family'?'circleFamily':link.accessRole==='caregiver'?'circleCaregiver':'circleWorker')}</ThemedText>
       <SmaranButton label={t(language,'pairingView')} accessibilityLabel={t(language,'pairingView')+': '+(link.displayName??link.patientId)}

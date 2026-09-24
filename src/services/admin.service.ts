@@ -27,8 +27,8 @@ export async function enterAdmin() {
     for (const row of patients) {
       validateRecordId(row.patient.id);
       if (typeof row.patient.preferred_name !== 'string' || !Array.isArray(row.reports)) throw new Error('Invalid admin data.');
-      // Patient location left the product surface; any location payload the
-      // server still returns is ignored rather than displayed or stored.
+      // Location uses explicit patient/caregiver authorization. The admin
+      // response never grants location access; historical payloads are ignored.
       for (const report of row.reports) {
         if (report.patient_id !== row.patient.id) throw new Error('Report ownership mismatch.');
         parseReportFacts(report.snapshot);

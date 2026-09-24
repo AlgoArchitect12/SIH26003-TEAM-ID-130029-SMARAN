@@ -1,6 +1,7 @@
 import { captureAccount, getCloudClient } from '../cloud/auth';
 import { CareScopes } from '../caregiver/care-circle';
 import { validateRecordId } from '../utils/validation';
+export const PairingScopes = [...CareScopes, 'location'] as const;
 
 export type PairingRole = 'family' | 'caregiver' | 'healthcare_worker';
 export type PairingGrant = { patientId: string; accessRole: PairingRole; scopes: string[]; label: string };
@@ -52,7 +53,7 @@ async function call<T>(method: string, args: Record<string, unknown>, parse: (da
   return parse(data as Record<string, unknown>);
 }
 function checkScopes(scopes: readonly string[]) {
-  if (!scopes.length || scopes.length > CareScopes.length || scopes.some(scope => !CareScopes.includes(scope as never))) {
+  if (!scopes.length || scopes.length > PairingScopes.length || scopes.some(scope => !PairingScopes.includes(scope as never))) {
     fail('pairingInvalidInput');
   }
 }

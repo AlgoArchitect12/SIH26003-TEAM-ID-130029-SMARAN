@@ -1,3 +1,4 @@
+import { locationStrings } from './location-strings';
 import { uxStrings } from './ux-strings';
 import { stabilizationStrings } from './stabilization-strings';
 import { accountStrings } from './account-strings';
@@ -17,6 +18,7 @@ import type { TranslationCatalog } from './strings';
 
 const bengali = {
   ...accountStrings.bn,
+  ...locationStrings.bn,
   ...syncStrings.bn,
   ...aiAssistantStrings.bn,
   ...careCircleStrings.bn,
@@ -176,6 +178,7 @@ const bengali = {
 
 const meitei = {
   ...accountStrings.mni,
+  ...locationStrings.mni,
   ...syncStrings.mni,
   ...aiAssistantStrings.mni,
   ...careCircleStrings.mni,
@@ -335,6 +338,7 @@ const meitei = {
 
 const khasi = {
   ...accountStrings.kha,
+  ...locationStrings.kha,
   ...syncStrings.kha,
   ...aiAssistantStrings.kha,
   ...careCircleStrings.kha,
@@ -494,6 +498,7 @@ const khasi = {
 
 const mizo = {
   ...accountStrings.lus,
+  ...locationStrings.lus,
   ...syncStrings.lus,
   ...aiAssistantStrings.lus,
   ...careCircleStrings.lus,

@@ -2,7 +2,7 @@
   "expo": {
     "name": "SMARAN AI",
     "slug": "smaran-ai",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "smaran-ai",
@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.smaran.ai",
-      "versionCode": 1,
+      "versionCode": 2,
       "allowBackup": false,
       "blockedPermissions": [
         "android.permission.CAMERA",
@@ -68,9 +68,14 @@
         }
       ],
       "./plugins/with-private-backup.cjs",
-      ["expo-notifications", {
-        "sounds": ["./assets/sounds/smaran_alarm.wav"]
-      }],
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/smaran_alarm.wav"
+          ]
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -79,7 +84,16 @@
           "microphonePermission": false
         }
       ],
-      "expo-mail-composer"
+      "expo-mail-composer",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Share your location with the people you explicitly allow.",
+          "isAndroidBackgroundLocationEnabled": false,
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

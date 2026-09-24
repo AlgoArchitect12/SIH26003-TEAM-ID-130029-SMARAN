@@ -6,29 +6,7 @@ const { screen, nodes } = require('./check-privacy-recovery.cjs');
 const { createDatabase, A, B } = require('./check-auth-sync-migration.cjs');
 
 async function locations() {
-  // GPS left the active product surface: no route, service, repository,
-  // dependency, permission prompt, navigation entry, admin display or UI text.
-  for (const file of ['app/caregiver/location.tsx', 'src/services/location.service.ts', 'src/db/repositories/location.repository.ts']) {
-    assert.equal(fs.existsSync(file), false, file + ' removed from the product surface');
-  }
-  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-  const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
-  for (const name of ['expo-location', 'expo-task-manager']) {
-    assert.equal(pkg.dependencies[name], undefined, name + ' dependency removed');
-    assert.equal(lock.packages[''].dependencies[name], undefined, name + ' lock entry removed');
-    assert.equal(lock.packages['node_modules/' + name], undefined, name + ' lock module removed');
-  }
-  const plugins = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo.plugins;
-  assert.ok(!JSON.stringify(plugins).includes('expo-location'), 'no location permission prompts');
-  assert.doesNotMatch(fs.readFileSync('components/caregiver/care-workspace.tsx', 'utf8'), /locationTitle|caregiver\/location/);
-  assert.doesNotMatch(fs.readFileSync('app/admin.tsx', 'utf8'), /locationLatest|locationEmpty|row\.location/);
-  assert.doesNotMatch(fs.readFileSync('app/_layout.tsx', 'utf8'), /location\.service|startLocationLifecycle/);
-  assert.doesNotMatch(fs.readFileSync('src/services/admin.service.ts', 'utf8'), /location\/types|validateLocation/);
-  const { stabilizationStrings } = load('src/i18n/stabilization-strings.ts');
-  for (const [language, catalog] of Object.entries(stabilizationStrings)) {
-    assert.deepEqual(Object.keys(catalog).sort(), Object.keys(stabilizationStrings.en).sort());
-    assert.ok(!Object.keys(catalog).some(key => key.startsWith('location')), language + ' has no location UI text');
-  }
+  await require('./check-realtime-location.cjs').main();
   // Dormant compatibility: historical migration 014 and its tables stay, and
   // rows queued by older builds still validate through the existing sync path
   // instead of wedging push/pull.
@@ -50,7 +28,7 @@ async function locations() {
     assert.throws(() => validate(record, B));
     assert.throws(() => validate({ ...record, payload: { ...point, latitude: 91 } }, A));
   } finally { r.sqlite.close(); }
-  console.log('PASS GPS removed: no route/service/native task/permission/nav/admin/UI text; 014 history and tables preserved; in-flight location rows still validate through sync.');
+  console.log('PASS GPS restored with bounded consent-scoped storage; migration 014 upgrade compatibility preserved.');
 }
 
 function games() {

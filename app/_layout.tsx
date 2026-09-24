@@ -20,6 +20,7 @@ import { startAuthLifecycle } from '@/src/cloud/auth';
 import { startSyncLifecycle } from '@/src/cloud/sync';
 import { setWorkspace } from '@/src/stores/patient-session.store';
 import { startAdminLifecycle } from '@/src/services/admin.service';
+import { startLocationLifecycle } from '@/src/services/location.service';
 
 type BootstrapStatus = 'loading' | 'ready' | 'failed';
 
@@ -91,7 +92,8 @@ export default function RootLayout() {
     const stopAuth = startAuthLifecycle();
     const stopSync = startSyncLifecycle();
     const stopAdmin = startAdminLifecycle();
-    return () => { stopAuth(); stopSync(); stopAdmin(); };
+    const stopLocation = startLocationLifecycle();
+    return () => { stopLocation(); stopAuth(); stopSync(); stopAdmin(); };
   }, []);
   return (
     <ErrorBoundary>
