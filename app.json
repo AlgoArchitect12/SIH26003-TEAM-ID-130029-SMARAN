@@ -69,7 +69,7 @@
       ],
       "./plugins/with-private-backup.cjs",
       ["expo-notifications", {
-        "sounds": ["./assets/sounds/smaran-alarm.wav"]
+        "sounds": ["./assets/sounds/smaran_alarm.wav"]
       }],
       [
         "expo-image-picker",

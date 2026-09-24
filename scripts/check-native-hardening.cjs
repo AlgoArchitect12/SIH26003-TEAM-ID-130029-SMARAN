@@ -145,8 +145,8 @@ async function main() {
   const notificationSource = read('src/services/my-day.service.ts');
   assert.match(notificationSource, /name: t\(language, 'dayNotificationTitle'\)/u);
   assert.match(notificationSource, /AndroidImportance\.HIGH/u);
-  assert.match(notificationSource, /sound: alarmSound|smaran-alarm\.wav/u);
-  assert.ok(fs.existsSync(path.join(root, 'assets', 'sounds', 'smaran-alarm.wav')), 'bundled alarm tone ships with the app');
+  assert.match(notificationSource, /sound: alarmSound|smaran_alarm\.wav/u);
+  assert.ok(fs.existsSync(path.join(root, 'assets', 'sounds', 'smaran_alarm.wav')), 'bundled alarm tone ships with the app');
   assert.ok(notificationSource.indexOf('setNotificationChannelAsync') < notificationSource.indexOf('requestPermissionsAsync'));
   assert.ok(!/getExpoPushToken|getDevicePushToken/u.test(notificationSource));
 

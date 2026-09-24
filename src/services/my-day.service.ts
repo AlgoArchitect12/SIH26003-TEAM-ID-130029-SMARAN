@@ -13,7 +13,7 @@ export type NotificationResult = { permission: ReminderPermission; failed: boole
 // ships on a new channel; reconcile() below migrates schedules off 'my-day'.
 // iOS and pre-8 Android read the filename from the notification content.
 const channelId = 'smaran-reminders';
-const alarmSound = 'smaran-alarm.wav';
+const alarmSound = 'smaran_alarm.wav';
 const notificationPrefix = 'smaran-my-day-';
 let scheduledTimezone: string | null = null;
 

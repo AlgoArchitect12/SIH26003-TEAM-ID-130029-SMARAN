@@ -55,7 +55,7 @@ function checkMvp22Boundaries() {
   }
   const expectedConfig=JSON.parse(baseline('app.json'));
   expectedConfig.expo.plugins=expectedConfig.expo.plugins.map(plugin=>plugin==='expo-notifications'
-    ? ['expo-notifications',{sounds:['./assets/sounds/smaran-alarm.wav']}] : plugin);
+    ? ['expo-notifications',{sounds:['./assets/sounds/smaran_alarm.wav']}] : plugin);
   expectedConfig.expo.plugins.push('expo-mail-composer');
   assert.deepEqual(JSON.parse(fs.readFileSync('app.json','utf8')),expectedConfig,'only bundled reminder sound and report email plugins change');
   for(const file of ['eas.json','plugins/with-private-backup.cjs','src/db/client.web.ts']){

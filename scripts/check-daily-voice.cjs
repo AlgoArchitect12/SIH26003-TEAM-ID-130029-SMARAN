@@ -291,7 +291,7 @@ async function main() {
       assert.ok(pendingNotifications.size > 0);
       for (const notification of pendingNotifications.values()) {
         assert.deepEqual(notification.content, { title: t(language, 'dayNotificationTitle'), body: t(language, 'dayNotificationBody'),
-          sound: 'smaran-alarm.wav', data: { reminderId: notification.identifier.slice('smaran-my-day-'.length), alarmSound: 'smaran-alarm.wav' } });
+          sound: 'smaran_alarm.wav', data: { reminderId: notification.identifier.slice('smaran-my-day-'.length), alarmSound: 'smaran_alarm.wav' } });
       }
     }
     const oldReads = db.getAllAsync, delayed = deferred();

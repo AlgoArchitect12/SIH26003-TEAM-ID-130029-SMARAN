@@ -185,7 +185,7 @@ async function main() {
     for(const p of ['undetermined','denied']) {permission=p;assert.equal((await service.sync(patient)).permission,p);assert.equal(pending.size,0);}
     assert.equal(requests,0);
     permission='granted'; await service.sync(patient,true); assert.equal(requests,1);
-    assert.deepEqual(channels.get('smaran-reminders'),{name:t('as','dayNotificationTitle'),importance:4,sound:'smaran-alarm.wav',vibrationPattern:[0,500,250,500]});
+    assert.deepEqual(channels.get('smaran-reminders'),{name:t('as','dayNotificationTitle'),importance:4,sound:'smaran_alarm.wav',vibrationPattern:[0,500,250,500]});
     const count=pending.size; assert.equal(count,5);
     await service.sync(patient);assert.equal(pending.size,count);
     for (const item of pending.values()) assert.equal(item.trigger.channelId,'smaran-reminders','every alarm targets the sounding channel');
@@ -197,7 +197,7 @@ async function main() {
     assert.ok(migrated.every(item => canceled.includes(item.identifier)),'old channel entries cancelled once');
     assert.equal(new Set([...pending.keys()]).size,pending.size,'no duplicate identifiers after migration');
     const target=reminders[1], identifier='smaran-my-day-'+target.id;
-    const privateContent={title:t('as','dayNotificationTitle'),body:t('as','dayNotificationBody'),sound:'smaran-alarm.wav',data:{reminderId:target.id,alarmSound:'smaran-alarm.wav'}};
+    const privateContent={title:t('as','dayNotificationTitle'),body:t('as','dayNotificationBody'),sound:'smaran_alarm.wav',data:{reminderId:target.id,alarmSound:'smaran_alarm.wav'}};
     assert.deepEqual(pending.get(identifier).content,privateContent);
     // Matching revisions must not preserve an old sensitive payload, even during a warm sync.
     pending.get(identifier).content={title:'Synthetic medicine name',body:'Synthetic appointment notes'};
@@ -233,7 +233,7 @@ async function main() {
     await Promise.all([service.save(patient,{...base,title:'Concurrent one'},recovered.id),service.save(patient,{...base,title:'Concurrent two'},recovered.id)]);
     assert.equal((await repo.get(patient,recovered.id)).title,'Concurrent two');
     assert.deepEqual(pending.get('smaran-my-day-'+recovered.id).content, {
-      ...privateContent, data:{reminderId:recovered.id,alarmSound:'smaran-alarm.wav'},
+      ...privateContent, data:{reminderId:recovered.id,alarmSound:'smaran_alarm.wav'},
     });
     await service.remove(patient,once.id); assert.ok(!pending.has('smaran-my-day-'+once.id));
     // Deterministic early-Done investigation. This checks requested triggers, not OS delivery.
@@ -282,7 +282,7 @@ async function main() {
       assert.deepEqual(await service.sync(patient),{permission:'granted',failed:false});
       for (const record of [localizedDaily,localizedOnce]) {
         const notification=pending.get('smaran-my-day-'+record.id);
-        assert.deepEqual(notification.content,{title:t(language,'dayNotificationTitle'),body:t(language,'dayNotificationBody'),sound:'smaran-alarm.wav',data:{reminderId:record.id,alarmSound:'smaran-alarm.wav'}});
+        assert.deepEqual(notification.content,{title:t(language,'dayNotificationTitle'),body:t(language,'dayNotificationBody'),sound:'smaran_alarm.wav',data:{reminderId:record.id,alarmSound:'smaran_alarm.wav'}});
         assert.equal(notification.trigger.type,record.repeatRule==='daily'?'daily':'date');
         assert.ok(!JSON.stringify(notification.content).includes('Synthetic'));
         assert.equal((await repo.get(patient,record.id)).revision,record.revision);
@@ -318,7 +318,7 @@ async function main() {
     assert.deepEqual(fallbackSaved.notifications,{permission:'granted',failed:false});
     assert.equal((await repo.get(patient,fallbackSaved.reminder.id)).note,'Private free text');
     assert.deepEqual(pending.get('smaran-my-day-'+fallbackSaved.reminder.id).content,
-      {title:t('en','dayNotificationTitle'),body:t('en','dayNotificationBody'),sound:'smaran-alarm.wav',data:{reminderId:fallbackSaved.reminder.id,alarmSound:'smaran-alarm.wav'}});
+      {title:t('en','dayNotificationTitle'),body:t('en','dayNotificationBody'),sound:'smaran_alarm.wav',data:{reminderId:fallbackSaved.reminder.id,alarmSound:'smaran_alarm.wav'}});
     await service.sync(patient);
     assert.equal(pending.get('smaran-my-day-'+fallbackSaved.reminder.id).content.title,t('as','dayNotificationTitle'));
     assert.equal(t('unsupported','dayNotificationBody'),t('en','dayNotificationBody'));
