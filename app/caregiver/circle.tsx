@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { CareWorkspace } from '@components/caregiver/care-workspace';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
@@ -15,6 +16,7 @@ const empty: CareMemberInput = {display_name:'',relationship:'family_member',acc
 
 export function CirclePanel({data,refresh}: {data: ActiveCare; refresh:()=>void}) {
   const language = data.settings.language;
+  const router = useRouter();
   const [editing,setEditing] = useState<CareMember|null|undefined>();
   const [value,setValue] = useState<CareMemberInput>(empty), [confirm,setConfirm] = useState<string|null>(null);
   const [busy,setBusy] = useState(false), [failed,setFailed] = useState(false), lock = useRef(false);
@@ -28,6 +30,8 @@ export function CirclePanel({data,refresh}: {data: ActiveCare; refresh:()=>void}
   const edit = (member:CareMember|null)=>{setEditing(member);setFailed(false);setValue(member ? {...member,scopes:effectiveScopes(member)} : {...empty,scopes:[]});};
   return <>
     <ThemedText>{label('circleLocalNotice')}</ThemedText>
+    <SmaranButton label={label('pairingTitle')} accessibilityLabel={label('pairingTitle')} variant="outline" disabled={busy}
+      onPress={() => router.push('/caregiver/pairing')} />
     <ThemedText type="cardHeading" accessibilityRole="header">{label('circleTrusted')}</ThemedText>
     {failed && <ThemedText accessibilityRole="alert">{label('circleFailed')}</ThemedText>}
     {editing !== undefined ? <SmaranCard style={PageLayout.group}>

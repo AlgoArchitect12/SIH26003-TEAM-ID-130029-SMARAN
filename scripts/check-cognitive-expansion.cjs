@@ -199,7 +199,7 @@ async function architectureChecks() {
     // Separate fresh database runs the real registry 001→007.
     sqlite.close(); sqlite = new DatabaseSync(':memory:'); sqlite.exec('PRAGMA foreign_keys = ON');
     await runner(db); await runner(db);
-    assert.equal(table('schema_migrations').length, 13);
+    assert.equal(table('schema_migrations').length, 14, 'retain historical migration 014 after GPS retirement');
     assert.equal(table('cognitive_sessions').length, 0); assert.equal(table('adaptive_model_state').length, 0);
     assert.deepEqual(await db.getAllAsync('PRAGMA foreign_key_check'), []);
     console.log('PASS: fresh 001–007 chain, idempotence, no seeded activities/models');
@@ -318,7 +318,7 @@ function gameChecks() {
   const extraction = extractAdaptiveFeatures({patientId:'one',currentDifficulty:1,telemetry:value,recentSessions:[baseline]});
   assert.deepEqual(extraction.features,{accuracy:.5,relativePace:.5,workingMemory:.75,independence:.5,stability:.5});
   assert.equal(extraction.personalPaceBaselineMs,1000/Math.sqrt(2));
-  assert.equal(load('src/games/memory-match/difficulty.ts').INITIAL_MEMORY_DIFFICULTY,2);
+  assert.equal(load('src/games/memory-match/difficulty.ts').INITIAL_MEMORY_DIFFICULTY,1, 'release stabilization starts at the gentlest level');
   assert.equal(chooseExplanationTemplate({direction:'challenge'},extraction,'memory_match'),'explanationAddChallenge');
   assert.match(activitySummary('en',value),/2 pairs/);
 

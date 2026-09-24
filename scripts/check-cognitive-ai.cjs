@@ -34,6 +34,9 @@ function play(game, level, wrong = true) {
         assert.equal(state.wrongAnswers, n); assert.equal(state.feedback, 'retry');
         assert.equal(state.hintLevel, [0, 1, 3][n - 1]);
         assert.equal(state.correctSelections, 0, 'support never invents a correct selection');
+        assert.equal(state.lastChoice, mistake, 'wrong tap is retained for highlight');
+        assert.equal(engine.answerFeedbackFor(mistake, task.answer, state), 'wrong');
+        assert.equal(engine.answerFeedbackFor(task.answer, task.answer, state), null, 'unanswered option stays neutral');
       }
       assert.equal(state.hintsUsed, 2, 'count support actually delivered, not skipped stages');
       assert.equal(engine.chooseSelection(state, tasks, mistake, now), state, 'revealed answer locks distractors');
@@ -42,8 +45,12 @@ function play(game, level, wrong = true) {
     state = engine.resumeSelection(state, now += 60000);
     state = engine.chooseSelection(state, tasks, task.answer, now += 1000);
     assert.equal(state.feedback, 'correct');
+    assert.equal(engine.answerFeedbackFor(task.answer, task.answer, state), 'correct');
     assert.equal(engine.chooseSelection(state, tasks, task.answer, now), state, 'double tap cannot double count');
-    if (index < tasks.length - 1) state = engine.continueSelection(state, now += 10000);
+    if (index < tasks.length - 1) {
+      state = engine.continueSelection(state, now += 10000);
+      assert.equal(state.lastChoice, null, 'continuing clears the highlight');
+    }
   }
   const value = engine.finalizeSelection(state, game);
   assert.equal(value.correctSelections, tasks.length);
@@ -65,6 +72,7 @@ function gameChecks() {
       assert.deepEqual(prepare(game, level), prepare(game, level), 'deterministic offline content');
       play(game, level); play(game, level, false);
       let state = engine.createSelection(prepare(game, level), 0);
+      assert.equal(state.lastChoice, null, 'no highlight before an answer');
       for (let hint = 1; hint <= 3; hint++) { state = engine.hintSelection(state); assert.equal(state.hintLevel, hint); }
       assert.equal(state.hintsUsed, 3); assert.equal(engine.hintSelection(state), state);
     }
@@ -212,11 +220,13 @@ function screenBoundaries(r, settings, game, level) {
     '@/src/stores/cognitive-session.store': { useCognitiveSessionStore: hook(r.cognitive) },
     '@services/active-patient.service': { resolveActivePatient: async () => ({ status: 'ready', profile: { id: 'one' }, settings }) },
     '@db/repositories/cognitive.repository': { cognitiveRepository: r.repo },
-    '@/hooks/use-theme-color': { useThemeColors: () => ({ text: '#123', border: '#456', surface: '#fff', primary: '#075' }) },
+    '@/hooks/use-theme-color': { useThemeColors: () => ({ text: '#123', border: '#456', surface: '#fff', primary: '#075',
+      success: '#2E7D32', successSurface: '#1b6b3a', error: '#C62828', errorSurface: '#7a1f1f' }) },
   };
   for (const file of ['adaptive-engine', 'feature-extractor', 'cognitive-coach']) overrides['@ai/' + file] = r.module('src/ai/' + file + '.ts');
   for (const file of ['presentation', 'selection-engine', 'pattern-recognition', 'routine-recall', 'recall-activities', 'grid-activities', 'sudoku-lite', 'chess-puzzle', 'word-match',
     'memory-match/assets', 'memory-match/difficulty', 'memory-match/engine', 'memory-match/telemetry']) overrides['@/src/games/' + file] = r.module('src/games/' + file + '.ts');
+  overrides['@components/games/answer-feedback'] = load('components/games/answer-feedback.tsx', overrides);
   insertRow(r.sqlite, 'cognitive_sessions', rowFor(game, `${game}-${settings.language}-${level}`, 'one', level));
   r.onboarding.getState().setLanguage(settings.language);
   return { overrides, navigation, listeners };
@@ -247,6 +257,9 @@ async function screenChecks() {
           cards = nodes(tree).filter(node => node.type === 'MemoryCard'); press(cards[first]);
           cards = nodes(tree).filter(node => node.type === 'MemoryCard'); press(cards[wrong]);
           assert.ok(nodes(tree).some(node => node.type === 'EncouragementBanner' && node.props.message === t(language, n === 1 ? 'coachWrong' : 'coachTogether')));
+          const shown = nodes(tree).filter(node => node.type === 'MemoryCard');
+          assert.equal(shown.filter(card => card.props.mismatched).length, 2, 'mismatched pair flashes red, not color-only');
+          assert.ok(shown.filter(card => card.props.mismatched).every(card => card.props.accessibilityHint === t(language, 'answerWrong')));
           render.advance(); tree = render();
           if (n === 2 && level === 5) {
             press(byLabel('gameHint'));
@@ -275,6 +288,9 @@ async function screenChecks() {
         if (game === 'sequence_memory' || game === 'picture_recall') assert.ok(!nodes(tree).some(node => node.type?.name === 'PictureRow'));
         const wrong = tasks[0].choices.find(choice => choice !== tasks[0].answer);
         press(byId('choice-' + wrong)); assert.ok(text().includes(t(language, 'coachWrong')));
+        const wrongButton = byId('choice-' + wrong);
+        assert.ok(JSON.stringify(wrongButton.props.style).includes('#7a1f1f'), 'wrong option uses the shared error surface');
+        assert.equal(wrongButton.props.accessibilityHint, t(language, 'answerWrong'));
         press(byId('choice-' + wrong)); assert.ok(text().includes(t(language, 'coachTogether')));
         if (level === 5) {
           press(byId('activity-hint'));
@@ -287,6 +303,9 @@ async function screenChecks() {
           const answer = byId('choice-' + task.answer); press(answer);
           answer.props.onPress(); tree = render(); // stale callback / rapid duplicate.
           assert.ok(text().includes(t(language, 'coachCorrect')));
+          const marked = byId('choice-' + task.answer);
+          assert.ok(JSON.stringify(marked.props.style).includes('#1b6b3a'), 'correct option uses the shared success surface');
+          assert.ok(marked.props.accessibilityState?.selected, 'correct option exposes a non-color selected state');
           render.advance(); tree = render();
         }
         const pending = r.cognitive.getState().pending;

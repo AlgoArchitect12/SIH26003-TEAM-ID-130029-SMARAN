@@ -1,3 +1,6 @@
 # JWT verification is performed by auth.getUser in the handler, supporting current signing keys.
 [functions.online-ai]
 verify_jwt = false
+
+[functions.ai-care-assistant]
+verify_jwt = false

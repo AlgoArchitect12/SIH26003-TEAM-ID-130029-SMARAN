@@ -20,7 +20,11 @@ function screen(file, overrides, props) {
       return [slots[i], value => { slots[i] = typeof value === 'function' ? value(slots[i]) : value; }];
     },
     useRef: initial => slots[cursor++] ??= { current: initial },
-    useCallback: fn => fn,
+    useCallback: (fn, deps) => {
+      const i = cursor++, previous = slots[i];
+      if (!previous || deps.some((value, index) => value !== previous.deps[index])) slots[i] = { value: fn, deps };
+      return slots[i].value;
+    },
     useEffect: (fn, deps) => {
       const i = cursor++, previous = slots[i];
       if (!previous || deps.some((value, index) => value !== previous[index])) effects.push(() => { cleanups[i]?.(); cleanups[i] = fn(); });

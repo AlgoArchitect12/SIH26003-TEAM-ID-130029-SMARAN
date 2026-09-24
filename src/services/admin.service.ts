@@ -1,13 +1,12 @@
 import { AppState } from 'react-native';
 import { create } from 'zustand';
 import { captureAccount, getCloudClient, useAuthStore } from '../cloud/auth';
-import { validateLocation, type PatientLocation } from '../location/types';
 import { parseReportFacts, type ActivityReport } from '../caregiver/reports';
 import { validateRecordId } from '../utils/validation';
 import { getDatabase } from '../db/client';
 import { selectActivePatient } from './profile-switching.service';
 
-type AdminPatient = { patient: { id: string; preferred_name: string }; location: PatientLocation | null; reports: ActivityReport[] };
+type AdminPatient = { patient: { id: string; preferred_name: string }; reports: ActivityReport[] };
 export const useAdminStore = create<{
   mode: 'normal' | 'authenticating' | 'admin'; ownerId: string | null; patients: AdminPatient[]; failed: boolean;
 }>(() => ({ mode: 'normal', ownerId: null, patients: [], failed: false }));
@@ -28,16 +27,15 @@ export async function enterAdmin() {
     for (const row of patients) {
       validateRecordId(row.patient.id);
       if (typeof row.patient.preferred_name !== 'string' || !Array.isArray(row.reports)) throw new Error('Invalid admin data.');
-      if (row.location) {
-        validateLocation(row.location);
-        if (row.location.patient_id !== row.patient.id) throw new Error('Location ownership mismatch.');
-      }
+      // Patient location left the product surface; any location payload the
+      // server still returns is ignored rather than displayed or stored.
       for (const report of row.reports) {
         if (report.patient_id !== row.patient.id) throw new Error('Report ownership mismatch.');
         parseReportFacts(report.snapshot);
       }
     }
-    useAdminStore.setState({ mode: 'admin', ownerId: account.ownerId, patients });
+    useAdminStore.setState({ mode: 'admin', ownerId: account.ownerId,
+      patients: patients.map(({ patient, reports }) => ({ patient, reports })) });
     return true;
   } catch {
     if (request === generation) useAdminStore.setState({ mode: 'normal', ownerId: null, patients: [], failed: true });

@@ -85,6 +85,7 @@ export default function MemoryMatchScreen() {
   const [paused, setPaused] = useState(false);
   const telemetry = useRef<MemoryTelemetryState | null>(null);
   const completionStarted = useRef(false);
+  const lastFlip = useRef<number | null>(null);
   useGameTransition(game.status === 'SESSION_COMPLETE' ? 700 : null, () => {
     if (data?.isCurrent() && completionStarted.current) router.replace('/patient/games/result');
   }, paused);
@@ -240,6 +241,7 @@ export default function MemoryMatchScreen() {
     if (paused || !data.isCurrent() || (coachRef.current.hintLevel >= 3 && !supportPositions.includes(index))) return;
     const next = flipCard(gameRef.current, index);
     if (next.state === gameRef.current) return;
+    lastFlip.current = index;
     const now = Date.now();
     if (next.comparedSymbols === null) {
       if (telemetry.current) telemetry.current = recordFirstFlip(telemetry.current, now);
@@ -329,6 +331,10 @@ export default function MemoryMatchScreen() {
                 const shownState = hinted ? 'revealed' : card.state;
                 const labelKey =
                   shownState === 'hidden' ? 'cardHidden' : shownState === 'matched' ? 'cardMatched' : 'cardRevealed';
+                // Mismatched pair stays face-up and input-locked for 1400ms; flash
+                // both cards with the shared wrong treatment until resolve.
+                const mismatched = feedbackCue === 'almost' && game.inputLocked && card.state !== 'matched' &&
+                  (index === game.firstCardIndex || index === lastFlip.current);
                 return (
                   <MemoryCard
                     positionLabel={new Intl.NumberFormat(language).format(index + 1)}
@@ -336,6 +342,8 @@ export default function MemoryMatchScreen() {
                       position: String(index + 1),
                       symbol: t(language, symbol.labelKey),
                     })}
+                    accessibilityHint={mismatched ? t(language, 'answerWrong') : undefined}
+                    mismatched={mismatched}
                     disabled={paused || game.inputLocked || card.state === 'matched' || game.status !== 'PLAYING' || (coach.hintLevel >= 3 && !supportPositions.includes(index))}
                     highContrast={settings.highContrast}
                     hinted={hinted}

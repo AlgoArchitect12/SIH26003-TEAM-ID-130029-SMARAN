@@ -33,8 +33,6 @@ export default function AdminScreen() {
         if (locked.current) return; locked.current = true; setBusy(true); setFailed(false);
         void manageAdminPatient(row.patient.id).then(() => router.push('/caregiver/home')).catch(() => setFailed(true)).finally(() => { locked.current = false; setBusy(false); });
       }} />
-      <ThemedText type="cardHeading">{t(language, 'locationLatest')}</ThemedText>
-      <ThemedText>{row.location ? `${new Date(row.location.recorded_at).toLocaleString(language)} · ${row.location.latitude}, ${row.location.longitude}` : t(language, 'locationEmpty')}</ThemedText>
       <ThemedText type="cardHeading">{t(language, 'reportTitle')}</ThemedText>
       {!row.reports.length && <ThemedText>{t(language, 'reportEmpty')}</ThemedText>}
       {row.reports.map(report => <View key={report.id} style={PageLayout.group}>

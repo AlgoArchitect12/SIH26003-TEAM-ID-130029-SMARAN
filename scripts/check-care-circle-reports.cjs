@@ -310,10 +310,11 @@ async function ui(r,report) {
     const source=fs.readFileSync(file,'utf8');assert.doesNotMatch(source,/console\.|TextInput|numberOfLines=|setInterval|fetch\(/);assert.match(source,/accessibilityLabel/);
   }
   const navigation=screen('components/caregiver/care-workspace.tsx',{'expo-router':{useRouter:()=>({replace(){}})},
+    '@/src/cloud/auth':{useAuthStore:()=>0},
     '@react-navigation/native':{useIsFocused:()=>true},'@/src/stores/patient-session.store':{usePatientSessionStore:()=>0},
     '@/src/stores/onboarding.store':{useOnboardingStore:()=> 'en'},'@/src/services/care-circle.service':{},'@/src/services/profile-switching.service':{}},{language:'en'});
   assert.equal(nodes(navigation()).filter(n=>n.type==='SmaranButton').length,6);
-  console.log('PASS J/K/I: seven complete catalogs/interpolation, actual create forms with empty contact fields and no selected scopes, accessible button names/states, report viewer/disclaimer, consent off, six dashboard destinations, shared ≥56px controls and wrapping contracts.');
+  console.log('PASS J/K/I: seven complete catalogs/interpolation, actual create forms with empty contact fields and no selected scopes, accessible button names/states, report viewer/disclaimer, consent off, five dashboard destinations, shared ≥56px controls and wrapping contracts.');
 }
 async function main(){await migrations();const r=await domain();try{const report=await reports(r);await pdf(r,report);await cloud(r,report);await ui(r,report);}finally{r.sqlite.close();}}
 module.exports={runtime};

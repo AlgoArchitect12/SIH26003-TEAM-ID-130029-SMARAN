@@ -9,7 +9,11 @@ import { resolveActivePatient } from './active-patient.service';
 
 export type ReminderPermission = 'granted' | 'denied' | 'undetermined' | 'unavailable';
 export type NotificationResult = { permission: ReminderPermission; failed: boolean };
-const channelId = 'my-day';
+// Android fixes a channel's sound at creation, so the bundled alarm tone
+// ships on a new channel; reconcile() below migrates schedules off 'my-day'.
+// iOS and pre-8 Android read the filename from the notification content.
+const channelId = 'smaran-reminders';
+const alarmSound = 'smaran-alarm.wav';
 const notificationPrefix = 'smaran-my-day-';
 let scheduledTimezone: string | null = null;
 
@@ -17,10 +21,11 @@ if (Platform.OS !== 'web') Notifications.setNotificationHandler({
   handleNotification: async () => ({ shouldPlaySound: true, shouldSetBadge: false, shouldShowBanner: true, shouldShowList: true }),
 });
 
-export async function reminderPermission(request = false): Promise<ReminderPermission> {
+export async function reminderPermission(request = false, language?: Parameters<typeof t>[0]): Promise<ReminderPermission> {
   if (Platform.OS === 'web') return 'unavailable';
   if (Platform.OS === 'android') await Notifications.setNotificationChannelAsync(channelId, {
-    name: 'Smaran reminders', importance: Notifications.AndroidImportance.DEFAULT,
+    name: t(language, 'dayNotificationTitle'), importance: Notifications.AndroidImportance.HIGH,
+    sound: alarmSound, vibrationPattern: [0, 500, 250, 500],
   });
   const permission = request ? await Notifications.requestPermissionsAsync() : await Notifications.getPermissionsAsync();
   if (permission.granted || (permission.ios && [Notifications.IosAuthorizationStatus.PROVISIONAL,
@@ -31,10 +36,10 @@ export async function reminderPermission(request = false): Promise<ReminderPermi
 async function reconcile(patientId: string, request = false): Promise<NotificationResult> {
   let permission: ReminderPermission = 'unavailable';
   try {
-    permission = await reminderPermission(request);
+    const settings = await patientRepository.getSettings(patientId).catch(() => null);
+    permission = await reminderPermission(request, settings?.language);
     if (Platform.OS === 'web') return { permission, failed: false };
     // Language lookup is optional; a failed read must not prevent safe scheduling after a save.
-    const settings = await patientRepository.getSettings(patientId).catch(() => null);
     const privateContent = { title: t(settings?.language, 'dayNotificationTitle'), body: t(settings?.language, 'dayNotificationBody') };
     const [reminders, pending, events] = await Promise.all([
       repository.list(patientId, true), Notifications.getAllScheduledNotificationsAsync(), repository.currentCompletions(patientId),
@@ -51,9 +56,15 @@ async function reconcile(patientId: string, request = false): Promise<Notificati
       const completed = reminder.repeatRule === 'once' && events.some(event => event.reminderId === reminder.id);
       const wanted = permission === 'granted' && reminder.isEnabled && !reminder.deletedAt && !past && !completed;
       try {
-        const content = scheduled.get(identifier)?.content;
+        const scheduledItem = scheduled.get(identifier);
+        const content = scheduledItem?.content;
+        const scheduledChannel = (scheduledItem?.trigger as { channelId?: string } | undefined)?.channelId;
+        // iOS triggers carry no channel; the channel migration check is Android-only
+        // so daily iOS alarms are not needlessly rescheduled on every sync.
         if (wanted && !timezoneChanged && reminder.repeatRule === 'daily' && reminder.notificationRevision === reminder.revision && reminder.notificationId === identifier
-            && content?.title === privateContent.title && content.body === privateContent.body) continue;
+            && content?.title === privateContent.title && content.body === privateContent.body
+            && content.data?.alarmSound === alarmSound
+            && (Platform.OS !== 'android' || scheduledChannel === channelId)) continue;
         if (scheduled.has(identifier) || reminder.notificationId) {
           await Notifications.cancelScheduledNotificationAsync(reminder.notificationId ?? identifier);
           if (reminder.notificationId && reminder.notificationId !== identifier && scheduled.has(identifier))
@@ -64,7 +75,7 @@ async function reconcile(patientId: string, request = false): Promise<Notificati
           const [hour, minute] = reminder.timeOfDay.split(':').map(Number);
           notificationId = await Notifications.scheduleNotificationAsync({
             identifier,
-            content: { ...privateContent, sound: 'default', data: { reminderId: reminder.id } },
+            content: { ...privateContent, sound: alarmSound, data: { reminderId: reminder.id, alarmSound } },
             trigger: reminder.repeatRule === 'daily'
               ? { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId }
               : { type: Notifications.SchedulableTriggerInputTypes.DATE, date: localDateTime(reminder.scheduledDate!, reminder.timeOfDay), channelId },

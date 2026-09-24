@@ -299,7 +299,7 @@ async function syncChecks() {
   }finally{stop?.();await h.close();r.sqlite.close();assert.ok(folder.startsWith(path.resolve('.expo')+path.sep));fs.rmSync(folder,{recursive:true,force:true});}
 }
 
-function contractChecks() {
+async function contractChecks() {
   const {accountStrings}=load('src/i18n/account-strings.ts'),{strings,t}=load('src/i18n/index.ts');
   const slots=text=>[...text.matchAll(/\{(\w+)\}/g)].map(m=>m[1]).sort();
   for(const [language,values] of Object.entries(accountStrings)) {
@@ -310,6 +310,10 @@ function contractChecks() {
       '@/src/stores/onboarding.store':{useOnboardingStore:select=>select({language})},'@/src/cloud/config':config,
       '@/src/cloud/auth':{useAuthStore:()=>auth,initializeAuth:async()=>{},retryAuth:async()=>{}},
       '@/src/services/admin.service':{useAdminStore:()=>({mode:'caregiver'})},
+      '@/src/services/active-patient.service':{resolveActivePatient:async()=>({status:'missing'})},
+      '@/src/services/profile-switching.service':{leavePatientForSelection:()=>{}},
+      '@/src/services/pairing.service':{pairingService:{access:async()=>{throw Error('No patient');}}},
+      '@/src/stores/patient-session.store':{usePatientSessionStore:select=>select({workspace:'patient'}),setWorkspace:()=>{}},
       '@/src/cloud/sync':{useSyncStore:()=>syncState,refreshSyncStatus:async()=>{}}});
     let tree=nodes(render());const fields=tree.filter(n=>n.type==='Field');assert.equal(fields.length,2);
     assert.equal(fields[0].props.autoComplete,'email');assert.equal(fields[1].props.autoComplete,'current-password');assert.equal(fields[1].props.secureTextEntry,true);
@@ -320,18 +324,45 @@ function contractChecks() {
     for(const [status,key] of [['expired','accountSessionExpired'],['confirmation','accountConfirmEmail'],['offline','accountNetwork'],['unavailable','accountUnavailable'],['storage-error','accountStorage']]){
       auth={...auth,status};assert.ok(nodes(render()).some(n=>n.props?.children===t(language,key)),language+status);
     }
+    // Signed-in person/role card: active person, current view, switch targets.
+    auth={ownerId:'owner-a',status:'signed-in',revision:0,busy:false,message:null};
+    const personRoute=[];
+    const personRender=screen('app/account.tsx',{'react-native':{Platform:{OS:'android'},View:'View'},'expo-router':{useRouter:()=>({canGoBack:()=>false,replace:r=>personRoute.push(r)})},
+      '@/src/stores/onboarding.store':{useOnboardingStore:select=>select({language})},'@/src/cloud/config':config,
+      '@/src/cloud/auth':{useAuthStore:()=>auth,initializeAuth:async()=>{},retryAuth:async()=>{}},
+      '@/src/services/admin.service':{useAdminStore:()=>({mode:'caregiver'})},
+      '@/src/services/active-patient.service':{resolveActivePatient:async()=>({status:'ready',profile:{id:'one',preferredName:'Synthetic elder'}})},
+      '@/src/services/pairing.service':{pairingService:{access:async()=> 'owner'}},
+      '@/src/services/profile-switching.service':{leavePatientForSelection:()=>{leaves.push('left');}},
+      '@/src/stores/patient-session.store':{usePatientSessionStore:select=>select({workspace:'patient'}),setWorkspace:()=>{},capturePatientRequest:()=>()=>true},
+      '@/src/cloud/sync':{useSyncStore:()=>({status:'current',linked:true,pending:0,lastSuccess:null}),refreshSyncStatus:async()=>{}}});
+    const leaves=[];
+    personRender();await tick();personRender();await tick();
+    const ptree=nodes(personRender());
+    assert.ok(ptree.some(n=>n.props?.children===t(language,'accountPersonTitle')),language+' person title');
+    assert.ok(ptree.some(n=>n.props?.children==='Synthetic elder'),language+' active person');
+    assert.ok(ptree.some(n=>n.props?.children===t(language,'rolePatientView')),language+' current view');
+    ptree.find(n=>n.props?.label===t(language,'switchPerson')).props.onPress();
+    assert.deepEqual(personRoute.at(-1),{pathname:'/profiles',params:{view:'patient'}});
+    assert.deepEqual(leaves,['left']);
+    ptree.find(n=>n.props?.label===t(language,'roleCaregiverView')).props.onPress();
+    await tick();
+    assert.deepEqual(personRoute.at(-1),'/caregiver/home');
+    // Signed-out screens never expose person/role controls.
+    auth={ownerId:null,status:'local',revision:0,busy:false,message:null};
+    assert.ok(!nodes(render()).some(n=>n.props?.label===t(language,'roleCaregiverView')),language+' no role control offline');
   }
-  const files=execFileSync('git',['ls-files','--cached','--others','--exclude-standard','-z'],{encoding:'utf8'}).split('\0').filter(Boolean);
+  const files=execFileSync('git',['ls-files','--cached','--others','--exclude-standard','-z'],{encoding:'utf8'}).split('\0').filter(file=>file && fs.existsSync(file));
   const patterns=[['private key',/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],['provider key',/\b(?:sk-proj-|sk-ant-|AIza)[A-Za-z0-9_-]{24,}/],['secret key',/\bsb_secret_[A-Za-z0-9_-]{20,}/],['Google secret',/\bGOCSPX-[A-Za-z0-9_-]{20,}/],['literal token',/\beyJ[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}/]];
   const findings=[];
   for(const file of files.filter(f=>/\.(?:[cm]?[jt]sx?|json|sql|md|toml|ya?ml|example)$/.test(f))){const source=fs.readFileSync(file,'utf8');for(const [type,pattern]of patterns)if(pattern.test(source))findings.push({path:file,type});}
   assert.deepEqual(findings,[],'secret scan reports path/type only');
   for(const name of ['.env','.env.local','credentials.json','synthetic.key','synthetic.pem'])assert.ok(execFileSync('git',['check-ignore',name],{encoding:'utf8'}).trim());
-  for(const file of files.filter(f=>/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))){
+  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&f!=='supabase/migrations/20260924000000_family_pairing.sql')){
     assert.equal(fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n'),execFileSync('git',['show','1dfccf1:'+file],{encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' historical source unchanged');
   }
   console.log('PASS contracts: seven complete translated catalogs/interpolation, actual Account controls/status/offline action, email/password autofill, screen-reader labels, source secret scan, ignored credentials and frozen historical migrations.');
 }
-async function main(){await authChecks();await migrationChecks();await syncChecks();contractChecks();}
+async function main(){await authChecks();await migrationChecks();await syncChecks();await contractChecks();}
 module.exports = { harness };
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});

@@ -2,8 +2,14 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase } from '../client';
 import { SYNC_COLUMNS as SYNC_COLUMNS_V1 } from '../../cloud/location-sync-columns';
 import { assertOwner, BATCH_SIZE, validateCloudRecord, type CloudRecord, type OutboxEvent, type PullBatch, type PushReceipt } from '../../cloud/sync-contract';
+import { validateRecordId } from '../../utils/validation';
 
 function check(current: () => boolean) { if (!current()) throw new Error('Account request expired.'); }
+async function includesPatient(owner: string, patientId: string) {
+  assertOwner(owner);
+  return !!await (await getDatabase()).getFirstAsync(
+    'SELECT 1 FROM sync_patient_owners WHERE owner_id = ? AND patient_id = ?', owner, validateRecordId(patientId));
+}
 async function link(owner: string, current: () => boolean) {
   assertOwner(owner); check(current);
   await (await getDatabase()).withExclusiveTransactionAsync(async tx => {
@@ -170,4 +176,4 @@ async function success(owner: string, current: () => boolean) {
     check(current);
   });
 }
-export const syncRepository = { link, status, activate, pause, pending, acknowledge, fail, retry, apply, success };
+export const syncRepository = { link, status, includesPatient, activate, pause, pending, acknowledge, fail, retry, apply, success };

@@ -39,6 +39,9 @@ export function validateCloudRecord(value: unknown, owner: string): CloudRecord 
     throw new Error('Invalid sync fields.');
   }
   const p = r.payload;
+  // Patient location left the product surface: nothing collects or displays
+  // it anymore. Validation stays so rows queued by older builds still drain
+  // through the existing push/pull path instead of wedging sync.
   if (r.entity_type === 'patient_locations') validateLocation(p as unknown as PatientLocation);
   if (r.entity_type === 'care_circle_members') {
     const scopes = parseScopes(String(p.scopes));

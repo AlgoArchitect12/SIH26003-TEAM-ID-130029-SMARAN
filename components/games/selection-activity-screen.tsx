@@ -38,6 +38,7 @@ import {
   chooseSelection, continueSelection, createSelection, finalizeSelection, hintSelection, resumeSelection,
   type SelectionState, type SelectionTask,
 } from '@/src/games/selection-engine';
+import { AnswerFeedbackMark, answerFeedbackStyle, choiceFeedback } from '@components/games/answer-feedback';
 
 type SelectionActivity = Exclude<CognitiveActivityType, 'memory_match'>;
 type ActivityData = {
@@ -248,14 +249,23 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
         {(object || data.recall) && <ThemedText accessibilityRole="header" type="cardHeading">{prompt}</ThemedText>}
         {data.settings.voiceGuidance && !selection.awaitingContinue && <ReadScreenButton language={language} text={prompt + ' ' + (task?.choices.map(optionText).join('. ') ?? '')} />}
         <View style={styles.group}>
-          {task?.choices.map(choice => <SmaranButton key={choice} testID={'choice-' + choice} size="large"
+          {task?.choices.map(choice => {
+            const feedback = selection ? choiceFeedback(choice, task.answer, selection) : null;
+            return <SmaranButton key={choice} testID={'choice-' + choice} size="large"
             label={optionText(choice)}
             accessibilityLabel={t(language, data.routine ? 'routineOption' : pattern ? 'patternOption' : 'pictureOption', { step: optionText(choice), shape: optionText(choice), picture: optionText(choice) })}
+            accessibilityState={feedback === 'correct' ? { selected: true } : undefined}
             disabled={paused || selection.awaitingContinue || (selection.hintLevel === 3 && choice !== task.answer)} variant="outline"
-            accessibilityHint={selection.hintLevel === 3 && choice === task.answer ? hintText : undefined}
-            icon={!data.routine ? <MaterialIcons name={pattern ? shapeIcons[choice as PatternShape] : getMemorySymbol(choice as MemorySymbolId).icon} size={36} color={colors.text}
-              accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" /> : undefined}
-            onPress={() => { if (data.isCurrent() && current.current) update(chooseSelection(current.current, data.tasks, choice, Date.now())); }} />)}
+            accessibilityHint={feedback === 'wrong' ? t(language, 'answerWrong')
+              : selection.hintLevel === 3 && choice === task.answer ? hintText : undefined}
+            icon={!data.routine || feedback ? <>
+              {!data.routine ? <MaterialIcons name={pattern ? shapeIcons[choice as PatternShape] : getMemorySymbol(choice as MemorySymbolId).icon} size={36} color={colors.text}
+                accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" /> : null}
+              <AnswerFeedbackMark feedback={feedback} colors={colors} />
+            </> : undefined}
+            style={answerFeedbackStyle(feedback, colors)}
+            onPress={() => { if (data.isCurrent() && current.current) update(chooseSelection(current.current, data.tasks, choice, Date.now())); }} />;
+          })}
         </View>
         {selection.feedback && <ThemedText accessibilityLiveRegion="polite" type="cardHeading">
           {feedbackText}

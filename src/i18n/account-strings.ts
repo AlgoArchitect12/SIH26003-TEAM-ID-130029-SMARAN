@@ -24,6 +24,8 @@ const en = {
   accountInvalidLink: 'This sign-in link cannot be used. Return to Account and start again on this device.',
   accountNetwork: 'Network unavailable. Your local records are safe.', accountUnavailable: 'Cloud temporarily unavailable. Please try again.',
   accountSessionExpired: 'Session expired. Sign in again to continue backup.',
+  accountPersonTitle: 'Current person and role', accountPersonNone: 'No person selected yet.',
+  rolePatientView: 'Patient view', roleCaregiverView: 'Caregiver view',
 } as const;
 
 // Draft translations: complete keys, not native-speaker verified.
@@ -49,6 +51,8 @@ export const accountStrings: Record<Language, Record<keyof typeof en, string>> =
     accountExpiredLink: 'लिंक की अवधि समाप्त है। नया ईमेल पाने के लिए फिर खाता बनाएँ या Google साइन इन फिर शुरू करें। पुष्टि हो चुकी हो तो साइन इन करें।',
     accountInvalidLink: 'यह साइन इन लिंक इस्तेमाल नहीं हो सकता। खाते पर लौटकर इसी डिवाइस पर फिर शुरू करें।',
     accountNetwork: 'नेटवर्क उपलब्ध नहीं है। स्थानीय रिकॉर्ड सुरक्षित हैं।', accountUnavailable: 'क्लाउड अभी उपलब्ध नहीं है। फिर कोशिश करें।', accountSessionExpired: 'सत्र समाप्त हो गया। बैकअप के लिए फिर साइन इन करें।',
+    accountPersonTitle: 'वर्तमान व्यक्ति और भूमिका', accountPersonNone: 'अभी कोई व्यक्ति चुना नहीं है।',
+    rolePatientView: 'रोगी दृश्य', roleCaregiverView: 'देखभालकर्ता दृश्य',
   },
   as: {
     accountTitle: 'একাউণ্ট', accountIntro: 'একাউণ্ট খোলা ঐচ্ছিক। ছাইন ইন নকৰাকৈ স্থানীয় কাৰ্যকলাপ চলিব।',
@@ -70,6 +74,8 @@ export const accountStrings: Record<Language, Record<keyof typeof en, string>> =
     accountExpiredLink: 'লিংকৰ সময় শেষ। নতুন ইমেইল পাবলৈ পুনৰ একাউণ্ট খোলক বা Google ছাইন ইন পুনৰ আৰম্ভ কৰক। নিশ্চিত কৰিলে ছাইন ইন কৰক।',
     accountInvalidLink: 'এই ছাইন ইন লিংক ব্যৱহাৰ কৰিব নোৱাৰি। একাউণ্টলৈ উভতি এই ডিভাইচত পুনৰ আৰম্ভ কৰক।',
     accountNetwork: 'নেটৱৰ্ক নাই। স্থানীয় তথ্য সুৰক্ষিত।', accountUnavailable: 'ক্লাউড এতিয়া উপলব্ধ নহয়। পুনৰ চেষ্টা কৰক।', accountSessionExpired: 'ছেছনৰ সময় শেষ। বেকআপৰ বাবে পুনৰ ছাইন ইন কৰক।',
+    accountPersonTitle: 'বৰ্তমান ব্যক্তি আৰু ভূমিকা', accountPersonNone: 'এতিয়াও কোনো ব্যক্তি বাছনি কৰা হোৱা নাই।',
+    rolePatientView: 'ৰোগীৰ দৃশ্য', roleCaregiverView: 'যত্ন লওঁতাৰ দৃশ্য',
   },
   bn: {
     accountTitle: 'অ্যাকাউন্ট', accountIntro: 'অ্যাকাউন্ট ঐচ্ছিক। সাইন ইন ছাড়াই স্থানীয় কার্যকলাপ চলবে।',
@@ -91,6 +97,8 @@ export const accountStrings: Record<Language, Record<keyof typeof en, string>> =
     accountExpiredLink: 'লিংকের মেয়াদ শেষ। নতুন ইমেইলের জন্য আবার অ্যাকাউন্ট তৈরি করুন বা Google সাইন ইন শুরু করুন। নিশ্চিত হয়ে থাকলে সাইন ইন করুন।',
     accountInvalidLink: 'এই সাইন ইন লিংক ব্যবহার করা যাবে না। অ্যাকাউন্টে ফিরে এই ডিভাইসে আবার শুরু করুন।',
     accountNetwork: 'নেটওয়ার্ক নেই। স্থানীয় তথ্য নিরাপদ।', accountUnavailable: 'ক্লাউড এখন উপলব্ধ নয়। আবার চেষ্টা করুন।', accountSessionExpired: 'সেশনের মেয়াদ শেষ। ব্যাকআপের জন্য আবার সাইন ইন করুন।',
+    accountPersonTitle: 'বর্তমান ব্যক্তি ও ভূমিকা', accountPersonNone: 'এখনও কাউকে বাছাই করা হয়নি।',
+    rolePatientView: 'রোগীর দৃশ্য', roleCaregiverView: 'যত্নকারীর দৃশ্য',
   },
   mni: {
     accountTitle: 'একাউন্ট', accountIntro: 'একাউন্ট শেম্বা মথৌ তাদে। সাইন ইন তৌদনা ডিভাইস অসিগী থবকশিং তৌবা য়াই।',
@@ -112,6 +120,8 @@ export const accountStrings: Record<Language, Record<keyof typeof en, string>> =
     accountExpiredLink: 'লিংককী মতম লোইরে। অনৌবা ইমেইল ফংনবা একাউন্ট অমুক শেম্মো নত্রগা Google সাইন ইন হৌরো। চুম্বা খঙহনলবদি সাইন ইন তৌরো।',
     accountInvalidLink: 'সাইন ইন লিংক অসি শিজিন্নবা ঙমদে। একাউন্টতা হল্লক্লগা ডিভাইস অসিদা অমুক হৌরো।',
     accountNetwork: 'নেটৱৰ্ক ফংদ্রে। লোকল ৱারোলশিং শোয়দনা লৈরি।', accountUnavailable: 'হৌজিক ক্লাউড ফংদ্রে। অমুক হোৎনবিয়ু।', accountSessionExpired: 'সেশন মতম লোইরে। বেকআপকী অমুক সাইন ইন তৌরো।',
+    accountPersonTitle: 'হৌজিক্কী মী অমসুং থৌদাং', accountPersonNone: 'কনাগুম্বা অমা খনখিদ্রি।',
+    rolePatientView: 'অনাবগী মিৎয়েং', roleCaregiverView: 'চেকশিনবগী মিৎয়েং',
   },
   kha: {
     accountTitle: 'Ka akhaun', accountIntro: 'Ka akhaun kam long kaba donkam. Phi lah ban pyndonkam ia ki kam ha kane ka kor khlem rung.',
@@ -133,6 +143,8 @@ export const accountStrings: Record<Language, Record<keyof typeof en, string>> =
     accountExpiredLink: 'Ka por jong ka link ka la kut. Shna akhaun biang ban pan email thymmai ne sdang Google biang. Lada la pynthikna, rung.',
     accountInvalidLink: 'Ym lah ban pyndonkam ia kane ka link. Leit sha Akhaun bad sdang biang ha kane ka kor.',
     accountNetwork: 'Ym don network. Ki jingthoh ha ka kor ki shngain.', accountUnavailable: 'Ym ioh cloud mynta. Pyrshang biang.', accountSessionExpired: 'Ka por jingrung ka la kut. Rung biang ban bteng backup.',
+    accountPersonTitle: 'U briew bad ka kamram mynta', accountPersonNone: 'Ym pat jied ia uno uno.',
+    rolePatientView: 'Ka jingpeit jong u nongpang', roleCaregiverView: 'Ka jingpeit jong u nongsumar',
   },
   lus: {
     accountTitle: 'Akaun', accountIntro: 'Akaun neih a ngai kher lo. Luh lo pawhin he phone chhunga tih turte i ti thei.',
@@ -154,5 +166,7 @@ export const accountStrings: Record<Language, Record<keyof typeof en, string>> =
     accountExpiredLink: 'Link hun a tawp. Email thar dil turin akaun siam leh rawh emaw Google luhna tan leh rawh. Nemnghet tawh chuan lut rawh.',
     accountInvalidLink: 'He luhna link hi hman theih a ni lo. Akaunah kir la he phone-ah tan leh rawh.',
     accountNetwork: 'Network a awm lo. Phone chhunga chanchin a him.', accountUnavailable: 'Cloud tunah hman theih a ni lo. En leh rawh.', accountSessionExpired: 'Luhna hun a tawp. Backup chhunzawm turin lut leh rawh.',
+    accountPersonTitle: 'Mihring leh chanvo tun', accountPersonNone: 'Tu mah thlan a la ni lo.',
+    rolePatientView: 'Damlo thlirna', roleCaregiverView: 'Enkawl thlirna',
   },
 };

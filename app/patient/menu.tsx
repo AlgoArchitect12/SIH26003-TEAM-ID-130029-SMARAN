@@ -13,6 +13,7 @@ import { useThemeColors } from '@/hooks/use-theme-color';
 type Entry = { label: TranslationKey; icon: ComponentProps<typeof MaterialIcons>['name']; href: Href };
 const groups: { title: TranslationKey; entries: Entry[] }[] = [
   { title: 'menuPatient', entries: [
+    { label: 'aiPatientTitle', icon: 'chat-bubble-outline', href: '/patient/assistant' },
     { label: 'myProfile', icon: 'person-outline', href: '/patient/profile' },
     { label: 'homeRegionTitle', icon: 'landscape', href: '/patient/my-home' },
     { label: 'homeMemoriesTitle', icon: 'photo-library', href: '/patient/my-memories' },

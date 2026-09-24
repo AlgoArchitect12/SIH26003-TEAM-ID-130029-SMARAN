@@ -173,7 +173,8 @@ for (componentColors of Object.values(Colors)) {
   assert.equal(alert.props.accessibilityRole, 'alert');
 }
 
-const critical = git('ls-files', 'app/patient', 'app/caregiver', 'components/ui', 'components/patient', 'components/games', 'components/layout', 'components/themed-text.tsx').trim().split(/\r?\n/);
+const critical = git('ls-files', '--cached', '--others', '--exclude-standard', 'app/patient', 'app/caregiver', 'components/ui', 'components/patient', 'components/games', 'components/layout', 'components/themed-text.tsx').trim().split(/\r?\n/)
+  .filter(file => file !== 'app/caregiver/location.tsx'); // GPS route intentionally retired; scan new permanent UI too.
 for (const file of critical.filter(file => file.endsWith('.tsx'))) {
   assert.doesNotMatch(source(file), /numberOfLines\s*=|ellipsizeMode\s*=/, file + ': wrapping contract');
   assert.doesNotMatch(source(file), /['"]#[\da-f]{3,8}['"]|rgba?\(/i, file + ': use semantic colors');
@@ -184,6 +185,10 @@ assert.doesNotMatch(added, /Rahul Sharma|demoPatient|fakeScore|samplePatient|dem
 // MVP-20 explicitly authorizes these cognitive files and migration 007's registry entry.
 // Keep every other protected path guarded, including historical migrations 001–006.
 const cognitiveAIPaths = new Set([
+  // Reviewed release stabilization, Sync Status and family/AI application boundaries.
+  'src/games/memory-match/difficulty.ts', 'src/services/speech-voices.ts', 'src/services/tts-diagnostics.ts',
+  'src/i18n/sync-strings.ts', 'src/location/types.ts', 'src/services/admin.service.ts',
+  'src/services/pairing.service.ts', 'src/services/ai-assistant.service.ts', 'src/i18n/ai-assistant-strings.ts',
   'src/games/sudoku-lite.ts', 'src/games/chess-puzzle.ts', 'src/games/word-match.ts', 'src/i18n/three-game-strings.ts', // MVP-25.
   'src/games/grid-activities.ts', 'src/i18n/extra-game-strings.ts', 'src/games/memory-match/engine.ts',
   // MVP-21 authorizes only these additional reminder/speech sources. Database/config guards remain below.

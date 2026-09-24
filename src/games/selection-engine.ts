@@ -16,7 +16,19 @@ export type SelectionState = CoachState & {
   completedAtMs: number | null;
   awaitingContinue: boolean;
   feedback: 'retry' | 'correct' | null;
+  lastChoice: string | null;
 };
+
+export type AnswerFeedback = 'correct' | 'wrong' | null;
+
+// Pure mapping so every board paints the same accessible correct/wrong state.
+// Correct highlights the answer; wrong highlights only the tapped distractor.
+export function answerFeedbackFor(choice: string, answer: string,
+  selection: Pick<SelectionState, 'feedback' | 'lastChoice'>): AnswerFeedback {
+  if (selection.feedback === 'correct' && choice === answer) return 'correct';
+  if (selection.feedback === 'retry' && choice === selection.lastChoice) return 'wrong';
+  return null;
+}
 
 export function createSelection(tasks: readonly SelectionTask[], now: number): SelectionState {
   if (!tasks.length || new Set(tasks.map(task => task.id)).size !== tasks.length ||
@@ -29,7 +41,7 @@ export function createSelection(tasks: readonly SelectionTask[], now: number): S
     ...initialCoach,
     position: 0, correctSelections: 0, attempts: 0, hintsUsed: 0, repeatedErrors: 0, errorKeys: [],
     durationsMs: [], startedAtMs: now, lastDecisionAtMs: now, completedAtMs: null,
-    awaitingContinue: false, feedback: null,
+    awaitingContinue: false, feedback: null, lastChoice: null,
   };
 }
 
@@ -47,7 +59,7 @@ export function chooseSelection(state: SelectionState, tasks: readonly Selection
     errorKeys: correct || repeated ? state.errorKeys : [...state.errorKeys, errorKey],
     durationsMs: [...state.durationsMs, Math.max(0, now - state.lastDecisionAtMs)], lastDecisionAtMs: now,
     completedAtMs: correct && state.position === tasks.length - 1 ? now : null,
-    awaitingContinue: correct, feedback: correct ? 'correct' : 'retry',
+    awaitingContinue: correct, feedback: correct ? 'correct' : 'retry', lastChoice: choice,
   };
 }
 
@@ -58,7 +70,7 @@ export function hintSelection(state: SelectionState): SelectionState {
 
 export function continueSelection(state: SelectionState, now: number): SelectionState {
   return !state.awaitingContinue || state.completedAtMs !== null ? state :
-    { ...state, ...initialCoach, position: state.position + 1, awaitingContinue: false, feedback: null, lastDecisionAtMs: now };
+    { ...state, ...initialCoach, position: state.position + 1, awaitingContinue: false, feedback: null, lastChoice: null, lastDecisionAtMs: now };
 }
 
 export function resumeSelection(state: SelectionState, now: number): SelectionState {

@@ -19,9 +19,11 @@ import type { MemoryCardState } from '@/src/games/memory-match/types';
 
 type MemoryCardProps = {
   accessibilityLabel: string;
+  accessibilityHint?: string;
   disabled: boolean;
   highContrast: boolean;
   hinted: boolean;
+  mismatched?: boolean;
   onPress: () => void;
   positionLabel: string;
   reducedMotion: boolean;
@@ -32,9 +34,11 @@ type MemoryCardProps = {
 
 export function MemoryCard({
   accessibilityLabel,
+  accessibilityHint,
   disabled,
   highContrast,
   hinted,
+  mismatched = false,
   onPress,
   positionLabel,
   reducedMotion,
@@ -67,6 +71,7 @@ export function MemoryCard({
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       accessibilityRole="button"
       accessibilityState={{ disabled, selected: visible }}
       disabled={disabled}
@@ -101,10 +106,10 @@ export function MemoryCard({
         style={[
           styles.face,
           {
-            backgroundColor: state === 'matched' ? colors.successSurface : colors.surface,
-            borderColor: highContrast || hinted ? colors.text : state === 'matched' ? colors.success : colors.accent,
+            backgroundColor: state === 'matched' ? colors.successSurface : mismatched ? colors.errorSurface : colors.surface,
+            borderColor: highContrast || hinted ? colors.text : state === 'matched' ? colors.success : mismatched ? colors.error : colors.accent,
             borderStyle: hinted ? 'dashed' : 'solid',
-            borderWidth: highContrast || hinted ? 3 : 2,
+            borderWidth: highContrast || hinted ? 3 : mismatched ? 3 : 2,
           },
           backStyle,
         ]}>
@@ -121,6 +126,14 @@ export function MemoryCard({
             accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
             color={colors.success}
             name="check-circle"
+            size={22}
+            style={styles.check}
+          />
+        ) : mismatched ? (
+          <MaterialIcons
+            accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+            color={colors.error}
+            name="error-outline"
             size={22}
             style={styles.check}
           />

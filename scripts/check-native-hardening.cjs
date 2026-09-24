@@ -32,8 +32,9 @@ async function main() {
     '001_core_bootstrap.ts', '002_cognitive_adaptation.ts', '003_multilingual_expansion.ts',
     '004_my_day.ts', '005_my_memories.ts', '006_cognitive_expansion.ts', '007_cognitive_ai_expansion.ts', '008_auth_sync.ts', '009_extra_cognitive_games.ts', '010_care_circle_reports.ts', '011_sync_consent.ts',    '012_three_cognitive_games.ts',
     '013_report_delivery.ts',
+    '014_patient_location.ts',
     'index.ts',
-  ], 'Only authorized migrations 001–013');
+  ], 'Only authorized migrations 001–014; retired location history stays intact');
   require('./check-mvp22-boundaries.cjs').checkMvp22Boundaries();
   for (const file of migrations.filter(file => /\/00[1-6]_/.test(file))) {
     assert.equal(read(file).replace(/\r\n/gu, '\n').trim(), git('show', '6b1c0f5:' + file), file + ' must preserve stable base');
@@ -41,7 +42,7 @@ async function main() {
   const sdk = json('node_modules/expo/bundledNativeModules.json');
   const semver = require('semver'); // Already installed with Expo; no test dependency added.
   for (const name of ['expo', 'expo-router', 'expo-sqlite', 'expo-secure-store', 'expo-notifications',
-    'expo-file-system', 'expo-image-picker', 'expo-speech', 'expo-haptics', 'expo-splash-screen']) {
+    'expo-file-system', 'expo-image-picker', 'expo-speech', 'expo-haptics', 'expo-splash-screen', 'expo-mail-composer', 'expo-network']) {
     assert.ok(pkg.dependencies[name], name);
     const installed = json('node_modules/' + name + '/package.json').version;
     assert.equal(installed, lock.packages['node_modules/' + name].version, name + ' lock mismatch');
@@ -89,19 +90,36 @@ async function main() {
   const creditFiles = new Set(['src/my-home/content.ts', 'src/my-home/image-credits.json', 'components/ui/icon-symbol.tsx', 'hooks/use-theme-color.ts']);
   for (const file of sources) {
     const text = read(file);
-    if (file.startsWith('src/cloud/')) {
-      assert.ok(require('./check-mvp22-boundaries.cjs').authorized.has(file), 'Only reviewed cloud modules may use the gateway');
+    // The assistant is the sole application service with direct HTTP: authenticated Edge Function only.
+    if (file.startsWith('src/cloud/') || file === 'src/services/ai-assistant.service.ts') {
+      assert.ok(file === 'src/services/ai-assistant.service.ts' || require('./check-mvp22-boundaries.cjs').authorized.has(file), 'Only reviewed modules may use the gateway');
       assert.doesNotMatch(text, /service_role|SERVICE_ROLE|postgres(?:ql)?:\/\/|DB_PASSWORD|DATABASE_URL|OPENAI_API_KEY|GEMINI_API_KEY|ANTHROPIC_API_KEY|SUPABASE_SERVICE|console\.(log|debug)\s*\(/);
-    } else assert.ok(!/\bfetch\s*\(|\baxios\b|\bsupabase\b|\bfirebase\b|\bgraphql\b|new\s+(WebSocket|XMLHttpRequest)|\bprocess\.env|console\.(log|debug)\s*\(/iu.test(text), 'Runtime network, secret or debug path: ' + file);
+      if (file === 'src/services/ai-assistant.service.ts') {
+        assert.equal((text.match(/\bfetch\s*\(/gu) ?? []).length, 1);
+        assert.match(text, /fetch\(cloudConfig\.url\+'\/functions\/v1\/ai-care-assistant'/u);
+        assert.doesNotMatch(text, /\bprocess\.env|https?:\/\//u);
+      }
+    } else {
+      // This exact shared wire-contract import is not a Supabase client or network boundary.
+      const runtime = text.replaceAll('@/supabase/functions/ai-care-assistant/contract', 'assistant-contract');
+      assert.ok(!/\bfetch\s*\(|\baxios\b|\bsupabase\b|\bfirebase\b|\bgraphql\b|new\s+(WebSocket|XMLHttpRequest)|\bprocess\.env/iu.test(runtime), 'Runtime network or secret path: ' + file);
+    }
     if (/https?:\/\//u.test(text)) assert.ok(creditFiles.has(file), 'Review new URL: ' + file);
     if (/bhashini|remote translation/iu.test(text)) assert.equal(file, 'src/services/language/bhashini.service.ts');
     // Reject raw release logs; walk ancestors so nested __DEV__ handlers are recognized.
     const ast = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
     function visit(node) {
-      if (ts.isCallExpression(node) && /^console\.(warn|error)$/u.test(node.expression.getText(ast))) {
+      if (ts.isCallExpression(node) && /^console\.(log|debug|warn|error)$/u.test(node.expression.getText(ast))) {
+        if (/^console\.(log|debug)$/u.test(node.expression.getText(ast))) {
+          assert.equal(file, 'src/services/tts-diagnostics.ts', 'Only the reviewed static TTS development marker may log');
+          assert.equal(node.arguments.length, 1);
+          assert.ok(ts.isStringLiteral(node.arguments[0]));
+          assert.equal(node.arguments[0].text, '[SMARAN][TTS] diagnostic recorded');
+        }
         let parent = node.parent, guarded = false;
         while (parent) {
-          if (ts.isIfStatement(parent) && parent.expression.getText(ast) === '__DEV__') guarded = true;
+          if (ts.isIfStatement(parent) && parent.expression.getText(ast) === '__DEV__' &&
+              node.pos >= parent.thenStatement.pos && node.end <= parent.thenStatement.end) guarded = true;
           parent = parent.parent;
         }
         assert.ok(guarded, 'Release log could expose personal data: ' + file);
@@ -117,7 +135,7 @@ async function main() {
   assert.equal(files('assets/my-home').length, 32);
   for (const asset of assets) assert.ok(fs.statSync(asset).size > 0);
   for (const file of files('src/games')) assert.ok(!/https?:\/\//u.test(read(file)), file);
-  assert.equal(files('src/db/migrations').filter(file => /\/\d{3}_/u.test(file)).length, 13);
+  assert.equal(files('src/db/migrations').filter(file => /\/\d{3}_/u.test(file)).length, 14);
   for (const route of ['index', '_layout', 'patient/home', 'patient/games/index', 'patient/games/memory-match', 'patient/games/pattern-recognition',
     'patient/games/routine-recall', 'patient/games/result', 'patient/games/why-level', 'patient/my-day', 'patient/my-day-reminder',
     'patient/my-memories', 'patient/my-memory', 'patient/my-memory-editor', 'patient/my-home', 'patient/my-home-memory', 'caregiver/home']) assert.ok(fs.existsSync(path.join(root, 'app', route + '.tsx')), route);
@@ -125,7 +143,10 @@ async function main() {
   for (const pattern of [/Paths\.document/u, /validateMemoryPhotoPath/u, /intermediates: true, idempotent: true/u, /source\.copy\(target\)/u, /file\.exists/u]) assert.match(media, pattern);
   assert.ok(!/requestMediaLibraryPermissionsAsync/u.test(media));
   const notificationSource = read('src/services/my-day.service.ts');
-  assert.match(notificationSource, /name: 'Smaran reminders'/u);
+  assert.match(notificationSource, /name: t\(language, 'dayNotificationTitle'\)/u);
+  assert.match(notificationSource, /AndroidImportance\.HIGH/u);
+  assert.match(notificationSource, /sound: alarmSound|smaran-alarm\.wav/u);
+  assert.ok(fs.existsSync(path.join(root, 'assets', 'sounds', 'smaran-alarm.wav')), 'bundled alarm tone ships with the app');
   assert.ok(notificationSource.indexOf('setNotificationChannelAsync') < notificationSource.indexOf('requestPermissionsAsync'));
   assert.ok(!/getExpoPushToken|getDevicePushToken/u.test(notificationSource));
 
@@ -178,7 +199,7 @@ async function checkConnectionSafety() {
   try {
     const db = adapter(sql), runner = load('src/db/migrations/index.ts').runMigrations;
     await runner(db); await runner(db);
-    assert.equal(sql.prepare('SELECT count(*) AS n FROM schema_migrations').get().n, 13);
+    assert.equal(sql.prepare('SELECT count(*) AS n FROM schema_migrations').get().n, 14);
     for (const table of ['patient_profiles', 'cognitive_sessions', 'adaptive_model_state', 'personal_memories', 'reminders']) assert.equal(sql.prepare('SELECT count(*) AS n FROM ' + table).get().n, 0);
     const overrides = { '../client': { getDatabase: async () => db } };
     const memories = load('src/db/repositories/memories.repository.ts', overrides).memoriesRepository;
@@ -208,7 +229,7 @@ async function checkPermissionBoundary() {
   const calls = [];
   let status = 'denied';
   const notifications = {
-    AndroidImportance: { DEFAULT: 3 }, IosAuthorizationStatus: {},
+    AndroidImportance: { DEFAULT: 3, HIGH: 4 }, IosAuthorizationStatus: {},
     setNotificationHandler: () => {},
     setNotificationChannelAsync: async () => { calls.push('channel'); },
     getPermissionsAsync: async () => { calls.push('read'); return { status, granted: status === 'granted' }; },

@@ -13,6 +13,10 @@ import { accessEmail, accessGoogle, initializeAuth, logout, retryAuth, useAuthSt
 import { AccountError, cloudConfig } from '@/src/cloud/config';
 import { enableCloudSync, pauseCloudSync, refreshSyncStatus, syncNow, useSyncStore } from '@/src/cloud/sync';
 import { enterAdmin, exitAdmin, useAdminStore } from '@/src/services/admin.service';
+import { resolveActivePatient } from '@/src/services/active-patient.service';
+import { leavePatientForSelection } from '@/src/services/profile-switching.service';
+import { capturePatientRequest, setWorkspace, usePatientSessionStore } from '@/src/stores/patient-session.store';
+import { pairingService } from '@/src/services/pairing.service';
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -26,7 +30,25 @@ export default function AccountScreen() {
   const [message, setMessage] = useState<TranslationKey | null>(null);
   const [busy, setBusy] = useState(false);
   const locked = useRef(false);
+  const workspace = usePatientSessionStore(state => state.workspace);
+  const patientRevision = usePatientSessionStore(state => state.revision);
+  const [personName, setPersonName] = useState<string | null>(null);
+  const [access, setAccess] = useState<'owner' | 'member' | null>(null);
+  const activePerson = useRef<string | null>(null);
   useEffect(() => { void initializeAuth(); void refreshSyncStatus().catch(() => {}); }, []);
+  useEffect(() => {
+    let active = true;
+    setPersonName(null); setAccess(null); activePerson.current = null;
+    if (auth.ownerId) {
+      void resolveActivePatient().then(async resolution => {
+        if (!active || resolution.status !== 'ready') return;
+        setPersonName(resolution.profile.preferredName);
+        const role = await pairingService.access(resolution.profile.id);
+        if (active) { activePerson.current = resolution.profile.id; setAccess(role === 'owner' ? 'owner' : 'member'); }
+      }).catch(() => {});
+    }
+    return () => { active = false; };
+  }, [auth.ownerId, auth.revision, patientRevision]);
   const operation = useRef(0);
   useEffect(() => { operation.current++; setEmail(''); setPassword(''); setMessage(null); setBusy(false); locked.current = false; }, [auth.ownerId]);
   useEffect(() => () => { operation.current++; }, []);
@@ -82,7 +104,34 @@ export default function AccountScreen() {
       <SmaranButton label={t(language, 'accountGoogle')} accessibilityLabel={t(language, 'accountGoogle')} disabled={!available || disabled}
         variant="outline" onPress={() => void run(accessGoogle)} />
     </> : <>
+      <SmaranButton label={t(language, 'pairingTitle')} accessibilityLabel={t(language, 'pairingTitle')}
+        variant="outline" onPress={() => router.push('/caregiver/pairing')} />
       <ThemedText>{t(language, 'accountConsent')}</ThemedText>
+      <SmaranCard>
+        <ThemedText type="cardHeading">{t(language, 'accountPersonTitle')}</ThemedText>
+        <ThemedText>{personName ?? t(language, 'accountPersonNone')}</ThemedText>
+        <ThemedText type="secondary">{t(language, workspace === 'caregiver' ? 'roleCaregiverView' : 'rolePatientView')}</ThemedText>
+        <SmaranButton label={t(language, 'switchPerson')} accessibilityLabel={t(language, 'switchPerson')} variant="outline" disabled={disabled}
+          onPress={() => {
+            leavePatientForSelection();
+            router.replace({ pathname: '/profiles', params: { view: workspace === 'caregiver' ? 'caregiver' : 'patient' } });
+          }} />
+        {access === 'owner' && <SmaranButton label={t(language, 'rolePatientView')} accessibilityLabel={t(language, 'rolePatientView')} variant="outline" disabled={disabled || workspace !== 'caregiver'}
+          onPress={() => void run(async () => {
+            const current = capturePatientRequest();
+            if (!activePerson.current || await pairingService.access(activePerson.current) !== 'owner') throw new Error('Authorization required.');
+            if (!current()) return;
+            setWorkspace('patient'); router.replace('/patient/home');
+          })} />}
+        {access && <SmaranButton label={t(language, 'roleCaregiverView')} accessibilityLabel={t(language, 'roleCaregiverView')} variant="outline" disabled={disabled || workspace === 'caregiver'}
+          onPress={() => void run(async () => {
+            const current = capturePatientRequest();
+            if (!activePerson.current) throw new Error('Authorization required.');
+            const role = await pairingService.access(activePerson.current);
+            if (!current()) return;
+            setWorkspace('caregiver'); router.replace(role === 'owner' ? '/caregiver/home' : '/caregiver/pairing');
+          })} />}
+      </SmaranCard>
       {sync.linked ? action('accountSyncNow', () => syncNow(true)) : action('accountEnable', enableCloudSync)}
       {sync.linked && sync.unlinked > 0 && action('accountAddProfiles', enableCloudSync, 'outline')}
       {sync.linked && action('accountPause', pauseCloudSync, 'outline')}

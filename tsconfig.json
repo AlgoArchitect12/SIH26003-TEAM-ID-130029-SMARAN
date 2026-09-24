@@ -29,8 +29,7 @@
       ]
     }
   },
-  "exclude": ["supabase/functions/online-ai/index.ts"],
-  "exclude": ["supabase/functions/online-ai/index.ts"],
+  "exclude": ["supabase/functions/online-ai/index.ts", "supabase/functions/ai-care-assistant/index.ts"],
   "include": [
     "**/*.ts",
     "**/*.tsx",

@@ -12,6 +12,7 @@ import type { Language } from '@db/schema.types';
 import { t } from '@i18n/index';
 import type { GridActivity } from '@/src/games/grid-activities';
 import { chooseSelection, hintSelection, resumeSelection, type SelectionState } from '@/src/games/selection-engine';
+import { AnswerFeedbackMark, answerFeedbackStyle, choiceFeedback } from '@components/games/answer-feedback';
 
 type Phase = 'preview' | 'playback' | 'ready' | 'answer';
 type Props = {
@@ -111,16 +112,23 @@ export function GridActivityBoard({ paused = false, activity, selection, languag
         const guided = phase === 'answer' && !selection.awaitingContinue && tile === task.answer &&
           (selection.hintLevel >= (lights ? 2 : 1) || activity.markNext);
         const emphasized = tile === activeLight || guided;
+        const feedback = choiceFeedback(tile, task.answer, selection);
         const disabled = paused || phase !== 'answer' || selection.awaitingContinue || done || !focused || !foreground ||
           (selection.hintLevel === 3 && tile !== task.answer);
         return <SmaranButton key={tile} testID={'grid-tile-' + tile} size="large" label={`${tile === activeLight ? '◆ ' : done ? '✓ ' : ''}${tile}`}
           accessibilityLabel={t(language, lights ? 'lightTile' : done ? 'numberDone' : 'numberTile', {
             number: tile, row: String(Math.floor(index / 2) + 1), column: String(index % 2 + 1),
           })}
-          accessibilityState={{ selected: done || tile === activeLight }} accessibilityHint={guided ? hint || prompt : undefined}
+          accessibilityState={{ selected: done || tile === activeLight || feedback === 'correct' }}
+          accessibilityHint={guided ? hint || prompt : feedback === 'wrong' ? t(language, 'answerWrong') : undefined}
           disabled={disabled} variant="outline" reducedMotionOverride hapticsEnabled={!reducedMotion}
-          style={[styles.tile, { borderColor: emphasized ? colors.primary : colors.border,
-            borderWidth: emphasized ? 4 : 2, backgroundColor: emphasized ? colors.surfaceSelected : done ? colors.surfaceMuted : colors.surface }]}
+          icon={feedback ? <AnswerFeedbackMark feedback={feedback} colors={colors} /> : undefined}
+          style={[styles.tile,
+            { borderColor: colors.border, borderWidth: 2, backgroundColor: colors.surface },
+            emphasized && !feedback ? { borderColor: colors.primary, borderWidth: 4, backgroundColor: colors.surfaceSelected } : null,
+            !feedback && done ? { backgroundColor: colors.surfaceMuted } : null,
+            answerFeedbackStyle(feedback, colors),
+          ]}
           textStyle={{ color: colors.text }} onPress={() => pick(tile)} />;
       })}
     </View>

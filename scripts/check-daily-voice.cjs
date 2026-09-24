@@ -31,7 +31,7 @@ async function checkSpeech() {
     const matrix = await speech.getVoiceCapabilities();
     assert.deepEqual(matrix.filter(row => row.tts === 'available').map(row => row.language), [language]);
     let starts = 0, done = 0, errors = 0;
-    assert.equal(await speech.speakScreenText(t(language, 'dayWater'), language, {
+    assert.equal(await speech.speakScreenText(language === 'mni' ? 'Ising' : t(language, 'dayWater'), language, {
       onStart: () => starts++, onDone: () => done++, onError: () => errors++,
     }), 'started');
     const { options } = utterances.at(-1);
@@ -39,15 +39,24 @@ async function checkSpeech() {
     options.onStart(); assert.equal(starts, 1);
     assert.equal(options.voice, language); assert.equal(options.language, locale);
     options.onDone(); assert.equal(done, 1);
-    options.onError(); assert.equal(errors, 1);
+    // Release speech retries an enumerated voice once using the same language.
+    options.onError(); await tick(); assert.equal(errors, 0);
+    const fallback = utterances.at(-1).options;
+    assert.equal(fallback.voice, undefined); assert.equal(fallback.language, locale);
+    fallback.onError(); assert.equal(errors, 1);
     await speech.stopSpeech();
-    options.onStart(); options.onDone(); options.onError(); options.onStopped();
+    for (const old of [options, fallback]) { old.onStart(); old.onDone(); old.onError(); old.onStopped(); }
     assert.deepEqual([starts, done, errors], [1, 1, 1], 'Old callbacks cannot mutate the next reading');
   }
   voices = ['mni-IN', 'mni-Beng-IN', 'mni-Mtei-IN'].map(language => ({ identifier: language, language }));
-  assert.equal(await speech.speakScreenText('Ising', 'mni'), 'unavailable', 'Romanized catalog needs a suitable Latin-script voice');
+  assert.equal(await speech.speakScreenText('Ising', 'mni'), 'started');
+  assert.equal(utterances.at(-1).options.voice, undefined, 'Never select a non-Latin Meitei voice');
+  assert.equal(utterances.at(-1).options.language, 'mni-Latn-IN');
+  assert.equal(await speech.speakScreenText('\u0987\u09b8\u09bf\u0982', 'mni'), 'unavailable', 'Unsupported script remains rejected');
   voices = [{ identifier: 'english', language: 'en-IN' }];
-  assert.equal(await speech.speakScreenText('Khasi text', 'kha'), 'unavailable', 'Never substitute an unrelated language');
+  assert.equal(await speech.speakScreenText('Khasi text', 'kha'), 'started');
+  assert.equal(utterances.at(-1).options.voice, undefined, 'Never substitute the English voice');
+  assert.equal(utterances.at(-1).options.language, 'kha-IN');
   pending = deferred();
   const before = utterances.length;
   const stale = speech.speakScreenText('Private previous screen', 'en'); await tick();
@@ -59,7 +68,9 @@ async function checkSpeech() {
   assert.equal(utterances.at(-1).text, 'Second'); assert.ok(stops > 10);
   fail = true;
   assert.ok((await speech.getVoiceCapabilities()).every(row => row.tts === 'unknown'));
-  assert.equal(await speech.speakScreenText('Failed voice', 'en'), 'failed');
+  assert.equal(await speech.speakScreenText('Failed voice', 'en'), 'started', 'Enumeration failure still permits language-only synthesis');
+  assert.equal(utterances.at(-1).options.voice, undefined);
+  assert.equal(utterances.at(-1).options.language, 'en-IN');
   fail = false;
 
   for (const reducedMotion of [false, true]) {
@@ -94,7 +105,8 @@ async function checkSpeech() {
     const count = utterances.length; blur(); pending.resolve(voices); await tick(); pending = null;
     assert.equal(utterances.length, count, 'Navigation cancels an outstanding voice lookup');
     voices = []; action().props.onPress(); await tick();
-    assert.ok(nodes(render()).some(node => node.props?.children === t('en', 'speechUnavailable')));
+    utterances.at(-1).options.onError();
+    assert.ok(nodes(render()).some(node => node.props?.children === t('en', 'speechFailed')));
     assert.equal(action().props.disabled, undefined, 'Touch retry stays available');
     voices = [{ identifier: 'english', language: 'en-IN' }];
     const oldAction = action(), spokenBeforeSwitch = utterances.length;
@@ -265,7 +277,7 @@ async function main() {
       '../db/repositories/patient.repository': { patientRepository: { getSettings: async () => ({ language: notificationLanguage }) } },
       'react-native': { Platform: { OS: 'android' } },
       'expo-notifications': {
-        AndroidImportance: { DEFAULT: 3 }, SchedulableTriggerInputTypes: { DAILY: 'daily', DATE: 'date' },
+        AndroidImportance: { DEFAULT: 3, HIGH: 4 }, SchedulableTriggerInputTypes: { DAILY: 'daily', DATE: 'date' },
         setNotificationHandler() {}, setNotificationChannelAsync: async () => {},
         getPermissionsAsync: async () => ({ granted: true, status: 'granted' }),
         getAllScheduledNotificationsAsync: async () => [...pendingNotifications.values()], getPresentedNotificationsAsync: async () => [],
@@ -279,7 +291,7 @@ async function main() {
       assert.ok(pendingNotifications.size > 0);
       for (const notification of pendingNotifications.values()) {
         assert.deepEqual(notification.content, { title: t(language, 'dayNotificationTitle'), body: t(language, 'dayNotificationBody'),
-          sound: 'default', data: { reminderId: notification.identifier.slice('smaran-my-day-'.length) } });
+          sound: 'smaran-alarm.wav', data: { reminderId: notification.identifier.slice('smaran-my-day-'.length), alarmSound: 'smaran-alarm.wav' } });
       }
     }
     const oldReads = db.getAllAsync, delayed = deferred();

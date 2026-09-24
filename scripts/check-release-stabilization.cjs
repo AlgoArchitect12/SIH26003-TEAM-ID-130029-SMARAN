@@ -1,91 +1,56 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { randomUUID } = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const { load } = require('./check-elderly-ux.cjs');
 const { screen, nodes } = require('./check-privacy-recovery.cjs');
-const { createDatabase, seed, A, B } = require('./check-auth-sync-migration.cjs');
-const tick = () => new Promise(setImmediate);
+const { createDatabase, A, B } = require('./check-auth-sync-migration.cjs');
 
 async function locations() {
+  // GPS left the active product surface: no route, service, repository,
+  // dependency, permission prompt, navigation entry, admin display or UI text.
+  for (const file of ['app/caregiver/location.tsx', 'src/services/location.service.ts', 'src/db/repositories/location.repository.ts']) {
+    assert.equal(fs.existsSync(file), false, file + ' removed from the product surface');
+  }
+  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+  for (const name of ['expo-location', 'expo-task-manager']) {
+    assert.equal(pkg.dependencies[name], undefined, name + ' dependency removed');
+    assert.equal(lock.packages[''].dependencies[name], undefined, name + ' lock entry removed');
+    assert.equal(lock.packages['node_modules/' + name], undefined, name + ' lock module removed');
+  }
+  const plugins = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo.plugins;
+  assert.ok(!JSON.stringify(plugins).includes('expo-location'), 'no location permission prompts');
+  assert.doesNotMatch(fs.readFileSync('components/caregiver/care-workspace.tsx', 'utf8'), /locationTitle|caregiver\/location/);
+  assert.doesNotMatch(fs.readFileSync('app/admin.tsx', 'utf8'), /locationLatest|locationEmpty|row\.location/);
+  assert.doesNotMatch(fs.readFileSync('app/_layout.tsx', 'utf8'), /location\.service|startLocationLifecycle/);
+  assert.doesNotMatch(fs.readFileSync('src/services/admin.service.ts', 'utf8'), /location\/types|validateLocation/);
+  const { stabilizationStrings } = load('src/i18n/stabilization-strings.ts');
+  for (const [language, catalog] of Object.entries(stabilizationStrings)) {
+    assert.deepEqual(Object.keys(catalog).sort(), Object.keys(stabilizationStrings.en).sort());
+    assert.ok(!Object.keys(catalog).some(key => key.startsWith('location')), language + ' has no location UI text');
+  }
+  // Dormant compatibility: historical migration 014 and its tables stay, and
+  // rows queued by older builds still validate through the existing sync path
+  // instead of wedging push/pull.
+  assert.ok(fs.existsSync('src/db/migrations/014_patient_location.ts'), '014 history preserved');
   const r = createDatabase(), cache = new Map();
-  const overrides = { '../client': { getDatabase: async () => r.db }, 'expo-crypto': { randomUUID } };
-  const module = file => load(file, overrides, cache);
-  const run = module('src/db/migrations/index.ts').runMigrations;
-  const repo = module('src/db/repositories/location.repository.ts').locationRepository;
-  const sync = module('src/db/repositories/sync.repository.ts').syncRepository;
-  const { trackingStatus } = module('src/location/types.ts');
+  const module = file => load(file, { '../client': { getDatabase: async () => r.db } }, cache);
   try {
     for (const file of fs.readdirSync('src/db/migrations').filter(f => /^(00[1-9]|01[0-2])_/.test(f))) {
       assert.equal(fs.readFileSync('src/db/migrations/' + file, 'utf8').replaceAll('\r\n','\n'),
         execFileSync('git', ['show', 'HEAD:src/db/migrations/' + file], { encoding: 'utf8' }).replaceAll('\r\n','\n'));
     }
-    await run(r.db); await seed(r.db); await sync.link(A, () => true);
-    const before = r.sqlite.prepare('SELECT * FROM sync_outbox').all();
-    await run(r.db); assert.deepEqual(r.sqlite.prepare('SELECT * FROM sync_outbox').all(), before);
-    assert.equal(trackingStatus(false,false,false,false),'PAUSED');
-    assert.equal(trackingStatus(true,false,true,true),'LOCATION_DISABLED');
-    assert.equal(trackingStatus(true,true,false,false),'PERMISSION_REQUIRED');
-    assert.equal(trackingStatus(true,true,true,false),'PERMISSION_REQUIRED');
-    assert.equal(trackingStatus(true,true,true,true),'ACTIVE');
-    await assert.rejects(repo.setEnabled('one',true,()=>false));
-    assert.equal(await repo.enabled(),null);
-    await repo.setEnabled('one',true,()=>true);
-    const state = await repo.enabled();
-    const point = { latitude:26.14, longitude:91.73, accuracy:12, recorded_at:new Date(Date.now()+1000).toISOString(), source:'background' };
-    await repo.record('one',state.consented_at,[point]);
-    await repo.record('one',state.consented_at,[point]);
-    assert.equal((await repo.recent('one')).length,1,'duplicate OS batches are idempotent');
-    assert.equal(await repo.latest('two'),null);
-    assert.equal((await repo.latest('one')).accuracy,12);
-    const event = r.sqlite.prepare("SELECT * FROM sync_outbox WHERE entity_type='patient_locations'").get();
-    assert.equal(event.patient_id,'one');assert.equal(event.owner_id,A);
-    const payload = JSON.parse(event.payload);
-    const record = { owner_id:A, patient_id:'one', entity_type:'patient_locations', entity_id:payload.id, payload, version:1, deleted:false };
+    await module('src/db/migrations/index.ts').runMigrations(r.db);
+    const tables = r.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(row => row.name);
+    assert.ok(tables.includes('patient_tracking') && tables.includes('patient_locations'), '014 tables remain for upgrades');
+    const point = { id: 'drain01', patient_id: 'one', latitude: 26.14, longitude: 91.73, accuracy: 12, recorded_at: new Date().toISOString(), source: 'background' };
+    const record = { owner_id: A, patient_id: 'one', entity_type: 'patient_locations', entity_id: 'drain01', payload: point, version: 1, deleted: false };
     const validate = module('src/cloud/sync-contract.ts').validateCloudRecord;
-    assert.equal(validate(record,A),record);assert.throws(()=>validate(record,B));
-    for (const bad of [{latitude:91},{longitude:NaN},{accuracy:-1},{recorded_at:'bad'},{source:'public'},{patient_id:'two'}]) {
-      assert.throws(()=>validate({...record,payload:{...payload,...bad}},A));
-    }
-    r.sqlite.exec("CREATE TRIGGER injected_location_failure BEFORE INSERT ON sync_outbox WHEN NEW.entity_type='patient_locations' BEGIN SELECT RAISE(ABORT,'injected'); END");
-    await assert.rejects(repo.record('one',state.consented_at,[{...point,latitude:27}]),/injected/);
-    assert.equal((await repo.recent('one')).length,1,'location and outbox roll back together');
-    r.sqlite.exec('DROP TRIGGER injected_location_failure');
-    await repo.status('one','ERROR');assert.equal((await repo.state('one')).status,'ERROR');
-    await repo.setEnabled('two',true,()=>true);assert.equal((await repo.state('one')).status,'PAUSED');
-    await repo.record('one',state.consented_at,[{...point,latitude:28}]);assert.equal((await repo.recent('one')).length,1,'old patient batches ignored');
-    assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
-
-    let fg=false,bg=false,services=true,started=false,available=true,callback,starts=0,permissionRequests=0;
-    const native = {
-      Accuracy:{Balanced:3}, hasServicesEnabledAsync:async()=>services,
-      getForegroundPermissionsAsync:async()=>({granted:fg}), getBackgroundPermissionsAsync:async()=>({granted:bg}),
-      requestForegroundPermissionsAsync:async()=>{permissionRequests++;return{granted:fg};}, requestBackgroundPermissionsAsync:async()=>{permissionRequests++;return{granted:bg};},
-      hasStartedLocationUpdatesAsync:async()=>started, stopLocationUpdatesAsync:async()=>{started=false;},
-      startLocationUpdatesAsync:async(name,options)=>{assert.equal(options.timeInterval,60000);assert.equal(options.distanceInterval,50);started=true;starts++;},
-      getLastKnownPositionAsync:async()=>null,
-    };
-    const auth = require('zustand').create(()=>({ownerId:A,status:'signed-in'}));
-    const service = load('src/services/location.service.ts',{
-      'expo-location':native,'expo-task-manager':{isTaskDefined:()=>false,defineTask:(name,fn)=>{callback=fn;},isAvailableAsync:async()=>available},
-      'react-native':{Platform:{OS:'android'},AppState:{addEventListener:()=>({remove(){}})}},
-      '../db/repositories/location.repository':{locationRepository:repo}, '../cloud/auth':{useAuthStore:auth},'../cloud/sync':{syncNow:async()=>{}},
-      '../stores/patient-session.store':{captureReminderManagement:()=>()=>true},'./active-patient.service':{resolveActivePatient:async()=>({status:'ready',profile:{id:'two'}})},
-    });
-    await service.refreshTracking();assert.equal((await repo.state('two')).status,'PERMISSION_REQUIRED');assert.equal(permissionRequests,0,'resume never prompts silently');
-    fg=true;await service.setPatientTracking('two',true);assert.equal((await repo.state('two')).status,'PERMISSION_REQUIRED');
-    bg=true;await service.refreshTracking();assert.equal((await repo.state('two')).status,'ACTIVE');assert.equal(starts,1);
-    await service.refreshTracking();assert.equal(starts,1,'no duplicate native subscriptions');
-    const now=Date.now()+2000;
-    await callback({data:{locations:[{timestamp:now,coords:{latitude:26,longitude:91,accuracy:null}}]}});
-    assert.equal((await repo.latest('two')).recorded_at,new Date(now).toISOString());
-    services=false;await service.refreshTracking();assert.equal((await repo.state('two')).status,'LOCATION_DISABLED');assert.equal(started,false);
-    services=true;await service.refreshTracking();assert.equal(started,true);
-    available=false;await service.refreshTracking();assert.equal((await repo.state('two')).status,'ERROR');
-    await service.setPatientTracking('two',false);assert.equal((await repo.state('two')).status,'PAUSED');
-    const stop=service.startLocationLifecycle();auth.setState({ownerId:null});await tick();stop();
-    console.log('PASS GPS: permissions, statuses, opt-in, recovery, native task, timestamp, SQLite, deduplication, atomic outbox, sync contract, latest location and patient isolation.');
-  } finally {r.sqlite.close();}
+    assert.equal(validate(record, A), record, 'in-flight location rows still drain');
+    assert.throws(() => validate(record, B));
+    assert.throws(() => validate({ ...record, payload: { ...point, latitude: 91 } }, A));
+  } finally { r.sqlite.close(); }
+  console.log('PASS GPS removed: no route/service/native task/permission/nav/admin/UI text; 014 history and tables preserved; in-flight location rows still validate through sync.');
 }
 
 function games() {

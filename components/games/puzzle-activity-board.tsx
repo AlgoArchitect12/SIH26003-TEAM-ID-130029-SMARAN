@@ -14,6 +14,7 @@ import { chessSymbols, isLegalChessMove, movementKeys, moveChessPiece, pieceKeys
 import { sudokuCandidates, sudokuPeers, type SudokuPuzzle } from '@/src/games/sudoku-lite';
 import type { WordActivity } from '@/src/games/word-match';
 import { chooseSelection, continueSelection, hintSelection, resumeSelection, type SelectionState, type SelectionTask } from '@/src/games/selection-engine';
+import { AnswerFeedbackMark, answerFeedbackStyle, choiceFeedback } from '@components/games/answer-feedback';
 
 export type PuzzleActivity = { tasks: readonly SelectionTask[] } & (
   { gameType: 'sudoku_lite'; sudoku: SudokuPuzzle } |
@@ -61,7 +62,7 @@ export function PuzzleActivityBoard({ paused = false, activity, selection, level
       const current = order.current[state.position];
       coaches.current[current.id] = { hintLevel: state.hintLevel, wrongAnswers: state.wrongAnswers };
       [order.current[state.position], order.current[index]] = [order.current[index], current];
-      return { ...state, ...(coaches.current[id] ?? initialCoach), feedback: null };
+      return { ...state, ...(coaches.current[id] ?? initialCoach), feedback: null, lastChoice: null };
     });
   };
   const pick = (choice: string) => {
@@ -175,10 +176,17 @@ export function PuzzleActivityBoard({ paused = false, activity, selection, level
     {voice && <ReadScreenButton language={language} text={prompt + '. ' + task.choices.map(choiceText).join('. ')} />}
     {words && <ThemedText type="cardHeading">{prompt}</ThemedText>}
     <View style={styles.group}>
-      {task.choices.map(choice => <SmaranButton key={choice} testID={'puzzle-choice-' + choice} size="large" variant="outline"
-        label={(selection.hintLevel >= 2 && choice === task.answer ? '◇ ' : '') + choiceText(choice)} accessibilityLabel={choiceText(choice)}
-        disabled={locked || (words !== null && done.has(choice)) || (selection.hintLevel === 3 && choice !== task.answer)}
-        onPress={() => pick(choice)} />)}
+      {task.choices.map(choice => {
+        const feedback = choiceFeedback(choice, task.answer, selection);
+        return <SmaranButton key={choice} testID={'puzzle-choice-' + choice} size="large" variant="outline"
+          label={(selection.hintLevel >= 2 && choice === task.answer ? '◇ ' : '') + choiceText(choice)} accessibilityLabel={choiceText(choice)}
+          accessibilityState={feedback === 'correct' ? { selected: true } : undefined}
+          accessibilityHint={feedback === 'wrong' ? t(language, 'answerWrong') : undefined}
+          icon={feedback === 'wrong' ? <AnswerFeedbackMark feedback={feedback} colors={colors} /> : undefined}
+          style={answerFeedbackStyle(feedback, colors)}
+          disabled={locked || (words !== null && done.has(choice)) || (selection.hintLevel === 3 && choice !== task.answer)}
+          onPress={() => pick(choice)} />;
+      })}
     </View>
     {!!feedback && <ThemedText type="cardHeading" accessibilityLiveRegion="polite">{feedback}</ThemedText>}
     {!!guidance && <ThemedText accessibilityLiveRegion="polite">{guidance}</ThemedText>}

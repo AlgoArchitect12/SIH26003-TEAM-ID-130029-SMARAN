@@ -78,7 +78,8 @@ function postgresChecks(pg) {
     GRANT USAGE ON SCHEMA auth, public TO anon, authenticated;
     GRANT EXECUTE ON FUNCTION auth.uid() TO anon, authenticated;`);
   const grants = () => pg.sql(`SELECT json_agg(x ORDER BY table_name,grantee,privilege_type) FROM
-    (SELECT table_name,grantee,privilege_type FROM information_schema.role_table_grants WHERE table_schema='public') x;`);
+    (SELECT table_name,grantee,privilege_type FROM information_schema.role_table_grants WHERE table_schema='public'
+    AND table_name NOT IN ('pairing_codes','patient_memberships','pairing_attempts')) x;`);
   let originalGrants;
   for (const file of fs.readdirSync(path.join(root,'supabase/migrations')).filter(f => f.endsWith('.sql')).sort()) {
     pg.sql(source('supabase/migrations/' + file));
@@ -86,6 +87,10 @@ function postgresChecks(pg) {
     assert.equal(grants(), originalGrants, file + ' preserves table grants');
     console.log('PASS PostgreSQL migration ' + file);
   }
+  // Family pairing tables are RPC-only: RLS on, no direct grants to anon/authenticated.
+  assert.equal(pg.sql(`SELECT count(*) FROM pg_class WHERE relname IN ('pairing_codes','patient_memberships','pairing_attempts') AND relrowsecurity`), '3');
+  assert.equal(pg.sql(`SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='public'
+    AND table_name IN ('pairing_codes','patient_memberships','pairing_attempts') AND grantee IN ('anon','authenticated','PUBLIC')`), '0');
   for (const file of fs.readdirSync(path.join(root,'supabase/tests')).filter(f => f.endsWith('.sql')).sort()) {
     pg.sql(source('supabase/tests/' + file)); console.log('PASS PostgreSQL fixture ' + file);
   }
@@ -412,6 +417,11 @@ async function statusChecks() {
         '@/src/stores/onboarding.store':{useOnboardingStore:select=>select({language})},'@/src/cloud/config':{cloudConfig:{},AccountError:load('src/cloud/config.ts').AccountError},
         '@/src/cloud/auth':{useAuthStore:()=>h.auth.useAuthStore.getState(),initializeAuth:async()=>{}},
         '@/src/services/admin.service':{useAdminStore:()=>({mode:'caregiver'})},
+        '@/src/services/active-patient.service':{resolveActivePatient:async()=>({status:'missing'})},
+        // Account role controls use this reviewed RPC boundary; this fixture has no active patient.
+        '@/src/services/pairing.service':{pairingService:{access:async()=>{throw Error('No patient in status fixture');}}},
+        '@/src/services/profile-switching.service':{leavePatientForSelection:()=>{}},
+        '@/src/stores/patient-session.store':{usePatientSessionStore:select=>select({workspace:'patient'}),setWorkspace:()=>{}},
         '@/src/cloud/sync':{useSyncStore:()=>state,refreshSyncStatus:async()=>{}}});
       for(const [status,key] of [['local','accountLocalStatus'],['waiting','accountPending'],['current','accountCurrent'],['attention','accountAttention'],['paused','accountPaused']]) {
         state.status=status;assert.ok(nodes(render()).some(n=>n.props?.children===t(language,key,{count:String(state.pending)})),language+' '+status);
@@ -455,7 +465,8 @@ async function hostedAudit() {
 function sourceChecks() {
   const files=execFileSync('git',['ls-files','--cached','--others','--exclude-standard','-z'],{cwd:root,encoding:'utf8'}).split('\0').filter(Boolean);
   // Freeze every migration at the release preceding Sync Status, including 014.
-  for(const file of files.filter(f=>/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))) {
+  // The family-pairing migration is a new forward file, verified separately.
+  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&f!=='supabase/migrations/20260924000000_family_pairing.sql')) {
     assert.equal(source(file).replace(/\r\n/g,'\n'),execFileSync('git',['show','1dfccf1:'+file],{cwd:root,encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' historical migration unchanged');
   }
   const patterns=[['private key',/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],['AI provider key',/\b(?:sk-proj-|sk-ant-|AIza)[A-Za-z0-9_-]{24,}/],
@@ -464,7 +475,8 @@ function sourceChecks() {
     ['database URL password',/postgres(?:ql)?:\/\/[^\s/:]+:[^\s@]{4,}@/],
     ['literal credential',/(?:access_token|refresh_token|database_password|DB_PASSWORD|client_secret)\s*[=:]\s*["'][A-Za-z0-9_+/=-]{24,}["']/i]];
   const findings=[];
-  for(const file of files.filter(f=>/\.(?:[cm]?[jt]sx?|json|sql|md|toml|ya?ml|example)$/.test(f)))for(const [type,regex]of patterns)if(regex.test(source(file)))findings.push({type,path:file});
+  // Deleted GPS source is no longer executable; historical migrations above must still exist unchanged.
+  for(const file of files.filter(f=>fs.existsSync(path.join(root,f))&&/\.(?:[cm]?[jt]sx?|json|sql|md|toml|ya?ml|example)$/.test(f)))for(const [type,regex]of patterns)if(regex.test(source(file)))findings.push({type,path:file});
   assert.deepEqual(findings,[],'secret scan: path/type only');
   assert.ok(execFileSync('git',['check-ignore','.env.local'],{cwd:root,encoding:'utf8'}).trim());
   for(const file of ['auth.ts','auth-storage.ts','sync.ts'])assert.doesNotMatch(source('src/cloud/'+file),/console\.(?:log|debug|warn|error)\s*\(/,'no raw auth/sync diagnostics in production');

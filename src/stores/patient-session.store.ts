@@ -11,7 +11,7 @@ export const usePatientSessionStore = create<{
 
 export function setWorkspace(workspace: 'patient' | 'caregiver') {
   usePatientSessionStore.setState(state => state.workspace === workspace ? state :
-    { workspace, workspaceRevision: state.workspaceRevision + 1 });
+    { workspace, workspaceRevision: state.workspaceRevision + 1, revision: state.revision + 1 });
 }
 
 export function captureReminderManagement() {

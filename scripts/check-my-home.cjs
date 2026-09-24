@@ -123,7 +123,7 @@ async function main() {
   }
   const speech = fs.readFileSync(path.join(root, 'components/accessibility/read-screen-button.tsx'), 'utf8');
   assert.match(speech, /speechLanguage = language/u, 'existing speech callers retain their language');
-  assert.match(speech, /speakScreenText\(text, speechLanguage/u);
+  assert.match(speech, /speakScreenText\(\s*text,\s*speechLanguage/u);
   console.log('PASS: 32 sourced items, 32 licensed local images, 8 stored-state mappings, 7 UI catalogs, categories, invalid inputs and offline routes');
 }
 

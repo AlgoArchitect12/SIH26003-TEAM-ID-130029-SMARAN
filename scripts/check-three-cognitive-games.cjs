@@ -329,6 +329,7 @@ async function screenChecks() {
       overrides['@/src/games/sudoku-lite']={...sudoku,prepareSudoku:l=>prepare('sudoku_lite',l).sudoku};
       overrides['@/src/games/chess-puzzle']={...chess,prepareChess:l=>prepare('chess_puzzle',l).chess};
       overrides['@/src/games/word-match']={...words,prepareWords:l=>prepare('word_match',l).words};
+      overrides['@components/games/answer-feedback']=load('components/games/answer-feedback.tsx',overrides);
       const parent=screen('components/games/selection-activity-screen.tsx',overrides,{gameType:game});parent();await tick();
       const byId=(tree,id)=>nodes(tree).find(n=>n.props?.testID===id);
       byId(parent(),'activity-start').props.onPress();
@@ -351,12 +352,14 @@ async function screenChecks() {
       }
       for(const [i,task] of tasks.entries()) {
         if(i===0) {const wrong=task.choices.find(c=>c!==task.answer);for(const hint of [0,1,3]){click('puzzle-choice-'+wrong);assert.equal(props.selection.hintLevel,hint);assert.equal(props.selection.correctSelections,0);}
+          assert.equal(byId(render(),'puzzle-choice-'+wrong).props.accessibilityHint,t(language,'answerWrong'),'wrong choice carries a non-color status hint');
           assert.ok(byId(render(),'puzzle-choice-'+wrong).props.disabled);assert.ok(nodes(render()).some(n=>n.props?.children===t(language,'puzzleReveal',{answer:game==='word_match'?t(language,props.activity.words.options.find(p=>p.id===task.answer).right):game==='chess_puzzle'?(level===1?t(language,chess.pieceKeys[task.answer]):t(language,'chessSquare',{square:task.answer,piece:task.board[task.answer]?t(language,'chessBlack')+' '+t(language,chess.pieceKeys[task.board[task.answer].kind]):t(language,'chessEmpty'),mark:''}).trim()):task.answer})));}
         const callback=byId(render(),'puzzle-choice-'+task.answer).props.onPress;
         valid=false;callback();render();assert.equal(props.selection.correctSelections,i);valid=true;
         background('background');callback();render();assert.equal(props.selection.correctSelections,i);background('active');
         focused=false;render();callback();render();assert.equal(props.selection.correctSelections,i);focused=true;render();
         click('puzzle-choice-'+task.answer);assert.equal(props.selection.correctSelections,i+1);
+        assert.ok(byId(render(),'puzzle-choice-'+task.answer).props.accessibilityState?.selected,'correct choice exposes a non-color selected state');
         callback();render();assert.equal(props.selection.correctSelections,i+1);
         if(i===tasks.length-1){valid=false;board.advance();assert.equal(cognitive.getState().pending,null);assert.deepEqual(routes,[]);valid=true;props.onContinue();}
         else {board.advance();render();}
@@ -402,20 +405,19 @@ function sourceChecks() {
     ...fs.readdirSync('supabase/migrations').filter(f=>f<'20260916000000').map(f=>'supabase/migrations/'+f),'src/db/client.web.ts']) {
     assert.equal(fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n'),execFileSync('git',['show','a030ac8:'+file],{encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' protected');
   }
-  // Required location/mail/task dependencies are explicitly validated while
+  // Required network/mail dependencies are explicitly validated while
   // all other dependency fields remain protected against accidental loss.
+  // GPS left the product surface, so its packages and their transitive lock
+  // entries are gone; the remaining required Expo modules pull no extra entries.
   for(const file of ['package.json','package-lock.json']) {
     const before=JSON.parse(execFileSync('git',['show','a030ac8:'+file],{encoding:'utf8'}));
     const after=JSON.parse(fs.readFileSync(file,'utf8'));
     const dependencies=file==='package.json'?after.dependencies:after.packages[''].dependencies;
-    for(const [name,version] of Object.entries({'expo-network':'~8.0.8','expo-location':'~19.0.8','expo-mail-composer':'~15.0.8','expo-task-manager':'~14.0.9'})) {
+    for(const [name,version] of Object.entries({'expo-network':'~8.0.8','expo-mail-composer':'~15.0.8'})) {
       assert.equal(dependencies[name],version,name+' required'); delete dependencies[name];
       if(file==='package-lock.json') { assert.equal(after.packages['node_modules/'+name].version,version.slice(1)); delete after.packages['node_modules/'+name]; }
     }
-    if(file==='package-lock.json') {
-      assert.equal(after.packages['node_modules/unimodules-app-loader'].version,'6.0.8');
-      delete after.packages['node_modules/unimodules-app-loader'];
-    }
+    if(file==='package-lock.json') assert.equal(after.packages['node_modules/unimodules-app-loader'],undefined);
     assert.deepEqual(after,before,'all other dependency fields preserved: '+file);
   }
   const old=fs.readFileSync('supabase/migrations/20260915000000_care_circle_reports.sql','utf8').replace(/\r\n/g,'\n');
@@ -443,6 +445,7 @@ function continuedCoachingChecks() {
       'react-native':{View:'View',Text:'Text',Pressable:'Pressable',StyleSheet:{create:s=>s},AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},
       '@ai/cognitive-coach':load('src/ai/cognitive-coach.ts')};
     for(const name of ['selection-engine','chess-puzzle','sudoku-lite'])overrides['@/src/games/'+name]=load('src/games/'+name+'.ts');
+    overrides['@components/games/answer-feedback']=load('components/games/answer-feedback.tsx',overrides);
     const render=screen('components/games/puzzle-activity-board.tsx',overrides,props);
     const click=id=>{const node=nodes(render()).find(n=>n.props?.testID===id);assert.ok(node&&!node.props.disabled,id);node.props.onPress();render();};
     click('puzzle-choice-'+first.choices.find(choice=>choice!==first.answer));

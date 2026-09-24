@@ -1,5 +1,6 @@
-import { capturePatientRequest } from '@/src/stores/patient-session.store';
+import { capturePatientRequest, usePatientSessionStore } from '@/src/stores/patient-session.store';
 import { useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@components/themed-text';
@@ -13,6 +14,7 @@ import type { NotificationResult } from '@services/my-day.service';
 export { category } from '@/src/my-day/presets';
 export function useMyDayPatient() {
   const router = useRouter();
+  const revision = usePatientSessionStore(s => s.revision);
   const language = useOnboardingStore(s => s.language) ?? 'en';
   const [patientId, setPatientId] = useState<string | null>(null);
   const [patientName, setPatientName] = useState<string | undefined>();
@@ -40,7 +42,7 @@ export function useMyDayPatient() {
       else setFailed(true);
     });
     return () => { active = false; };
-  }, [attempt, router]);
+  }, [attempt, router, revision]);
   return { patientId, patientName, language, failed, retry };
 }
 export { Field } from '@components/ui/smaran-field';
@@ -56,6 +58,8 @@ export function NotificationNotice({ result, busy, onRetry, onAllow }: {
     <ThemedText accessibilityLiveRegion="polite">{t(language, key)}</ThemedText>
     {result.permission === 'undetermined' && <SmaranButton label={t(language, 'dayAllow')} accessibilityLabel={t(language, 'dayAllow')} onPress={onAllow} disabled={busy} variant="outline" />}
     {(result.failed || result.permission === 'denied') && <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={onRetry} disabled={busy} variant="outline" />}
+    {result.permission === 'denied' && <SmaranButton label={t(language, 'dayNotificationSettings')} accessibilityLabel={t(language, 'dayNotificationSettings')}
+      onPress={() => { void Linking.openSettings().catch(() => {}); }} disabled={busy} variant="outline" />}
   </View>;
 }
 export const dayStyles = StyleSheet.create({

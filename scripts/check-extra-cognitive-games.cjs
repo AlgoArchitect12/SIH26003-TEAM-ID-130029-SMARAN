@@ -87,22 +87,21 @@ function contracts() {
     'supabase/migrations/20260912000000_auth_sync.sql', 'src/db/client.web.ts']) {
     assert.equal(fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n'), execFileSync('git', ['show', '9a4f43c:' + file], { encoding: 'utf8' }).replace(/\r\n/g, '\n'), file + ' unchanged');
   }
-  // MVP-23 authorizes SDK-54 PDF dependencies plus required location/mail/task
-  // dependencies for care-circle reports/location. Preserve all existing fields
-  // while explicitly validating each required new dependency.
+  // MVP-23 authorizes SDK-54 PDF dependencies plus required network/mail
+  // dependencies for care-circle reports. GPS left the product surface, so its
+  // packages are absent. Preserve all existing fields while explicitly
+  // validating each required new dependency.
   for (const file of ['package.json','package-lock.json']) {
     const before = JSON.parse(execFileSync('git',['show','a58ea61:'+file],{encoding:'utf8'}));
     const after = JSON.parse(fs.readFileSync(file,'utf8'));
     const dependencies = file === 'package.json' ? after.dependencies : after.packages[''].dependencies;
-    for (const [name,version] of Object.entries({'expo-network':'~8.0.8','expo-print':'~15.0.8','expo-sharing':'~14.0.8','expo-location':'~19.0.8','expo-mail-composer':'~15.0.8','expo-task-manager':'~14.0.9'})) {
+    for (const [name,version] of Object.entries({'expo-network':'~8.0.8','expo-print':'~15.0.8','expo-sharing':'~14.0.8','expo-mail-composer':'~15.0.8'})) {
       assert.equal(dependencies[name],version,name + ' required'); delete dependencies[name];
       if (file === 'package-lock.json') { assert.equal(after.packages['node_modules/'+name].version,version.slice(1)); delete after.packages['node_modules/'+name]; }
     }
-    if (file === 'package-lock.json') {
-      // Transitive lock entry pulled in by the required new Expo modules.
-      assert.equal(after.packages['node_modules/unimodules-app-loader'].version,'6.0.8');
-      delete after.packages['node_modules/unimodules-app-loader'];
-    }
+    // GPS left the product surface, so its packages and their transitive lock
+    // entries are gone; the remaining required Expo modules pull no extra entries.
+    if (file === 'package-lock.json') assert.equal(after.packages['node_modules/unimodules-app-loader'],undefined);
     assert.deepEqual(after,before,'all other dependency fields preserved: '+file);
   }
   console.log('PASS extra games: eight-game catalog/routes, seeded playable rounds at all five levels, full 1–10, coaching/hints/completion, truthful telemetry, seven catalogs, original UI, historical source preservation.');
@@ -284,6 +283,7 @@ async function screenChecks() {
       };
       for (const name of ['adaptive-engine', 'feature-extractor', 'cognitive-coach']) overrides['@ai/' + name] = r.module('src/ai/' + name + '.ts');
       for (const name of ['selection-engine', 'presentation', 'pattern-recognition', 'routine-recall', 'recall-activities', 'grid-activities', 'sudoku-lite', 'chess-puzzle', 'word-match', 'memory-match/assets']) overrides['@/src/games/' + name] = r.module('src/games/' + name + '.ts');
+      overrides['@components/games/answer-feedback'] = load('components/games/answer-feedback.tsx', overrides);
       overrides['@/src/games/grid-activities'] = { prepareGridActivity: prepare };
       const parent = screen('components/games/selection-activity-screen.tsx', overrides, { gameType: game });
       parent(); await tick();
@@ -315,12 +315,14 @@ async function screenChecks() {
           const wrong = task.choices.find(c => c !== task.answer);
           click('grid-tile-' + wrong); render(); assert.equal(state.hintLevel, 0); assert.equal(state.correctSelections, 0);
           assert.ok(nodes(render()).some(n => n.props?.children === t(language, game === 'remember_lights' ? 'gridWrong' : 'numberWrong', { answer: task.answer })));
+          assert.equal(byId(render(), 'grid-tile-' + wrong).props.accessibilityHint, t(language, 'answerWrong'), 'wrong tile carries a non-color status hint');
           click('grid-tile-' + wrong); render(); assert.equal(state.hintLevel, 1);
           if (game === 'remember_lights') { assert.ok(byId(render(), 'lights-next'), 'second error really replays'); watch(); }
           click('grid-tile-' + wrong); render(); assert.equal(state.hintLevel, 3);
           assert.ok(byId(render(), 'grid-tile-' + wrong).props.disabled);
         }
         click('grid-tile-' + task.answer); render(); assert.equal(state.correctSelections, index + 1);
+        assert.ok(byId(render(), 'grid-tile-' + task.answer).props.accessibilityState.selected, 'correct tile exposes a non-color selected state');
         if (game === 'number_path') {
           const tile = byId(render(), 'grid-tile-' + task.answer);
           assert.ok(tile.props.accessibilityState.selected); assert.equal(tile.props.accessibilityLabel, t(language, 'numberDone', { number: task.answer }));
@@ -360,6 +362,7 @@ async function playbackChecks() {
         '@react-navigation/native': { useIsFocused: () => focused }, '@/hooks/use-reduced-motion': { useReducedMotion: () => false },
         '@/hooks/use-theme-color': { useThemeColors: () => ({}) }, '@ai/cognitive-coach': load('src/ai/cognitive-coach.ts'),
         '@/src/games/selection-engine': engine,
+        '@components/games/answer-feedback': load('components/games/answer-feedback.tsx'),
       }, props);
       const find = id => nodes(render()).find(n => n.props?.testID === id);
       find('lights-play').props.onPress(); render();
