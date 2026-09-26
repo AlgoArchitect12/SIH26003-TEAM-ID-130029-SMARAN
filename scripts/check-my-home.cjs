@@ -7,7 +7,7 @@ const { load } = require('./check-elderly-ux.cjs');
 const root = path.resolve(__dirname, '..');
 const credits = require('../src/my-home/image-credits.json');
 const source = fs.readFileSync(path.join(root, 'src/my-home/content.ts'), 'utf8');
-const documentation = fs.readFileSync(path.join(root, 'docs/NER_CONTENT_SOURCES.md'), 'utf8').replace(/\s+/gu, ' ');
+const documentation = fs.readFileSync(path.join(root, 'docs/product/NER_CONTENT_SOURCES.md'), 'utf8').replace(/\s+/gu, ' ');
 const assetPaths = [...source.matchAll(/require\('([^']+\.jpg)'\)/gu)].map(match => match[1]);
 const overrides = { './image-credits.json': credits };
 for (const relative of assetPaths) {

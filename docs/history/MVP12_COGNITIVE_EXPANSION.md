@@ -25,7 +25,7 @@ New files:
 | `src/db/migrations/006_cognitive_expansion.ts` | Session/model table rebuild |
 | `src/i18n/cognitive-strings.ts` | 42 UI keys in seven languages |
 | `scripts/check-cognitive-expansion.cjs` | Deterministic migration, repository, adaptation, game and safety checks |
-| `docs/MVP12_COGNITIVE_EXPANSION.md` | This review report |
+| `docs/history/MVP12_COGNITIVE_EXPANSION.md` | This review report |
 
 Modified files are listed in the final Git snapshot. They cover Patient Home, Memory Match integration, shared result/Why screens, caregiver presentation/service/types, cognitive persistence/types/migration registration, adaptive input/extraction/explanation/model identity, translation registration, and narrowly updated historical QA expectations.
 
@@ -274,7 +274,7 @@ Untracked files:
 	app/patient/games/pattern-recognition.tsx
 	app/patient/games/routine-recall.tsx
 	components/games/selection-activity-screen.tsx
-	docs/MVP12_COGNITIVE_EXPANSION.md
+	docs/history/MVP12_COGNITIVE_EXPANSION.md
 	scripts/check-cognitive-expansion.cjs
 	src/db/migrations/006_cognitive_expansion.ts
 	src/games/pattern-recognition.ts
@@ -346,7 +346,7 @@ app/patient/games/index.tsx
 app/patient/games/pattern-recognition.tsx
 app/patient/games/routine-recall.tsx
 components/games/selection-activity-screen.tsx
-docs/MVP12_COGNITIVE_EXPANSION.md
+docs/history/MVP12_COGNITIVE_EXPANSION.md
 scripts/check-cognitive-expansion.cjs
 src/db/migrations/006_cognitive_expansion.ts
 src/games/pattern-recognition.ts

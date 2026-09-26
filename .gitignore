@@ -6,6 +6,7 @@ node_modules/
 # Expo
 .expo/
 dist/
+build/
 web-build/
 expo-env.d.ts
 .eas-prebuild-inspect/
@@ -27,6 +28,16 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 *.log
+coverage/
+.cache/
+
+# Windows and editor temporary files
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.swo
+.claude/settings.local.json
 
 # Supabase CLI local metadata
 /supabase/.temp/

@@ -208,7 +208,7 @@ PHASE 0: Repository Cleanup & Engineering Foundation (Console Logging, Base Type
 ## PHASE 1 — Design System & Accessible Foundation
 
 ### TASK-001-A: Color Palette & Semantic Design Tokens
-- **Objective**: Implement the calming, high-contrast HealthTech color palette specified in `/docs/DESIGN.md`.
+- **Objective**: Implement the calming, high-contrast HealthTech color palette specified in `/docs/product/DESIGN.md`.
 - **Dependencies**: PHASE 0.
 - **Files/Folders Affected**:
   - `constants/theme.ts`

@@ -64,7 +64,7 @@ The installed SecureStore 15.0.8 XML includes only `sharedpref/.` and excludes `
 
 Android documents that an include list replaces default inclusion, and that `allowBackup=false` alone may still allow device transfer on some Android 12+ manufacturers. The new policy therefore supplies explicit extraction exclusions as well as disabling backup. [Android Auto Backup](https://developer.android.com/identity/data/autobackup).
 
-The small [local config plugin](../plugins/with-private-backup.cjs) uses the installed `expo/config-plugins` Android manifest and file mods. It writes one deterministic XML resource during native generation. No native module, string patch of generated Kotlin/Gradle, dependency or migration was added. SecureStore's own backup setup is disabled because this plugin takes ownership and excludes **all shared preferences**, including SecureStore and notification payloads, as required when using a custom policy. [Expo SDK 54 SecureStore backup configuration](https://docs.expo.dev/versions/v54.0.0/sdk/securestore/).
+The small [local config plugin](../../plugins/with-private-backup.cjs) uses the installed `expo/config-plugins` Android manifest and file mods. It writes one deterministic XML resource during native generation. No native module, string patch of generated Kotlin/Gradle, dependency or migration was added. SecureStore's own backup setup is disabled because this plugin takes ownership and excludes **all shared preferences**, including SecureStore and notification payloads, as required when using a custom policy. [Expo SDK 54 SecureStore backup configuration](https://docs.expo.dev/versions/v54.0.0/sdk/securestore/).
 
 Current Expo introspection verifies:
 
@@ -200,7 +200,7 @@ No APK was built, no Gradle merged manifest/resource artifact was inspected and 
 
 No commit, merge, tag, push, deployment, APK build, new cloud/auth/analytics feature or database migration. Protected diffs for `package.json`, `package-lock.json`, `src/db/migrations`, `src/db/client.web.ts`, and `eas.json` are empty. New files are this report, the local config plugin, and the focused regression script; ordinary `git diff --stat` excludes these untracked files.
 
-After removing the temporary Playwright output/screenshot and stopping the QA server, `git diff --check` passes. The tracked diff has 24 files changed, 157 insertions and 112 deletions; the three new files are additional. `git diff --name-status` contains the same 24 `M` paths below. `git ls-files --others --exclude-standard` contains exactly `docs/MVP18A_PRIVACY_RECOVERY.md`, `plugins/with-private-backup.cjs`, and `scripts/check-privacy-recovery.cjs`.
+After removing the temporary Playwright output/screenshot and stopping the QA server, `git diff --check` passes. The tracked diff has 24 files changed, 157 insertions and 112 deletions; the three new files are additional. `git diff --name-status` contains the same 24 `M` paths below. `git ls-files --others --exclude-standard` contains exactly `docs/history/MVP18A_PRIVACY_RECOVERY.md`, `plugins/with-private-backup.cjs`, and `scripts/check-privacy-recovery.cjs`.
 
 Exact `git status --short`:
 
@@ -229,7 +229,7 @@ Exact `git status --short`:
  M src/services/secure-storage.service.ts
  M src/services/speech.service.ts
  M src/stores/appearance.store.ts
-?? docs/MVP18A_PRIVACY_RECOVERY.md
+?? docs/history/MVP18A_PRIVACY_RECOVERY.md
 ?? plugins/
 ?? scripts/check-privacy-recovery.cjs
 ```
@@ -290,7 +290,7 @@ No commit, merge, tag, migration, dependency, user-switching UI or other deferre
  M src/services/secure-storage.service.ts
  M src/services/speech.service.ts
  M src/stores/appearance.store.ts
-?? docs/MVP18A_PRIVACY_RECOVERY.md
+?? docs/history/MVP18A_PRIVACY_RECOVERY.md
 ?? plugins/
 ?? scripts/check-privacy-recovery.cjs
 ```

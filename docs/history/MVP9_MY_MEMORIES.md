@@ -16,7 +16,7 @@ Completed in the existing `feature/mvp9-my-memories` working tree, based on `ff7
    src/services/memory-media.service.ts
    src/i18n/memory-strings.ts
    scripts/check-my-memories.cjs
-   docs/MVP9_MY_MEMORIES.md
+   docs/history/MVP9_MY_MEMORIES.md
    ```
 
 2. **Files modified — 9:**

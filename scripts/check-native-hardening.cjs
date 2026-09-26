@@ -155,8 +155,8 @@ async function main() {
   await checkConnectionSafety();
   await checkPermissionBoundary();
   await checkActivePatient();
-  for (const file of ['docs/MVP13_NATIVE_HARDENING.md', 'docs/MVP13_NATIVE_ANDROID_TEST_PLAN.md', 'docs/MVP13_NATIVE_ANDROID_RESULTS.md']) assert.ok(read(file).includes('NOT RUN'), file);
-  const physical = read('docs/MVP13_NATIVE_ANDROID_RESULTS.md').split('## PHYSICAL DEVICE VERIFIED')[1];
+  for (const file of ['docs/history/MVP13_NATIVE_HARDENING.md', 'docs/testing/MVP13_NATIVE_ANDROID_TEST_PLAN.md', 'docs/validation/MVP13_NATIVE_ANDROID_RESULTS.md']) assert.ok(read(file).includes('NOT RUN'), file);
+  const physical = read('docs/validation/MVP13_NATIVE_ANDROID_RESULTS.md').split('## PHYSICAL DEVICE VERIFIED')[1];
   assert.ok(physical, 'Separate physical results from static/build evidence');
   for (const row of physical.split('\n').filter(line => /^\|/u.test(line) && /\| (PASS|FAIL) \|/u.test(line))) {
     assert.match(row, /Evidence: .+/u, 'Physical claims need observed evidence, device and artifact recorded by tester');

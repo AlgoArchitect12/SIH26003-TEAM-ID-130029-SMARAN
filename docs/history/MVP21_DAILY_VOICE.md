@@ -160,7 +160,7 @@ Final changed-file inventory (12 modified tracked files and four untracked addit
  M src/services/my-day.service.ts
  M src/services/speech.service.ts
 ?? components/accessibility/voice-capabilities.tsx
-?? docs/MVP21_DAILY_VOICE.md
+?? docs/history/MVP21_DAILY_VOICE.md
 ?? scripts/check-daily-voice.cjs
 ?? src/my-day/presets.ts
 ```

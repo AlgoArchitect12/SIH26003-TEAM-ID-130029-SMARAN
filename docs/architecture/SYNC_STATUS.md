@@ -16,7 +16,7 @@ Implemented against release `1dfccf1`. No commit, deployment, hosted write, hist
 | `scripts/check-sync-status.cjs` | Deterministic model, real SQLite/lifecycle and component tests. |
 | `scripts/check-auth-cloud-hardening.cjs`, `scripts/check-live-database-sync.cjs` | Update stale migration-count/source baselines to the existing release with migration 014; supply the existing admin boundary in screen tests. Freeze all historical local/cloud migrations, including previously excluded files. |
 | `scripts/check-extra-cognitive-games.cjs`, `scripts/check-three-cognitive-games.cjs` | Explicitly verify the newly authorized network dependency and its lockfile version while retaining all other dependency checks. |
-| `README.md`, `docs/SYNC_STATUS.md` | Handoff and validation evidence. |
+| `README.md`, `docs/architecture/SYNC_STATUS.md` | Handoff and validation evidence. |
 
 ## Behavior
 

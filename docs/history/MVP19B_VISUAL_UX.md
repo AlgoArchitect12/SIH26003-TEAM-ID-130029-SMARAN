@@ -113,7 +113,7 @@ The requested diffs are blank for `package.json`, `package-lock.json`, `src/db/m
  M components/ui/smaran-field.tsx
  M constants/colors.ts
  M constants/layout.ts
-?? docs/MVP19B_VISUAL_UX.md
+?? docs/history/MVP19B_VISUAL_UX.md
 ?? scripts/check-visual-ux.cjs
 ```
 

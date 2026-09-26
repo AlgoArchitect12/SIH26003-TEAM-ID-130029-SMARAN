@@ -1,6 +1,6 @@
 # MVP-13 Native Android / Offline / APK Hardening
 
-Release acceptance: **BLOCKED — USER AUTH REQUIRED** and **BLOCKED — PHYSICAL DEVICE REQUIRED**. APK build and all physical Android cases are **NOT RUN**. Configuration/host/export evidence is recorded separately below and in [native results](MVP13_NATIVE_ANDROID_RESULTS.md).
+Release acceptance: **BLOCKED — USER AUTH REQUIRED** and **BLOCKED — PHYSICAL DEVICE REQUIRED**. APK build and all physical Android cases are **NOT RUN**. Configuration/host/export evidence is recorded separately below and in [native results](../validation/MVP13_NATIVE_ANDROID_RESULTS.md).
 
 ## Baseline and scope
 
@@ -10,9 +10,9 @@ Created:
 
 - `eas.json`
 - `scripts/check-native-hardening.cjs`
-- `docs/MVP13_NATIVE_HARDENING.md`
-- `docs/MVP13_NATIVE_ANDROID_TEST_PLAN.md`
-- `docs/MVP13_NATIVE_ANDROID_RESULTS.md`
+- `docs/history/MVP13_NATIVE_HARDENING.md`
+- `docs/testing/MVP13_NATIVE_ANDROID_TEST_PLAN.md`
+- `docs/validation/MVP13_NATIVE_ANDROID_RESULTS.md`
 
 Modified:
 
@@ -131,7 +131,7 @@ Native hardening script and asset-byte verification: **PASS**, `node scripts/che
 
 Java Temurin 17.0.20 and Node 24.19.0 are available. adb/Gradle not found on PATH, standard Android SDK and Android Studio locations absent, ANDROID_HOME/ANDROID_SDK_ROOT/JAVA_HOME unset. Device enumeration/install are **NOT RUN**; a physically attached phone cannot be ruled out without ADB. No Android Studio installation, global config edit, device data deletion, phone setting change or reboot occurred.
 
-Remaining actions: authenticate/link EAS under the user's chosen account; resolve signing decisions; build preview APK; inspect artifact permissions/SQLite build flag; install on an authorized Android device; execute [the native test plan](MVP13_NATIVE_ANDROID_TEST_PLAN.md), including exact airplane-mode sequence, persistence, notification/photo checks, all games/regions/languages and TalkBack. Only the user enables airplane mode/reboots. Preserve data; stop on signing/package conflict. Record outcomes in [native results](MVP13_NATIVE_ANDROID_RESULTS.md).
+Remaining actions: authenticate/link EAS under the user's chosen account; resolve signing decisions; build preview APK; inspect artifact permissions/SQLite build flag; install on an authorized Android device; execute [the native test plan](../testing/MVP13_NATIVE_ANDROID_TEST_PLAN.md), including exact airplane-mode sequence, persistence, notification/photo checks, all games/regions/languages and TalkBack. Only the user enables airplane mode/reboots. Preserve data; stop on signing/package conflict. Record outcomes in [native results](../validation/MVP13_NATIVE_ANDROID_RESULTS.md).
 
 Medical wording remains unchanged: Smaran shows activity recorded in this app. These records are not a medical assessment. Smaran does not diagnose or assess dementia. No diagnosis, severity/stage, progression/decline, risk score, treatment or verified medication-adherence claim was introduced.
 
@@ -146,9 +146,9 @@ Git status --short:
  M app.json
  M components/error-boundary.tsx
  M src/services/my-day.service.ts
-?? docs/MVP13_NATIVE_ANDROID_RESULTS.md
-?? docs/MVP13_NATIVE_ANDROID_TEST_PLAN.md
-?? docs/MVP13_NATIVE_HARDENING.md
+?? docs/validation/MVP13_NATIVE_ANDROID_RESULTS.md
+?? docs/testing/MVP13_NATIVE_ANDROID_TEST_PLAN.md
+?? docs/history/MVP13_NATIVE_HARDENING.md
 ?? eas.json
 ?? scripts/check-native-hardening.cjs
 ```

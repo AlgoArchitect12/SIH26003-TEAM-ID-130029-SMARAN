@@ -317,7 +317,7 @@ Exact `git status --short`:
 ?? .env.example
 ?? app/account.tsx
 ?? app/auth/
-?? docs/MVP22_AUTH_SYNC.md
+?? docs/history/MVP22_AUTH_SYNC.md
 ?? scripts/check-auth-sync-migration.cjs
 ?? scripts/check-auth-sync.cjs
 ?? scripts/check-mvp22-boundaries.cjs
@@ -334,7 +334,7 @@ Expanded `git ls-files --others --exclude-standard`:
 .env.example
 app/account.tsx
 app/auth/callback.tsx
-docs/MVP22_AUTH_SYNC.md
+docs/history/MVP22_AUTH_SYNC.md
 scripts/check-auth-sync-migration.cjs
 scripts/check-auth-sync.cjs
 scripts/check-mvp22-boundaries.cjs
@@ -438,7 +438,7 @@ No PostgreSQL, hosted auth, deployed gateway or two-device test ran here. psql, 
 Only `src/i18n/account-strings.ts` and this report changed during the audit. Nothing is staged. HEAD remains `1a5ef943cf7b8ed361a8d11a9c86a09c06a91637` on `feature/mvp22-auth-sync`.
 
 ```text
- M docs/MVP22_AUTH_SYNC.md
+ M docs/history/MVP22_AUTH_SYNC.md
  M src/i18n/account-strings.ts
 ```
 

@@ -64,4 +64,4 @@ No physical Android tests were performed. Device model / Android API / tester / 
 | Optional reboot / restored reminder | NOT RUN | No reboot performed |
 | Final merged APK permissions | NOT RUN | Introspection cannot merge all Android libraries |
 
-When updating a physical row to PASS or FAIL, start notes with `Evidence:` and record the device, APK identity, date/tester and observed result. The script checks this format; it cannot authenticate human observations. Full procedures and the exact SIH sequence are in [MVP13_NATIVE_ANDROID_TEST_PLAN.md](MVP13_NATIVE_ANDROID_TEST_PLAN.md).
+When updating a physical row to PASS or FAIL, start notes with `Evidence:` and record the device, APK identity, date/tester and observed result. The script checks this format; it cannot authenticate human observations. Full procedures and the exact SIH sequence are in [MVP13_NATIVE_ANDROID_TEST_PLAN.md](../testing/MVP13_NATIVE_ANDROID_TEST_PLAN.md).

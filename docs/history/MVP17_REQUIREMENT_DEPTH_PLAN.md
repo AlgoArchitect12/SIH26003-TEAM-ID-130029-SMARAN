@@ -24,7 +24,7 @@ Important distinctions established by source review:
 | Security | SecureStore for active/onboarding flags, appearance and patient-scoped DOB; parameterized SQL; patient predicates; managed photo paths; limited permissions. | SecureStore does not encrypt the SQLite database or photos. The declared `authToken` key is unused; it does not implement authentication. |
 | Build/QA | `eas.json` has a preview APK profile; MVP14 records a user-reported APK build/install. MVP15 records browser QA using temporary adapters. | No current-baseline physical Android PASS, merged APK permission inspection or current live-data audit was performed in this task. |
 
-`docs/PRD.md`, `docs/TECHSTACK.md` and `docs/TODO.md` mix product intentions with future architecture, including Supabase, queueing and additional activities. Source/routes/schema take precedence when judging present coverage. Leave those shared documents untouched during concurrent MVP16 work; reconcile them in a later explicitly scoped documentation change.
+`docs/product/PRD.md`, `docs/architecture/TECHSTACK.md` and `docs/history/TODO.md` mix product intentions with future architecture, including Supabase, queueing and additional activities. Source/routes/schema take precedence when judging present coverage. Leave those shared documents untouched during concurrent MVP16 work; reconcile them in a later explicitly scoped documentation change.
 
 ### Safety contract for every future milestone
 
@@ -296,7 +296,7 @@ Seven catalogs are composed from the base/UX/My Day/memory/My Home/care/cognitiv
 
 All eight states have exactly four content items and bundled JPEGs (32 total). `src/my-home/content.ts` stores English title, short description, detail, optional prompt and image description; `my-home-memory.tsx` marks English content and uses English speech explicitly. Surrounding controls, region names and categories are translated. `Routines` contains five English pretend activities, disclosed as English by the shared selection screen. Personal memory text is authored by users; it has no separate content-language tag, so reading mixed-language family text using the UI voice needs explicit review.
 
-This is real culturally localized **subject matter and imagery**, alongside multilingual **UI**; it is not complete multilingual cultural content. `NER_CONTENT_SOURCES.md` provides editorial references and the image-credit ledger includes rights/attribution records. Source-count/metadata inspection does not independently relicense every asset or certify community appropriateness. No bundled MP3/WAV/OGG/M4A cultural audio was found. Default notification sound/TTS are not culturally localized sound content.
+This is real culturally localized **subject matter and imagery**, alongside multilingual **UI**; it is not complete multilingual cultural content. `../product/NER_CONTENT_SOURCES.md` provides editorial references and the image-credit ledger includes rights/attribution records. Source-count/metadata inspection does not independently relicense every asset or certify community appropriateness. No bundled MP3/WAV/OGG/M4A cultural audio was found. Default notification sound/TTS are not culturally localized sound content.
 
 ### PROPOSED / NEXT ARCHITECTURE
 
@@ -511,8 +511,8 @@ A separate Node standard-library document check passed: all relative links resol
 Exact `git status --short`:
 
 ```text
-?? docs/MVP17_REQUIREMENT_DEPTH_PLAN.md
-?? docs/SIH26003_REQUIREMENT_MATRIX.md
+?? docs/history/MVP17_REQUIREMENT_DEPTH_PLAN.md
+?? docs/history/SIH26003_REQUIREMENT_MATRIX.md
 ```
 
 Only these two files were created. No application behavior, migration, dependency or app configuration was changed. No staging, commit, merge, tag, release or APK build was performed.

@@ -20,7 +20,7 @@ SMARAN is not a diagnostic medical device. It does not diagnose dementia, prescr
 
 ## 🎯 Problem
 
-Memory, recognition and daily routines can become difficult for older adults with cognitive challenges. Family caregivers need a practical way to support those routines and understand recorded activity. The project's [product brief](docs/PRD.md) also identifies unreliable connectivity, language barriers and culturally unfamiliar content as design concerns for remote communities.
+Memory, recognition and daily routines can become difficult for older adults with cognitive challenges. Family caregivers need a practical way to support those routines and understand recorded activity. The project's [product brief](docs/product/PRD.md) also identifies unreliable connectivity, language barriers and culturally unfamiliar content as design concerns for remote communities.
 
 ## 💡 Solution
 
@@ -173,7 +173,7 @@ npx expo start
 
 Copy the example only on first setup; preserve an existing local `.env`. If PowerShell blocks npm's script wrapper, use `npm.cmd` and `npx.cmd`.
 
-Core native use does not need cloud credentials. For optional accounts/backup, fill in `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Read the [auth setup](docs/MVP24_AUTH_CLOUD_HARDENING.md) and inspect the [current migrations](supabase/migrations/) before enabling a backend: older milestone guides are not a complete current deployment checklist. Google sign-in also needs the provider and `smaran-ai://auth/callback` configured in Supabase.
+Core native use does not need cloud credentials. For optional accounts/backup, fill in `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Read the [auth setup](docs/history/MVP24_AUTH_CLOUD_HARDENING.md) and inspect the [current migrations](supabase/migrations/) before enabling a backend: older milestone guides are not a complete current deployment checklist. Google sign-in also needs the provider and `smaran-ai://auth/callback` configured in Supabase.
 
 ## ▶️ Run the App
 
@@ -212,7 +212,7 @@ The regression runner executes every other `scripts/check-*.cjs` entry point seq
 | Hosted cloud acceptance | ⚠️ Partial; public Auth reachability passed, but migration visibility and authenticated push/pull tests remain blocked |
 | Physical devices, signed releases and external delivery | ⏳ Not yet verified in this pass |
 
-See [SIH validation](docs/SIH_VALIDATION.md) for commands, retry history and the limits of each result. The regression count includes one helper-only entry point; it is not a count of independent test suites. Historical milestone results are not presented as fresh acceptance evidence.
+See [SIH validation](docs/validation/SIH_VALIDATION.md) for commands, retry history and the limits of each result. The regression count includes one helper-only entry point; it is not a count of independent test suites. Historical milestone results are not presented as fresh acceptance evidence.
 
 ## 📦 Build & Deployment
 
@@ -241,11 +241,11 @@ Backend deployment is separate from EAS. Review ordered [Supabase migrations](su
 
 | Area | Read next |
 |---|---|
-| Product | [Product requirements](docs/PRD.md) · [Historical SIH requirement assessment](docs/SIH26003_REQUIREMENT_MATRIX.md) |
-| Architecture | [Sync behavior and boundaries](docs/SYNC_STATUS.md) · [Cognitive adaptation](docs/MVP20_COGNITIVE_AI.md) · [Regional content sources](docs/NER_CONTENT_SOURCES.md) |
-| Testing | [Native Android test plan](docs/MVP13_NATIVE_ANDROID_TEST_PLAN.md) · [Regression scripts](scripts/) · [SQL fixtures](supabase/tests/) |
-| Validation | [Current SIH validation](docs/SIH_VALIDATION.md) · [Historical database verification](docs/MVP26_LIVE_DATABASE_VERIFICATION.md) |
-| Deployment | [Auth/cloud configuration](docs/MVP24_AUTH_CLOUD_HARDENING.md) · [Release 1.0.1 notes](docs/RELEASE_1.0.1.md) · [EAS profiles](eas.json) |
+| Product | [Product requirements](docs/product/PRD.md) · [Historical SIH requirement assessment](docs/history/SIH26003_REQUIREMENT_MATRIX.md) |
+| Architecture | [Sync behavior and boundaries](docs/architecture/SYNC_STATUS.md) · [Cognitive adaptation](docs/history/MVP20_COGNITIVE_AI.md) · [Regional content sources](docs/product/NER_CONTENT_SOURCES.md) |
+| Testing | [Native Android test plan](docs/testing/MVP13_NATIVE_ANDROID_TEST_PLAN.md) · [Regression scripts](scripts/) · [SQL fixtures](supabase/tests/) |
+| Validation | [Current SIH validation](docs/validation/SIH_VALIDATION.md) · [Historical database verification](docs/history/MVP26_LIVE_DATABASE_VERIFICATION.md) |
+| Deployment | [Auth/cloud configuration](docs/history/MVP24_AUTH_CLOUD_HARDENING.md) · [Release 1.0.1 notes](docs/deployment/RELEASE_1.0.1.md) · [EAS profiles](eas.json) |
 
 Milestone documents describe their named baselines and may include plans or superseded results. Use current code/configuration and the SIH validation report to assess today's scope.
 

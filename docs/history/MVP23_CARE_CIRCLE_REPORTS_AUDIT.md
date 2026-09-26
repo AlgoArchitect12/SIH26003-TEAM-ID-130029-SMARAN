@@ -144,7 +144,7 @@ Expo checks/export used EXPO_NO_DOTENV=1 to avoid reading local environment file
 ?? app/caregiver/reports.tsx
 ?? components/caregiver/care-overview.tsx
 ?? components/caregiver/care-workspace.tsx
-?? docs/MVP23_CARE_CIRCLE_REPORTS_AUDIT.md
+?? docs/history/MVP23_CARE_CIRCLE_REPORTS_AUDIT.md
 ?? scripts/check-care-circle-reports.cjs
 ?? src/caregiver/care-circle.ts
 ?? src/caregiver/report-presentation.ts

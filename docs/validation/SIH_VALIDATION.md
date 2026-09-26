@@ -49,7 +49,7 @@ The export emitted the existing Expo Notifications warning that push-token liste
 
 ## Security and cleanup
 
-The pre-edit audit covered the 371 tracked baseline files and Git history across local refs, including all history reachable from the public `main`. Gitleaks 8.30.1 reported two `generic-api-key` matches in ordinary prose in `docs/MVP22_AUTH_SYNC.md` and `docs/MVP24_AUTH_CLOUD_HARDENING.md`; the matched contexts were inspected and classified as false positives. They are not credentials. The four presentation files were scanned separately with full secret redaction and no findings.
+The pre-edit audit covered the 371 tracked baseline files and Git history across local refs, including all history reachable from the public `main`. Gitleaks 8.30.1 reported two `generic-api-key` matches in ordinary prose in `docs/history/MVP22_AUTH_SYNC.md` and `docs/history/MVP24_AUTH_CLOUD_HARDENING.md`; the matched contexts were inspected and classified as false positives. They are not credentials. The four presentation files were scanned separately with full secret redaction and no findings.
 
 The only tracked environment file is the empty `.env.example`. Real local environment files remain ignored. No real provider key, access token, service-role credential, password, credential JSON or private key was introduced. This is a credential-disclosure check, not a claim of a complete application penetration test.
 

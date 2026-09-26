@@ -2,7 +2,7 @@
 
 All physical cases start **NOT RUN**. Use only a standalone `preview` APK for release acceptance. Expo Go verification != standalone verification; Expo export PASS != standalone APK PASS. Host SQLite checks do not execute Android's SQLite library.
 
-Record each case in `MVP13_NATIVE_ANDROID_RESULTS.md`: PASS / FAIL / NOT RUN, tester, date/time/timezone, device model/Android version, APK build ID/hash, steps, expected/actual result and evidence. Never mark a case PASS based only on code review, Expo Go, host tests or export. Use synthetic patient data in evidence.
+Record each case in `../validation/MVP13_NATIVE_ANDROID_RESULTS.md`: PASS / FAIL / NOT RUN, tester, date/time/timezone, device model/Android version, APK build ID/hash, steps, expected/actual result and evidence. Never mark a case PASS based only on code review, Expo Go, host tests or export. Use synthetic patient data in evidence.
 
 ## Build and installation checkpoint
 

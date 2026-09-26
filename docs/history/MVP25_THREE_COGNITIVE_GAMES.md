@@ -254,7 +254,7 @@ M	supabase/functions/online-ai/contract.ts
 ?? app/patient/games/sudoku-lite.tsx
 ?? app/patient/games/word-match.tsx
 ?? components/games/puzzle-activity-board.tsx
-?? docs/MVP25_THREE_COGNITIVE_GAMES.md
+?? docs/history/MVP25_THREE_COGNITIVE_GAMES.md
 ?? scripts/check-three-cognitive-games.cjs
 ?? src/db/migrations/012_three_cognitive_games.ts
 ?? src/games/chess-puzzle.ts
@@ -518,7 +518,7 @@ Final `git status --short --untracked-files=all` (complete changed-file inventor
 ?? app/patient/games/sudoku-lite.tsx
 ?? app/patient/games/word-match.tsx
 ?? components/games/puzzle-activity-board.tsx
-?? docs/MVP25_THREE_COGNITIVE_GAMES.md
+?? docs/history/MVP25_THREE_COGNITIVE_GAMES.md
 ?? scripts/check-three-cognitive-games.cjs
 ?? src/db/migrations/012_three_cognitive_games.ts
 ?? src/games/chess-puzzle.ts

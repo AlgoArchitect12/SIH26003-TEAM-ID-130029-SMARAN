@@ -136,7 +136,7 @@ feature/mvp11-my-care
  M src/i18n/regional-strings.ts
  M src/i18n/strings.ts
 ?? app/caregiver/home.tsx
-?? docs/MVP11_MY_CARE.md
+?? docs/history/MVP11_MY_CARE.md
 ?? scripts/check-my-care.cjs
 ?? src/caregiver/types.ts
 ?? src/i18n/care-strings.ts
@@ -175,6 +175,6 @@ Untracked deliverables are intentionally not included in ordinary `git diff --st
 | `src/services/caregiver.service.ts` | 66 |
 | `src/i18n/care-strings.ts` | 188 |
 | `scripts/check-my-care.cjs` | 191 |
-| `docs/MVP11_MY_CARE.md` | 180 |
+| `docs/history/MVP11_MY_CARE.md` | 180 |
 
 Staged diff: empty. Package/migration/protected-feature diffs: empty. Temporary QA files: none. Medical inference: none. Fake production data: none. No commit, merge, or tag.

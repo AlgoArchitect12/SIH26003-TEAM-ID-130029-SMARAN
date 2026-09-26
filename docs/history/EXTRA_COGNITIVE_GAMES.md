@@ -172,7 +172,7 @@ Untracked files:
 	app/patient/games/number-path.tsx
 	app/patient/games/remember-lights.tsx
 	components/games/grid-activity-board.tsx
-	docs/EXTRA_COGNITIVE_GAMES.md
+	docs/history/EXTRA_COGNITIVE_GAMES.md
 	scripts/check-extra-cognitive-games.cjs
 	src/db/migrations/009_extra_cognitive_games.ts
 	src/games/grid-activities.ts

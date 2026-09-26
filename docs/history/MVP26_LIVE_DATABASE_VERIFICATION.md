@@ -188,7 +188,7 @@ Final `git status --short --untracked-files=all` (also the exact changed-file in
  M src/cloud/sync.ts
  M src/db/repositories/sync.repository.ts
  M src/i18n/account-strings.ts
-?? docs/MVP26_LIVE_DATABASE_VERIFICATION.md
+?? docs/history/MVP26_LIVE_DATABASE_VERIFICATION.md
 ?? scripts/check-live-database-sync.cjs
 ```
 

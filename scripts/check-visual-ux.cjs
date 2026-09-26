@@ -237,7 +237,7 @@ for (const file of [...['app', 'components', 'constants', 'hooks', 'src', 'plugi
 for (const artifact of ['.expo/visual-ux-qa', '.playwright-mcp']) {
   assert.equal(fs.existsSync(path.join(root, artifact)), false, artifact + ': remove temporary QA artifacts');
 }
-assert.ok(fs.existsSync(path.join(root, 'docs/MVP19B_VISUAL_UX.md')), 'Visual UX handoff is present');
+assert.ok(fs.existsSync(path.join(root, 'docs/history/MVP19B_VISUAL_UX.md')), 'Visual UX handoff is present');
 assert.doesNotMatch(source('app/caregiver/activity.tsx'), /disabled=\{days === value\}/, 'Selected period remains an enabled selection');
 assert.match(source('app/caregiver/activity.tsx'), /if \(days === value\) return/, 'Reselecting current period preserves loaded records');
 assert.equal(layout.PageLayout.content.maxWidth, layout.Layout.contentMaxWidth);

@@ -230,7 +230,7 @@ See the final status snapshot below; every modified/untracked source file belong
  M src/db/migrations/index.ts
  M src/db/repositories/sync.repository.ts
  M src/i18n/account-strings.ts
-?? docs/MVP24_AUTH_CLOUD_HARDENING.md
+?? docs/history/MVP24_AUTH_CLOUD_HARDENING.md
 ?? scripts/check-auth-cloud-hardening.cjs
 ?? src/db/migrations/011_sync_consent.ts
 ```

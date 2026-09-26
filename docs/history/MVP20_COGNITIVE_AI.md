@@ -275,7 +275,7 @@ Exact status (the file inventory for the complete MVP-20 worktree):
 ?? app/patient/games/familiar-object.tsx
 ?? app/patient/games/picture-recall.tsx
 ?? app/patient/games/sequence-memory.tsx
-?? docs/MVP20_COGNITIVE_AI.md
+?? docs/history/MVP20_COGNITIVE_AI.md
 ?? scripts/check-cognitive-ai.cjs
 ?? scripts/check-cognitive-migration.cjs
 ?? src/ai/cognitive-coach.ts

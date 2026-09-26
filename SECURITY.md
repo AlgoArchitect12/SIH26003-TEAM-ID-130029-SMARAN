@@ -26,4 +26,4 @@ Real `.env` files, signing material and local release artifacts must remain untr
 - SecureStore protects selected values; the SQLite database is not configured for SQLCipher encryption. Local person switching is not authentication between users sharing a device.
 - Personal photos are local files. Report sharing intentionally exports information outside the app; invoking a share sheet does not prove delivery.
 - Review Edge Function authorization, webhook access and provider configuration before deployment, especially the privileged report-delivery integration. A secret scan is not a complete security assessment.
-- Authenticated hosted flows and physical-device privacy behavior require acceptance testing. See [the current validation report](docs/SIH_VALIDATION.md).
+- Authenticated hosted flows and physical-device privacy behavior require acceptance testing. See [the current validation report](docs/validation/SIH_VALIDATION.md).
