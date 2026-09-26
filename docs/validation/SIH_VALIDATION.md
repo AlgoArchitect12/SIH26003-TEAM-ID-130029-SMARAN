@@ -1,5 +1,7 @@
 # SIH presentation validation
 
+The original engineering evidence below is retained with its original baseline. See [Phase 2 landing-page validation](#phase-2-landing-page-validation) for the later presentation-only checks.
+
 Application baseline: `ed9f948c097aa7823530c95374528e1aea7e92e1` (version 1.0.1).
 
 This pass changes repository presentation only. Application source, dependencies, database migrations and regression assertions are unchanged.
@@ -64,3 +66,21 @@ Cleanup adds repository-level ignores for the existing EAS prebuild inspection d
 - Confirm hosted migration state and provide isolated test identities through secure configuration for end-to-end acceptance.
 - Verify the signed native app, accessibility, location consent/revocation, reminders, report sharing and enabled external providers.
 - Capture real screenshots and a real demo recording in a separate evidence task.
+
+## Phase 2 landing-page validation
+
+Date: 26 September 2026. Starting commit: `c069da34a7dc5881ac5583b648884e605f260585` (completed Phase 1 structure). This phase changes only the root README and this validation record. Source, runtime assets, dependencies, configuration, migrations, test assertions and the Phase 1 directory layout remain unchanged.
+
+| Check | Result and scope |
+|---|---|
+| `npx tsc --noEmit` | Passed, exit 0; fresh Phase 2 check using `npx.cmd` on Windows |
+| `npm run lint` | Passed, exit 0; fresh Phase 2 check with `EXPO_NO_DOTENV=1` |
+| Documentation references | Repository-relative Markdown/HTML targets resolve; GitHub-rendered navigation targets are present |
+| GitHub Markdown rendering | API rendering preserves the centered hero, five descriptive technology badges, two Mermaid blocks and two expandable setup sections |
+| Browser preview | GitHub-rendered HTML with GitHub styles checked at 1280, 768 and 390 pixels: no article overflow, all badges loaded, setup details expand; no screenshot or video capture |
+| Mermaid diagrams | Both diagrams rendered with Mermaid 11 in the browser; the architecture was reduced to a readable seven-node overview (896-unit intrinsic width) |
+| Public repository metadata | Description and all 12 requested topics already matched exactly; confirmed the repository is public and its default branch is `main` |
+
+The preview is a documentation check, not application or device QA. Full regressions, Expo Doctor and native/web exports were not rerun for this prose-only phase. The Phase 1 run at the starting commit passed all 34 regression entry points across the aggregate run and two PostgreSQL retries; its ignored aggregate log still records the initial two environment failures. The count includes the helper-only entry point described above. Phase 1 retry logs are `check-family-pairing.phase1-retry.log` and `check-live-database-sync.phase1-retry.log` under `.expo/regressions/`.
+
+Earlier export, compatibility and hosted-audit results retain their original scope. No new hosted acceptance, physical-device results, signed builds, clinical evidence, team-member details or provider delivery claims were added. Screenshots and demo sections remain explicit placeholders; no additional hero asset or evidence folder was created.
