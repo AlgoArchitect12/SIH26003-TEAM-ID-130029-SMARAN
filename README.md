@@ -201,11 +201,23 @@ Explore the implementation in [services](src/services/), [local storage](src/db/
 
 ## 📱 Product Screenshots
 
-> Real device screenshots will be added after final evidence capture.
+| Home | Cognitive training |
+|---|---|
+| ![SMARAN home on Android](assets/screenshots/02-home.png) | ![SMARAN cognitive training catalogue](assets/screenshots/03-train-my-mind.png) |
+
+| Adaptive activity result | Regional home |
+|---|---|
+| ![Pattern and Shape activity completion](assets/screenshots/05-adaptive-feedback.png) | ![My Home with Assam regional content](assets/screenshots/08-my-home-regional.png) |
+
+| Caregiver view | Locally generated activity report |
+|---|---|
+| ![SMARAN caregiver view](assets/screenshots/09-caregiver-support.png) | ![SMARAN local activity report](assets/screenshots/10-local-report.png) |
+
+All screenshots were captured from the running Android app. Capture details and the full evidence inventory are in [docs/SIH_EVIDENCE.md](docs/SIH_EVIDENCE.md).
 
 ## 🎬 Product Demo
 
-> Real application demo recording will be added after final device capture.
+[Watch or download the real Android app demo (MP4, 1:58)](assets/demo/SMARAN-Android-Demo.mp4). It was recorded from the running emulator; see [capture details](docs/evidence/android-pixel9a/README.md).
 
 ## 🏆 SIH Submission
 
