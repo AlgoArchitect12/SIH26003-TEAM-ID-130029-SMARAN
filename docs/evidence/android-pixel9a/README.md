@@ -25,10 +25,14 @@ All images in `assets/screenshots/` were taken from the live emulator using Andr
 | `09-caregiver-support.png` | Local caregiver dashboard for the synthetic profile |
 | `10-local-report.png` | Locally generated activity summary |
 | `11-report-details.png` | Saved activity totals in the report detail view |
+| `12-picture-recall-result.png` | Phase 5 live Picture Recall result (2/2, 100%) |
+| `13-caregiver-reports.png` | Phase 5 caregiver Reports route for the synthetic profile |
+
+The 11 original Phase 3 captures were preserved. Phase 5 continued in the existing emulator without resetting the app. See [`docs/HUMAN_QA_REPORT.md`](../../HUMAN_QA_REPORT.md) for actual results and blockers. My Memories and My Home remained on a loading screen during the continuation; the new Reports capture shows the route but does not verify this run's report contents.
 
 ## Demo recording
 
-`assets/demo/SMARAN-Android-Demo.mp4` is a continuous Android `screenrecord` capture made while SMARAN was foregrounded. It follows the patient home into Train My Mind, plays Pattern & Shape sessions, shows completion feedback, and advances to the next level. The MP4 is 1080 x 2424, 1:58, and 738,510 bytes. Android Photos opened the indexed MP4 and visibly rendered recorded SMARAN screens during playback. Android MediaStore reports 118,520 ms duration and 1080 x 2424 resolution.
+`assets/demo/SMARAN-Android-Demo.mp4` is the fresh Phase 5 Android `screenrecord` capture. It records real navigation through patient and caregiver routes. The MP4 is 1080 x 2424, 2:58 (178.071 seconds), and 1,209,441 bytes. Google Photos opened the indexed MP4 on the emulator and rendered recorded SMARAN screens during playback. The previous Phase 3 demo file was replaced.
 
 ## Scope and caveats
 
