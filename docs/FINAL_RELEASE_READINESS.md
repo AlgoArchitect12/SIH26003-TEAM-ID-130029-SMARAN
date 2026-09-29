@@ -2,7 +2,7 @@
 
 Baseline: `5190871e7344b9ee34065521c15ec436c0061246`, clean `main` checkout. This continues the [final hardening](FINAL_SIH_HARDENING.md); it does not supersede the pending physical-phone checks in the human QA report. No screenshots, recordings, Drive operations, UI redesign, hosted writes or deployment were performed.
 
-**Decision: NO-GO for claiming full production/hosted completion.** Local engineering checks pass apart from the previously documented historical file allowlist assertion. Physical Android acceptance and connected-service acceptance remain outstanding. No new application defect was established in the audited local flows.
+**Decision: NO-GO for claiming full production/hosted completion.** The resumed local regression suite passes 35/35 after the historical allowlist was corrected for two previously approved patient-loading timeout files. Android production JavaScript export passes. Physical Android acceptance and connected-service acceptance remain outstanding. No new application defect was established in the audited local flows.
 
 ## Changes from the baseline
 
@@ -15,7 +15,7 @@ Baseline: `5190871e7344b9ee34065521c15ec436c0061246`, clean `main` checkout. Thi
 
 | Area | Status and actual boundary |
 |---|---|
-| Activity sessions/results | PASS in regression harnesses. Patient/activity identity, telemetry, feedback, saved/recommended level and adaptation use scoped records. Transactional session/model saves reject stale patients and conflicting latest sessions. Failed saves retain the result; saved results wait for explicit navigation. Physical result/back/relaunch acceptance remains NOT VERIFIED. |
+| Activity sessions/results | PASS in regression harnesses. Patient/activity identity, telemetry, feedback, saved/recommended level and adaptation use scoped records. Transactional session/model saves reject stale patients and conflicting latest sessions. Failed saves retain the result; OS Back/gesture removal now saves before resuming the original navigation action. Late responses cannot publish over a replaced session. Physical result/back/relaunch acceptance remains NOT VERIFIED. |
 | Reports | PASS in SQLite and presentation checks. All eleven activities retain separate identities/metrics. Accuracy totals use correct/attempt counts, not a mean of percentages. Memory Match's two-card explanation is selected only for Memory Match; Pattern & Shape uses selection-attempt copy. Detail history retains its own game, level, hints and feedback. Why-level reads the requested session for the active patient and uses its activity type. Immutable 7/30-day snapshots contain aggregate facts, not every session's feedback/level or an AI explanation. Scope filtering and HTML escaping remain in place. |
 | My Day | PASS local create/edit/enable/complete/remove, duplicate completion protection, persistence and scheduling failure/retry checks. Native permission and actual notification delivery remain NOT VERIFIED. |
 | My Memories | PASS local media/persistence and empty/loading/error/retry checks. Patient changes invalidate loads; copied files are cleaned up on failed saves. Native picker and phone relaunch acceptance remain NOT VERIFIED. |
@@ -81,15 +81,15 @@ Before any automatic delivery: implement authenticated worker entry, persisted o
 | `npm.cmd run lint` | PASS, no warnings/errors. |
 | `git diff --check` | PASS; LF/CRLF notices are not failures. |
 | `node scripts/check-final-sih-hardening.cjs` | PASS. |
-| `node scripts/check-regressions.cjs` | 32/35 on initial aggregate; two PostgreSQL startup restrictions, plus the existing historical allowlist assertion. |
+| `node scripts/check-regressions.cjs` | Initial aggregate had sandbox PostgreSQL startup restrictions and the historical allowlist assertion; resumed run on 29 September 2026 passes **35/35**. |
 | Elevated `node scripts/check-live-database-sync.cjs` | PASS after migration-gate change: all eight migrations, five SQL fixtures, real SQLite/PostgreSQL persistence, restart/replay, retries, isolation and RLS. Hosted checks explicitly remain blocked as above. |
 | Elevated `node scripts/check-family-pairing.cjs` | PASS: SQL pairing/location, permissions/revocation, input validation and UI harness checks. |
-| Combined regression outcome | **34/35 entry points pass.** `check-visual-ux.cjs` still rejects the earlier timeout changes in `active-patient.service.ts` and `with-timeout.ts` under an MVP-19A allowlist. Its contrast checks pass. Neither that assertion nor production code was changed to hide the failure. |
-| `CI=1 npx.cmd expo export --platform android --clear --output-dir .expo/release-readiness-android` | PASS after authorized Hermes execution outside the sandbox: 1,874 modules, 76 assets, 6,331,860-byte Hermes bundle. Current public Supabase URL/key presence checked. This is a production bundle export, not a signed APK/AAB or physical-device acceptance. |
+| Combined regression outcome | **35/35 entry points pass.** `check-visual-ux.cjs` now allows only the two already-approved patient-loading timeout files; its other protected-path checks remain active. |
+| Android production export | Clean-cache `npx.cmd expo export --platform android --clear --output-dir .expo/release-readiness-android`; 1,874 modules and bundled regional assets. Production JS export, not a signed APK/AAB or physical-device acceptance. |
 
-No browser QA was needed for this test/documentation-only change; no UI was modified. Physical Android QA remains the user's separate task.
+Browser QA on `http://localhost:8099/patient/games/result` reached the existing setup-recovery screen because web SQLite is unsupported; its Retry control rendered. Browser console showed the known local setup initialization error and Expo Notifications web warning. The result flow could not be exercised in browser; physical Android QA remains pending.
 
-The two temporary exports created by this continuation were removed after validation. Existing caches, regression logs and historical assets were preserved. Only the current checkout's four intended test/documentation files are included in the release-readiness commit; no old private-worktree source or private remote was accessed.
+The ignored `.expo/release-readiness-android` export is retained for review. The requested commit contains only the six reviewed result-flow, regression-test, allowlist and readiness-documentation files from this checkout; no private-repo or Drive operations were performed.
 
 ## Remaining work by submission priority
 
@@ -108,7 +108,6 @@ The two temporary exports created by this continuation were removed after valida
 **SAFE TO DEFER**
 
 - Automatic WhatsApp delivery and optional AI provider features while clearly unavailable; local reports and manual native sharing cover the implemented path.
-- Historical MVP-19A test-boundary maintenance, with the existing 34/35 result disclosed. It is not evidence of a new product defect.
 - iOS acceptance, web SQLite support, cloud photo restore and background tracking when excluded from the Android/local submission scope. No emergency tracking promise.
 
 **NOT AN ISSUE**

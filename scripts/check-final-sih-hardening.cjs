@@ -166,8 +166,64 @@ async function delivery() {
   render.unmount();
 }
 
+async function resultNavigation() {
+  for (const scenario of ['newer', 'unmount', 'back']) {
+    let finish, guard, failed = true, saves = 0;
+    const routes = [], settings = { language: 'en', textSize: 'standard' };
+    const session = { patientId: 'one', gameType: 'pattern_recognition', startedAtMs: 1, completedAtMs: 2, challengesCompleted: 5,
+      attempts: 6, correctSelections: 5, accuracy: 5 / 6, hintsUsed: 1 };
+    const recommendation = { recommendedDifficulty: 2, direction: 'challenge' };
+    const pending = { patientId: 'one', telemetry: session, initialRecommendation: recommendation };
+    const value = { pending, saved: null, clear() {}, setSaved: saved => { value.saved = saved; value.pending = null; } };
+    const useCognitiveSessionStore = Object.assign(fn => fn(value), { getState: () => value });
+    const store = { language: 'en', setLanguage() {}, setAccessibilityPreferences() {} };
+    const router = { dismissTo: route => routes.push(route), replace: route => routes.push(route) };
+    const render = screen('app/patient/games/result.tsx', {
+      'expo-router': { useRouter: () => router },
+      '@react-navigation/native': { useIsFocused: () => true, useNavigation: () => ({ dispatch: action => routes.push(action) }),
+        usePreventRemove: (enabled, callback) => { guard = { enabled, callback }; } },
+      'react-native': { View: 'View', StyleSheet: { create: s => s }, AppState: { currentState: 'active', addEventListener: () => ({ remove() {} }) } },
+      '@/src/stores/patient-session.store': { capturePatientRequest: () => () => true },
+      '@/src/stores/cognitive-session.store': { useCognitiveSessionStore },
+      '@/src/stores/onboarding.store': { useOnboardingStore: fn => fn(store) },
+      '@/hooks/use-theme-color': { useThemeColors: () => ({}) }, '@expo/vector-icons': { MaterialIcons: 'MaterialIcons' },
+      '@/src/games/presentation': load('src/games/presentation.ts'),
+      '@services/active-patient.service': { resolveActivePatient: async () => ({ status: 'ready', profile: { id: 'one', preferredName: 'Fixture' }, settings }) },
+      '@services/cognitive.service': { saveCognitiveResult: () => { saves++; return new Promise((resolve, reject) => {
+        finish = () => failed ? reject(Error('save failed')) : resolve({ session, recommendation });
+      }); } },
+    });
+    render(); await tick(); render();
+    if (scenario === 'back') {
+      assert.equal(guard?.enabled, true, 'OS Back/gesture removal must guard an unsaved result');
+      const action = { type: 'GO_BACK' };
+      guard.callback({ data: { action } });
+      guard.callback({ data: { action } });
+      assert.equal(saves, 1, 'repeated Back cannot start duplicate saves');
+      finish(); await tick(); render();
+      assert.equal(routes.length, 0, 'save failure must prevent OS Back');
+      assert.equal(value.pending, pending);
+      failed = false; guard.callback({ data: { action } }); finish(); await tick(); render();
+      assert.equal(value.saved.session.gameType, 'pattern_recognition');
+      assert.deepEqual(routes, [action], 'successful save resumes the original action once');
+      assert.equal(guard.enabled, false);
+    } else {
+      failed = false;
+      nodes(render()).find(n => n.props?.label === t('en', 'skip')).props.onPress();
+      const newer = { ...pending, telemetry: { ...session, startedAtMs: 10, completedAtMs: 20 } };
+      if (scenario === 'newer') value.pending = newer;
+      else render.unmount();
+      finish(); await tick();
+      assert.equal(value.saved, null, 'late completion cannot publish after replacement or unmount');
+      assert.equal(value.pending, scenario === 'newer' ? newer : pending);
+      assert.equal(routes.length, 0);
+    }
+    render.unmount();
+  }
+}
+
 async function main() {
-  await loading(); routineAndReports(); await results(); await delivery();
+  await loading(); routineAndReports(); await results(); await delivery(); await resultNavigation();
   console.log('PASS: bounded loads, stale workspace and switch recovery, Memories empty/error/retry, all localized routine choices/scoring, activity report mapping, persistent saved results and fail-closed delivery.');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

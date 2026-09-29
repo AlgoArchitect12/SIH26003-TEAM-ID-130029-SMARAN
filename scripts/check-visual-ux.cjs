@@ -196,6 +196,8 @@ const cognitiveAIPaths = new Set([
   'src/db/repositories/my-day.repository.ts', 'src/services/my-day.service.ts', 'src/services/speech.service.ts',
   'components/games/memory-card.tsx',
   'src/db/migrations/index.ts', 'src/db/migrations/007_cognitive_ai_expansion.ts',
+  // Approved post-MVP-19A startup hardening (2c498f8), bounded to patient reads.
+  'src/services/active-patient.service.ts', 'src/utils/with-timeout.ts',
   'src/db/schema.types.ts', 'src/db/repositories/cognitive.repository.ts',
   'src/ai/feature-extractor.ts', 'src/ai/cognitive-coach.ts', 'src/services/cognitive.service.ts',
   'src/games/pattern-recognition.ts', 'src/games/selection-engine.ts', 'src/games/telemetry.ts',

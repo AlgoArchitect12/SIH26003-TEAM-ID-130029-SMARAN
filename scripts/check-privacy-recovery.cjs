@@ -44,6 +44,10 @@ function screen(file, overrides, props) {
     if (name === 'expo-router') return { useLocalSearchParams: () => ({}), useRouter: () => ({ push() {}, dismissTo() {} }), ...overrides[name] };
     if (name === '@/hooks/use-game-transition') return load('hooks/use-game-transition.ts', { ...overrides, react,
       '@react-navigation/native': overrides['@react-navigation/native'] ?? { useIsFocused: () => true }, $timers: clock });
+    if (name === '@react-navigation/native') return {
+      useIsFocused: () => true, useNavigation: () => ({ dispatch() {} }), usePreventRemove() {},
+      ...overrides[name],
+    };
     if (name in overrides) return overrides[name];
     if (name === '@/src/utils/with-timeout') return load('src/utils/with-timeout.ts');
     if (name === 'react') return react;
@@ -53,7 +57,6 @@ function screen(file, overrides, props) {
     if (name === '@constants/layout') return load('constants/layout.ts', { 'react-native': { Platform: { select: s => s.web } } });
     if (name.startsWith('@components/')) return new Proxy({}, { get: (_, key) => String(key) });
     if (name === '@services/onboarding-recovery.service') return { ensureInitialRoute: () => null };
-    if (name === '@react-navigation/native') return { useIsFocused: () => true };
     if (name === 'expo-router') return { useRouter: () => ({ push: () => {}, dismissTo: () => {} }) };
     throw Error('Unexpected boundary: ' + name);
   }, module, module.exports, false);

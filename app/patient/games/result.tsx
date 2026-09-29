@@ -3,7 +3,7 @@ import { useGameTransition } from '@/hooks/use-game-transition';
 import type { Href } from 'expo-router';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useNavigation, usePreventRemove } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -44,6 +44,7 @@ function recommendationKey(direction: 'gentler' | 'hold' | 'challenge'): Transla
 
 export default function CognitiveResultScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const focused = useIsFocused();
   const colors = useThemeColors();
   const pending = useCognitiveSessionStore((state) => state.pending);
@@ -61,6 +62,9 @@ export default function CognitiveResultScreen() {
   const [saveFailed, setSaveFailed] = useState(false);
   const [paused, setPaused] = useState(false);
   const submissionLocked = useRef(false);
+  const live = useRef(true);
+  const removeAfterSave = useRef<Parameters<typeof navigation.dispatch>[0] | null>(null);
+  useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
   const automaticSave = useRef<() => void>(() => {});
   useGameTransition(status === 'ready' && pending && !saved && !saving && !saveFailed ? 6000 : null, () => automaticSave.current(), paused);
 
@@ -106,6 +110,46 @@ export default function CognitiveResultScreen() {
     };
   }, [clear, focused, loadAttempt, pending, router, saved, setAccessibility, setLanguage]);
 
+  useEffect(() => {
+    if (!saved || !removeAfterSave.current) return;
+    const action = removeAfterSave.current;
+    removeAfterSave.current = null;
+    navigation.dispatch(action);
+  }, [navigation, saved]);
+
+  const submit = async (feedback: ActivityFeedbackLabel | null) => {
+    const patientCurrent = capturePatientRequest();
+    const current = () => {
+      const active = useCognitiveSessionStore.getState().pending;
+      return !!pending && live.current && patientCurrent() && active?.patientId === pending.patientId &&
+        active.telemetry.gameType === pending.telemetry.gameType && active.telemetry.startedAtMs === pending.telemetry.startedAtMs &&
+        active.telemetry.completedAtMs === pending.telemetry.completedAtMs;
+    };
+    if (!pending || !current() || submissionLocked.current) return false;
+    submissionLocked.current = true;
+    setSaving(true);
+    setSaveFailed(false);
+    try {
+      const result = await saveCognitiveResult(pending, feedback);
+      if (!current()) return false;
+      setSaved(result);
+      return true;
+    } catch {
+      if (__DEV__) console.error('Completed activity could not be saved');
+      if (current()) setSaveFailed(true);
+      return false;
+    } finally {
+      submissionLocked.current = false;
+      if (live.current && patientCurrent()) setSaving(false);
+    }
+  };
+  automaticSave.current = () => { void submit(null); };
+  usePreventRemove(!!pending && !saved, ({ data }) => {
+    if (submissionLocked.current) return;
+    removeAfterSave.current = data.action;
+    void submit(null).then(saved => { if (!saved) removeAfterSave.current = null; });
+  });
+
   if (!settings || status !== 'ready' || (!pending && !saved)) {
     return (
       <ScreenWrapper contentContainerStyle={styles.centered} scroll>
@@ -135,27 +179,6 @@ export default function CognitiveResultScreen() {
   const recommendation = saved?.recommendation ?? pending?.initialRecommendation;
   if (!recommendation) return null;
   const recommendationText = t(language, recommendationKey(recommendation.direction));
-
-  const submit = async (feedback: ActivityFeedbackLabel | null) => {
-    const current = capturePatientRequest();
-    if (!current()) return false;
-    if (!pending || useCognitiveSessionStore.getState().pending !== pending || submissionLocked.current) return false;
-    submissionLocked.current = true;
-    setSaving(true);
-    setSaveFailed(false);
-    try {
-      const result = await saveCognitiveResult(pending, feedback);
-      if (current()) setSaved(result);
-      return current();
-    } catch {
-      if (__DEV__) console.error('Completed activity could not be saved');
-      if (current()) { setSaveFailed(true); submissionLocked.current = false; }
-      return false;
-    } finally {
-      if (current()) setSaving(false);
-    }
-  };
-  automaticSave.current = () => { void submit(null); };
 
   const readText = [
     t(language, 'resultTitle', { name: preferredName }), activity,
