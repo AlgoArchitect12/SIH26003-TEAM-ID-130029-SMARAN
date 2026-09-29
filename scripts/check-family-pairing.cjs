@@ -61,7 +61,7 @@ async function pgChecks() {
     execFileSync(exe('pg_ctl'), ['-D', data, '-l', path.join(dir, 'postgres.log'), '-o', `-h 127.0.0.1 -p ${port}`, '-w', 'start'], { windowsHide: true, stdio: 'ignore' });
     const sql = input => execFileSync(exe('psql'), ['-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1', '-h', '127.0.0.1', '-p', String(port), '-U', 'postgres', '-d', 'postgres'], { input, encoding: 'utf8', windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] }).trim();
     const q = value => `'${String(value).replace(/'/g, "''")}'`;
-    sql(`CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;
+    sql(`CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN;
       CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);
       CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
         SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;

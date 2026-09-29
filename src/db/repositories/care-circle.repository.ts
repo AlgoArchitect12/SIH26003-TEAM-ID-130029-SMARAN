@@ -1,7 +1,7 @@
 import { getDatabase } from '../client';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { validateRecordId, ValidationError } from '../../utils/validation';
-import { validateMember, type CareMember, type CareMemberInput } from '../../caregiver/care-circle';
+import { effectiveScopes, validateMember, type CareMember, type CareMemberInput } from '../../caregiver/care-circle';
 import { parseReportFacts, type ActivityReport, type ReportRecipient, type ReportDelivery } from '../../caregiver/reports';
 
 export function normalizePhoneNumber(value: unknown) {
@@ -123,6 +123,9 @@ async function saveRecipient(patientId: string, careMemberId: string | null, pho
     if (careMemberId) {
       const member = await memberFrom(tx,patientId,careMemberId);
       if (!member || member.status === 'revoked') throw new Error('Missing or revoked recipient.');
+      if (consent && (!effectiveScopes(member).includes('reports') || normalizePhoneNumber(member.phone) !== normalized)) {
+        throw new Error('Recipient report access or phone changed.');
+      }
     }
     const recordId = id ?? (await tx.getFirstAsync<{ id: string }>('SELECT lower(hex(randomblob(16))) AS id'))!.id;
     const now = new Date().toISOString();
@@ -130,8 +133,9 @@ async function saveRecipient(patientId: string, careMemberId: string | null, pho
 
     checkCareRequest(current);
     if (id) {
-      await tx.runAsync(`UPDATE report_recipients SET care_member_id=?, normalized_destination=?, consent_status=?, frequency=?, updated_at=?, revoked_at=? WHERE patient_id=? AND id=?`,
+      const result = await tx.runAsync(`UPDATE report_recipients SET care_member_id=?, normalized_destination=?, consent_status=?, frequency=?, updated_at=?, revoked_at=? WHERE patient_id=? AND id=?`,
         careMemberId, normalized, consentStatus, frequency, now, consent ? null : now, patientId, recordId);
+      if (!result.changes) throw new Error('Missing report recipient.');
     } else {
       await tx.runAsync(`INSERT INTO report_recipients(id,patient_id,care_member_id,channel,normalized_destination,consent_status,frequency,created_at,updated_at,revoked_at) VALUES(?,?,?,?,?,?,?,?,?,?)`,
         recordId, patientId, careMemberId, 'whatsapp', normalized, consentStatus, frequency, now, now, consent ? null : now);
@@ -142,14 +146,30 @@ async function saveRecipient(patientId: string, careMemberId: string | null, pho
   return saved;
 }
 async function queueDelivery(patientId: string, recipientId: string, reportPeriod: '7-day'|'30-day'|'manual', reportStart: string, reportEnd: string, snapshotId: string, current: () => boolean) {
+  validateRecordId(recipientId); validateRecordId(snapshotId);
+  if (!['7-day','30-day','manual'].includes(reportPeriod)) throw new Error('Invalid report period.');
   let saved!: ReportDelivery;
   await (await getDatabase()).withExclusiveTransactionAsync(async tx => {
     await owned(tx, patientId, current);
     const recipient = await tx.getFirstAsync<ReportRecipient>('SELECT * FROM report_recipients WHERE patient_id=? AND id=?', patientId, recipientId);
     if (!recipient) throw new Error('Missing report recipient.');
     if (recipient.consent_status !== 'enabled') throw new Error('Recipient has not consented to delivery.');
+    if (recipient.care_member_id) {
+      const member = await memberFrom(tx, patientId, recipient.care_member_id);
+      if (!member || !effectiveScopes(member).includes('reports') || normalizePhoneNumber(member.phone) !== recipient.normalized_destination ||
+          Date.parse(member.updated_at) > Date.parse(recipient.updated_at)) throw new Error('Recipient report access changed; renew consent.');
+    }
     const snapshot = await tx.getFirstAsync<ActivityReport>('SELECT * FROM activity_reports WHERE patient_id=? AND id=?', patientId, snapshotId);
     if (!snapshot) throw new Error('Missing report snapshot.');
+    const facts = parseReportFacts(snapshot.snapshot);
+    if (reportStart !== snapshot.period_start || reportEnd !== snapshot.period_end ||
+        (reportPeriod !== 'manual' && reportPeriod !== `${facts.days}-day`)) throw new Error('Report period does not match snapshot.');
+    const previous = await tx.getFirstAsync<ReportDelivery>(`SELECT * FROM report_deliveries WHERE patient_id=? AND recipient_id=?
+      AND report_period=? AND report_start=? AND report_end=? ORDER BY created_at LIMIT 1`, patientId, recipientId, reportPeriod, reportStart, reportEnd);
+    if (previous) {
+      if (previous.report_snapshot_id !== snapshotId) throw new Error('A different snapshot is already queued for this period.');
+      checkCareRequest(current); saved = previous; return;
+    }
     const id = (await tx.getFirstAsync<{ id: string }>('SELECT lower(hex(randomblob(16))) AS id'))!.id;
     const now = new Date().toISOString();
     checkCareRequest(current);

@@ -124,7 +124,7 @@ Email/password and Google sign-in, backup consent, a persistent sync queue and v
 
 **✅ Local reports · ⚠️ External delivery**
 
-Generate factual 7/30-day activity summaries with native PDF sharing and email composition. WhatsApp sending is disabled with HTTP 503 `not_configured`; a secure backend worker, provider configuration and end-to-end verification are still required. Opening a share sheet is not proof of delivery.
+Generate factual 7/30-day activity summaries with native PDF sharing and email composition. The [secure Meta WhatsApp worker](docs/deployment/SECURE_REPORT_DELIVERY.md) is implemented and locally tested, but remains disabled with HTTP 503 `not_configured` until hosted migration and provider/template/webhook configuration are completed. It sends explicitly queued snapshots; weekly/monthly preferences do not generate recurring reports. Opening a share sheet or queueing a report is not proof of delivery.
 
 ### 🤖 Assistant / AI
 

@@ -304,6 +304,18 @@ async function main() {
     assert.deepEqual(await service.sync(other),{permission:'granted',failed:false}); // Missing settings: safe English, no borrowed language.
     assert.equal(pending.get(otherId).content.title,t('en','dayNotificationTitle'));
     assert.equal(JSON.stringify([...pending.values()].filter(n=>n.identifier!==otherId)),ownSchedules);
+    // Each patient's existing daily alarms must rebuild after an offset change.
+    // Reconciling A first must not make B's old schedule appear up to date.
+    const originalOffset = Date.prototype.getTimezoneOffset;
+    const changedOffset = new Date().getTimezoneOffset() + 60;
+    try {
+      Date.prototype.getTimezoneOffset = () => changedOffset;
+      canceled.length = 0;
+      await service.sync(patient);
+      assert.ok(canceled.includes('smaran-my-day-' + localizedDaily.id));
+      await service.sync(other);
+      assert.ok(canceled.includes(otherId), 'timezone reconciliation must be scoped to each patient');
+    } finally { Date.prototype.getTimezoneOffset = originalOffset; }
     selectedPatient = other;
     await service.remove(other,otherReminder.id);
     selectedPatient = patient;

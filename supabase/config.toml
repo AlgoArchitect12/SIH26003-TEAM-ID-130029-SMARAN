@@ -4,3 +4,7 @@ verify_jwt = false
 
 [functions.ai-care-assistant]
 verify_jwt = false
+
+# Owner JWTs, cron secret and Meta HMAC are verified inside the handler.
+[functions.report-delivery]
+verify_jwt = false

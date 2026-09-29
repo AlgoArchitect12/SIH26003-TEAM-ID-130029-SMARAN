@@ -283,6 +283,7 @@ async function ui(r,report) {
   for(const [language,values] of Object.entries(catalog)){assert.deepEqual(Object.keys(values),Object.keys(catalog.en));for(const [key,value] of Object.entries(values)){assert.ok(value.trim());assert.equal(strings[language][key],value);assert.deepEqual(slots(value),slots(catalog.en[key]));}}
   const data={patient:await r.patient.getProfileById('facts'),settings:await r.patient.getSettings('facts'),members:[],reports:[report],recipients:[],deliveries:[],preference:null,current:r.current()};
   const overrides={'@/src/caregiver/care-circle':load('src/caregiver/care-circle.ts'),'@/src/caregiver/report-presentation':{reportSections},
+    '@/src/caregiver/reports':load('src/caregiver/reports.ts'),
     '@/src/db/repositories/care-circle.repository':{careCircleRepository:r.repo},'@/src/services/reports.service':r.module('src/services/reports.service.ts'),
     '@components/caregiver/care-member-fields':load('components/caregiver/care-member-fields.tsx', { 'react-native': {View: 'View', StyleSheet: {create: s => s}}, '@components/ui/smaran-field': { Field: 'Field' }, '@components/themed-text': { ThemedText: 'ThemedText' }, '@components/ui/smaran-checkbox': { SmaranCheckbox: 'SmaranCheckbox' }, '@i18n/index': load('src/i18n/index.ts'), '@components/ui/smaran-button': { SmaranButton: 'SmaranButton' } }),
     '@/src/services/report-pdf.service':{cleanupReportPdfs(){},prepareReportPdf:async()=>null,removeReportPdf(){},ReportPdfUnavailable:class extends Error{}}};

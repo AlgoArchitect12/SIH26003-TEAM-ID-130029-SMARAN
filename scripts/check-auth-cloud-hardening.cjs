@@ -246,7 +246,7 @@ async function syncChecks() {
     assert.equal(calls.length,0,'sign-in does not grant backup consent');
     assert.equal((await repo.status(A)).linked,false);
     await repo.link(A,auth.captureAccount().current);
-    const member=await care.save('one',{display_name:'Synthetic person',relationship:'family',access_role:'family',email:'care@example.test',phone:null,scopes:['reports']},()=>true);
+    const member=await care.save('one',{display_name:'Synthetic person',relationship:'family',access_role:'family',email:'care@example.test',phone:'+15551234567',scopes:['reports']},()=>true);
     assert.equal(member.status,'local');
     await care.saveRecipient('one', member.id, '+15551234567', 'weekly', true, ()=>true);
 
@@ -358,7 +358,7 @@ async function contractChecks() {
   for(const file of files.filter(f=>/\.(?:[cm]?[jt]sx?|json|sql|md|toml|ya?ml|example)$/.test(f))){const source=fs.readFileSync(file,'utf8');for(const [type,pattern]of patterns)if(pattern.test(source))findings.push({path:file,type});}
   assert.deepEqual(findings,[],'secret scan reports path/type only');
   for(const name of ['.env','.env.local','credentials.json','synthetic.key','synthetic.pem'])assert.ok(execFileSync('git',['check-ignore',name],{encoding:'utf8'}).trim());
-  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&!['supabase/migrations/20260924000000_family_pairing.sql','supabase/migrations/20260925000000_realtime_location.sql','src/db/migrations/015_live_location.ts'].includes(f))){
+  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&!['supabase/migrations/20260924000000_family_pairing.sql','supabase/migrations/20260925000000_realtime_location.sql','supabase/migrations/20260929000000_secure_report_worker.sql','src/db/migrations/015_live_location.ts'].includes(f))){
     assert.equal(fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n'),execFileSync('git',['show','1dfccf1:'+file],{encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' historical source unchanged');
   }
   console.log('PASS contracts: seven complete translated catalogs/interpolation, actual Account controls/status/offline action, email/password autofill, screen-reader labels, source secret scan, ignored credentials and frozen historical migrations.');

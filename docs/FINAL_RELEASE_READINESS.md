@@ -1,117 +1,110 @@
-# Final technical release readiness — 29 September 2026
+# Final remaining-work audit — 29 September 2026
 
-Baseline: `5190871e7344b9ee34065521c15ec436c0061246`, clean `main` checkout. This continues the [final hardening](FINAL_SIH_HARDENING.md); it does not supersede the pending physical-phone checks in the human QA report. No screenshots, recordings, Drive operations, UI redesign, hosted writes or deployment were performed.
+Baseline: clean `main` at `d99ec29d78cd333e1719fcba15ecda60a7b3cd95`. This sweep continues the current codebase. Historical human QA and evidence files are unchanged. No UI redesign, screenshots, video, Google Drive work, hosted mutation, provider send, deployment or signing operation was performed.
 
-**Decision: NO-GO for claiming full production/hosted completion.** The resumed local regression suite passes 35/35 after the historical allowlist was corrected for two previously approved patient-loading timeout files. Android production JavaScript export passes. Physical Android acceptance and connected-service acceptance remain outstanding. No new application defect was established in the audited local flows.
+**Decision: repository checks pass; NO-GO for claiming full production/hosted acceptance.** External configuration and physical Android acceptance remain required. The user selected completion of the Meta Cloud API adapter during this sweep.
 
-## Changes from the baseline
+## What changed
 
-- Fixed the hosted migration readiness gate in `scripts/check-live-database-sync.cjs`. It previously accepted the four migrations through 16 September while source contains eight through 25 September. The false acceptance was reproduced before editing. It now derives required versions from source, rejects each individually missing migration, and still requires a verified isolated identity. No production service or migration changed.
-- Corrected the moved authentication documentation link in `.env.example`.
-- Corrected README delivery status: credentials alone cannot enable the disabled WhatsApp handler. Linked this current audit without replacing historical results.
-- Detected a stale cached export that lacked the current public Supabase values. A clean-cache export includes both values in the final Hermes bundle; no credential was printed or changed. Clear Metro's cache when validating a changed build environment.
+- Added Android native-debug and production-APK EAS profiles while retaining preview APK, production AAB, explicit environments and `com.smaran.ai`.
+- Hardened local report queueing: validates the selected immutable snapshot/period, checks current recipient consent/report scope/contact, rejects missing recipient updates and returns the existing intent on repeated clicks. The Reports action uses the saved report's period instead of the currently selected generation tab and confirms a request without asserting delivery.
+- Fixed a reproduced notification timezone bug: the last-reconciled timezone was global, so patient A could prevent patient B's existing alarms from rebuilding after an offset change. It is now cached per patient, with a failing-before/passing-after two-patient regression.
+- Implemented the optional server-side Meta Cloud API adapter, authenticated owner/cron entry, bounded payloads and requests, additive private send ledger, atomic claims, duplicate-period protection, capped rate-limit retries and signed delivery callbacks. Client receipt forgery/offline replay cannot overwrite server receipts. It remains disabled by default. Ambiguous sends are held for reconciliation, never blindly retried.
+- Replaced misleading delivery test output and swallowed migration assertions with executable SQLite, worker-contract and PostgreSQL checks. Updated synthetic recipient fixtures to match actual consented phone numbers. Historical migration/config guards retain their assertions and recognize only the explicitly added profile/migration changes.
+- Added [secure delivery setup and recovery](deployment/SECURE_REPORT_DELIVERY.md), server-only blank environment examples and truthful README status.
 
-## Functional audit
+## Implementation and verification matrix
 
-| Area | Status and actual boundary |
+| Area | Implemented | Locally verified | External dependency | Remaining action |
+|---|---|---|---|---|
+| Maps/location | Google MapView, marker/zone/recenter, missing-key fallback, foreground permission/capture, pause/revoke, stale/offline status, consent epochs and bounded queue | `check-realtime-location`, `check-family-pairing`, native config checks | Google Cloud key/billing; signing; hosted location RPCs/Realtime; phone | Configure, rebuild and test tiles/GPS/permission/offline/revoke |
+| Android/EAS | SDK 54; debug/preview/production APK/AAB profiles; version 1.0.1/code 2 | Config tests and clean Hermes export | EAS project access, chosen environment and signing certificate | Build current signed artifact; inspect/install it |
+| Auth | Email/password, Google browser PKCE, state-bound callback, secure persistence, expiry/logout/recovery | Real installed SDK with controlled transport and SecureStore harness | Hosted Auth/email/Google OAuth and isolated identities | Live login/restore/refresh/logout/callback checks |
+| Sync | Owner-scoped outbox, push/pull, backoff/manual retry, reconnect, duplicate receipts, transactional cursors, account/patient guards | Real SQLite/PostgreSQL, restart/lost-ack/replay/isolation tests | Deployed migrations/RLS and live accounts | Hosted A/B, offline/reconnect and caregiver acceptance |
+| Schema | 15 ordered local migrations; nine ordered hosted migrations including private delivery ledger | Fresh/upgraded SQLite, FK checks, PostgreSQL migrations and six SQL fixtures | Authorized hosted migration visibility/deployment | Review/apply pending migrations, check RPC grants/RLS/publication |
+| Secure report delivery | Scoped Meta template text adapter, auth, claims, receipt projection/HMAC, no client provider secret | SQLite queue tests, synthetic provider/webhook tests, real PostgreSQL ledger/RPC tests, Deno check | Meta account/token/template/webhook; hosted deployment; optional cron | Follow delivery guide and verify real accepted/delivered/failed cases |
+| Notifications | Local permissions/channel, deterministic IDs, schedule/cancel/retry, privacy-safe content and timezone reconciliation | `check-my-day`, `check-daily-voice`, native config tests | Installed Android/iOS notification APIs and device settings | Phone permission, sound, firing time, timezone/DST, restart/cancel checks |
+| Caregiver/reports | Local profiles/scopes, separate hosted pairing, factual 7/30-day snapshots, scoped PDF/email/share | Care Circle/report SQL and service/component harnesses | Native sharing/mail; hosted remote pairing | Device sharing and remote owner/caregiver/revoke tests |
+| Cognitive/results | Eleven activities; scoped persistence/adaptation; Back/gesture/late-save protection | Existing cognitive/final-hardening regression entry points | Physical Android | Confirm result visibility, relaunch, controls and TalkBack |
+| My Day/Memories/My Home | Existing CRUD/media/bundled regional content; bounded reads and retry | Existing SQLite and component regressions | Native picker/storage/notification behavior | Recheck historical blocked/partial human flows |
+| Persistence/privacy | Transactional SQLite, SecureStore session banks/logout intent, backup exclusion | Migration/auth/privacy/native regressions | Native storage and final merged manifest | Device restore/relaunch; SQLite remains unencrypted, local profile switch is not authentication |
+| Assistant functions | Authenticated scoped context and server-side optional provider; separate `online-ai` stays disabled | Existing contract tests and Deno checks | Hosted provider secrets/configuration and acceptance | Configure only if claimed in submission |
+| Error/loading/retry | Existing 15-second read/cloud deadlines, request guards, failure/retry UI | Existing final-hardening/auth/sync/UI harnesses | Native I/O faults, phone QA | Storage deadlines do not cancel or repair stalled native operations |
+
+Existing routine labels, loading recovery, cognitive saves, result navigation, report activity mapping and My Day guards were retained. Only the reproduced cross-patient timezone defect changed reminder scheduling.
+
+## Maps and Android configuration
+
+`react-native-maps` remains **1.20.1** with `PROVIDER_GOOGLE`, matching [Expo SDK 54](https://docs.expo.dev/versions/v54.0.0/sdk/map-view/). `app.config.js` injects `GOOGLE_MAPS_API_KEY` into `android.config.googleMaps.apiKey`, and the optional iOS key into native iOS config. JS extras contain availability flags only. Both flags are **false in this checkout**. Invalid configured keys and missing platform keys on EAS builds are rejected. Android export succeeding does not validate map authorization.
+
+Foreground coarse/fine location is configured; background location and the location foreground service are disabled. Native config tests inspect backup exclusions and blocked camera/microphone/storage/biometric/overlay permissions. Final APK manifest and actual notification permission behavior still need native acceptance.
+
+Manual Google Cloud work:
+
+1. Select the intended project, attach enabled billing and enable **Maps SDK for Android**.
+2. Create a key restricted to that API and Android package **`com.smaran.ai`**, with the SHA-1 of the certificate signing the installed app. Direct EAS APK and Play app-signing certificates can differ; debug builds use a debug certificate.
+3. Set `GOOGLE_MAPS_API_KEY` in the profile's selected EAS environment (`development`, `preview` or `production`). Set it with suitable restricted visibility; native keys are distributed in binaries and require API/application restrictions. Local ignored environment files are not the remote EAS environment.
+4. Rebuild/install. Verify map tiles, foreground GPS, disabled/denied permission, paused sharing, stale/offline coordinates, scoped caregiver access and revoke. An availability flag does not detect a wrong SHA-1, unauthorized SDK or disabled billing; no native tile-authorization success is claimed.
+5. Only for iOS, configure its SDK and separate bundle-restricted key before its build.
+
+## Exact EAS/build handoff
+
+The existing package, owner and project ID were preserved. Profiles are explicit; local version management remains in `app.json` and `package.json`. Keep this candidate at 1.0.1/code 2 unless that code is already published; increment to a new unused Android version code before a subsequent store upload. No signing credentials were invented or inspected for secret values.
+
+| Purpose | Command | Artifact/environment |
+|---|---|---|
+| Native Android debug | `npx eas-cli build --platform android --profile development` | Debug APK, `development`, standard debug signing; no expo-dev-client dependency/launcher |
+| Metro for debug app | `npx expo start --localhost` | Development server; use the installed debug app and usual Android USB/emulator connection |
+| Preview installation | `npx eas-cli build --platform android --profile preview` | Internal release APK, `preview` |
+| Production APK | `npx eas-cli build --platform android --profile production-apk` | Internal release APK, inherits `production` environment |
+| Production AAB | `npx eas-cli build --platform android --profile production` | Store bundle, `production` |
+| JS production validation | `npx expo export --platform android --clear --output-dir .expo/remaining-work-android` | Hermes/assets only; no native signature |
+
+Before EAS builds: sign in with access to the existing project, confirm that project, configure its environment values, and select/authorize the intended Android keystore through EAS. Obtain its SHA-1 and configure Maps. Never commit downloaded signing files. Production/preview credentials have not been verified here. Windows local EAS builds are not the supported production path; use EAS cloud or a supported build host ([Expo local-build guidance](https://docs.expo.dev/build-reference/local-builds/)).
+
+**Fresh signed artifact: unavailable.** No current signed APK/AAB was built in this sweep. Ignored historical APKs exist dated 23–26 September; they predate this source and do not prove current acceptance. The ignored generated `android/` folder is also older and was not rewritten. EAS uses the tracked managed config; do not treat the stale local native folder as a current manifest/build verification.
+
+## Hosted Supabase handoff
+
+Read-only audit: public Auth settings returned **HTTP 200**; migration-history probing through the public API returned **HTTP 406**. This is unavailable migration visibility, not proof that deployment is missing. No verified isolated test owner/caregiver accounts were available. Hosted login/push/pull/reconnect/RLS remain **NOT VERIFIED**.
+
+1. Confirm the project and inspect migration history through authorized SQL/CLI access. Do not expose the private migrations schema to the public API. Review deployment/recovery before applying any pending changes.
+2. Required source order: `20260912000000`, `20260913000000`, `20260915000000`, `20260916000000`, `20260919000000`, `20260922000000`, `20260924000000`, `20260925000000`, **`20260929000000`**. The ninth migration is the new secure report worker. Verify owner/membership RLS, RPC grants and `location_signals` in `supabase_realtime`.
+3. Configure only `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in the chosen client environment. Privileged keys stay server-side.
+4. Enable email/password/confirmation and configure SMTP/sender/rate limits. Retain `{{ .ConfirmationURL }}`. Allow `smaran-ai://auth/callback` and its state-bearing callback pattern; validate the nonce on the installed app.
+5. Configure Google OAuth consent/audience/test users and the Web OAuth client in Supabase's provider settings, with the exact project callback (normally `https://<project-ref>.supabase.co/auth/v1/callback`). This application uses browser PKCE, not a native Google sign-in SDK.
+6. Test isolated confirmed owner/caregiver accounts: sign in/restore/refresh/sign out, offline local continuity, explicit backup consent, push/pull/reconnect, A/B isolation, pairing scopes and revocation, foreground location and receipts. No hosted success is inferred from disposable PostgreSQL.
+7. Deploy/verify the intended functions separately. For delivery, follow [the server setup guide](deployment/SECURE_REPORT_DELIVERY.md); for the optional assistant, configure `AI_PROVIDER`, `AI_API_URL`, `AI_API_KEY`, `AI_MODEL` only on the server.
+
+## Validation evidence from this sweep
+
+| Check | Result |
 |---|---|
-| Activity sessions/results | PASS in regression harnesses. Patient/activity identity, telemetry, feedback, saved/recommended level and adaptation use scoped records. Transactional session/model saves reject stale patients and conflicting latest sessions. Failed saves retain the result; OS Back/gesture removal now saves before resuming the original navigation action. Late responses cannot publish over a replaced session. Physical result/back/relaunch acceptance remains NOT VERIFIED. |
-| Reports | PASS in SQLite and presentation checks. All eleven activities retain separate identities/metrics. Accuracy totals use correct/attempt counts, not a mean of percentages. Memory Match's two-card explanation is selected only for Memory Match; Pattern & Shape uses selection-attempt copy. Detail history retains its own game, level, hints and feedback. Why-level reads the requested session for the active patient and uses its activity type. Immutable 7/30-day snapshots contain aggregate facts, not every session's feedback/level or an AI explanation. Scope filtering and HTML escaping remain in place. |
-| My Day | PASS local create/edit/enable/complete/remove, duplicate completion protection, persistence and scheduling failure/retry checks. Native permission and actual notification delivery remain NOT VERIFIED. |
-| My Memories | PASS local media/persistence and empty/loading/error/retry checks. Patient changes invalidate loads; copied files are cleaned up on failed saves. Native picker and phone relaunch acceptance remain NOT VERIFIED. |
-| My Home | PASS bundled content, regional initialization, switch recovery and error/retry checks. No network content dependency. Physical-phone recovery remains NOT VERIFIED. |
-| Caregiver/navigation | PASS local profile/scoped data, contacts, recipient updates/revocation and navigation/request-guard regressions. Shared-device local profiles are not private account authentication. Remote pairing is a separate hosted boundary. |
-| Async resilience | Active-patient/bootstrap, relevant list and caregiver loads have 15-second deadlines. Cloud fetches use abort/deadline and account revision guards. Native read deadlines do not cancel or repair the underlying storage operation. Existing write transactions/queues are retained. |
+| `npx tsc --noEmit` | PASS |
+| `npm run lint` | PASS, no warnings/errors |
+| `git diff --check` | PASS; Git line-ending notices are informational |
+| `node scripts/check-final-sih-hardening.cjs` | PASS |
+| `node scripts/check-report-delivery.cjs` | PASS; actual SQLite queue + synthetic Meta/webhook contracts |
+| `node scripts/check-live-database-sync.cjs` | PASS outside sandbox: nine migrations, six SQL fixtures, real SQLite/PostgreSQL/RLS, restart/replay/isolation |
+| `node scripts/check-regressions.cjs` | PASS: 35/35; logs and machine-readable results in ignored `.expo/regressions/` |
+| `npx --yes --package deno deno check --no-lock --node-modules-dir=none supabase/functions/report-delivery/index.ts supabase/functions/ai-care-assistant/index.ts supabase/functions/online-ai/index.ts` | PASS, all three entry points; no dependency manifest/lockfile changes |
+| Android clean production export | PASS: 1,874 modules, 76 assets, 6.33 MB Hermes bundle in `.expo/remaining-work-android` |
+| Source secret scans | PASS in auth/live-database regressions; path/type-only findings, no secret values logged |
+| Generated Android bundle configuration | Configured public Supabase URL/key present; no known private local environment values detected; Maps remains unconfigured |
+| Signed APK/AAB | NOT PRODUCED from current source |
+| Hosted provider/native acceptance | NOT VERIFIED |
 
-## Maps and location — PARTIAL / externally BLOCKED
+Initial sandbox run: 33/35; PostgreSQL startup was denied for two entry points. The elevated run exposed the exact new-migration history guard and concurrently generated browser QA directory, not application failures. The guard was updated without removing comparisons, generated browser artifacts were removed, and the clean aggregate rerun passed all 35 checks. Final review also verified orphaned recipients and revoked retry jobs become terminal without consuming another send attempt or blocking later queue entries.
 
-Implemented: `react-native-maps` 1.20.1, `PROVIDER_GOOGLE`, map/marker/safe-zone circle/recenter, coordinates and freshness, foreground permission, pause/revoke, bounded location history/outbox, consent epochs, owner/caregiver scope checks and Realtime invalidation with polling fallback. Capture stops when backgrounded or the person/account changes. SQL/RLS and synthetic permission/offline/revocation checks pass.
+Browser QA: `http://localhost:8102/caregiver/reports`, 390×844 and 1440×900, no screenshots. The actual app reaches its existing saved-setup recovery screen because web SQLite is unsupported. Retry works; no horizontal overflow; Retry height 60 px; three resources returned HTTP 200. Console: expected local setup errors and Expo Notifications web warning. **Reports content and delivery were not browser-verified.** Native/component tests are recorded separately; no fake web storage or auth bypass was added.
 
-`app.config.js` reads `GOOGLE_MAPS_API_KEY` and `GOOGLE_MAPS_IOS_API_KEY` into native configuration; JS extras contain only availability flags. Both flags are **false** in this checkout. Malformed configured keys throw; EAS builds reject a missing platform key. A local export can succeed without Maps configured. The map has a missing-key message; a syntactically valid but unauthorized key/billing restriction is not detected by that flag, and no dedicated native tile-authorization error UI is implemented. Coordinates/status remain independent of map tiles. No live map success is claimed.
+## Exact remaining tasks before submission
 
-Manual configuration still required:
+1. **Google Cloud:** billing, Android Maps SDK, restricted key, package/certificate SHA-1 and selected EAS environment.
+2. **EAS/signing:** authorized project/signing access, current native APK/AAB build, final manifest inspection and installation. Historical binaries are not current evidence.
+3. **Hosted Supabase:** inspect/review/apply required migrations; verify RLS/RPC/Realtime and email/Google settings with isolated identities.
+4. **Meta/provider:** account/sender/token, approved template/language/API version, server secrets, function deployment, signed webhook, optional queue cron and genuine delivery acceptance. Disable any older unsafe sender. No messages were sent here.
+5. **Physical device:** recheck the historical partial/blocked flows: Routine Recall labels, Remember Lights controls, every activity result/back/relaunch, Memories/Home recovery, My Day CRUD/permission/sound/timezone/cancellation, Reports/PDF/email, Maps/GPS/offline/revoke and TalkBack.
+6. **Submission claims:** retain PARTIAL/NOT VERIFIED for connected/native features until those checks pass. Automatic recurring report generation, background/emergency tracking, cloud photo restore and web SQLite remain outside the implemented scope; no new claim was introduced.
 
-1. Select the intended Google Cloud project, attach enabled billing and enable **Maps SDK for Android**.
-2. Create an API key restricted to that API and Android application `com.smaran.ai` plus the SHA-1 of the certificate signing the installed build. Use the EAS signing certificate for a directly installed APK; use the Play app-signing certificate for a Play-distributed app. The actual signing SHA-1 was not obtained here.
-3. Set `GOOGLE_MAPS_API_KEY` in the selected EAS `preview` or `production` environment; keep it out of Git. A native Maps key is distributed in the binary, so restrictions are necessary.
-4. Rebuild/install the native app and verify tiles, foreground GPS, denied permission, disabled device location, offline/stale state and consent revoke with a scoped caregiver. Location sharing also requires the Supabase work below.
-5. Only for iOS: enable its Maps SDK, create a separate key restricted to bundle ID `com.smaran.ai`, and set `GOOGLE_MAPS_IOS_API_KEY` before rebuilding.
-
-References: [Expo SDK 54 Maps setup](https://docs.expo.dev/versions/v54.0.0/sdk/map-view/) and [Google Android Maps setup](https://developers.google.com/maps/documentation/android-sdk/get-api-key).
-
-## Supabase/auth/sync — local PASS, hosted PARTIAL/BLOCKED
-
-Local implementation: optional email/password and Google browser PKCE, exact state-bound callback validation, SecureStore session persistence and logout recovery, local/offline continuity, backup consent, durable owner-scoped outbox, bounded batch passes, capped retry delay/manual retry, transactional pull cursors and account-change cancellation. General backup excludes photo bytes and birth dates; location uses separate consent. Foreground lifecycle drives automatic sync. Real SQLite plus disposable PostgreSQL tests pass; they do not establish deployed Auth/RLS acceptance.
-
-The ignored local environment has a URL and modern public publishable key. A fresh read-only request to hosted Auth settings returned HTTP 200. Migration history through the public API returned HTTP 406. This does **not** prove migrations are missing; it means their deployment cannot be verified with the available public access. No verified isolated owner/caregiver identities were available, so live login, push/pull, reconnect, pairing and cross-account RLS remain BLOCKED. Do not expose the private migrations schema to solve this probe limitation.
-
-Manual configuration/validation required:
-
-1. Confirm the intended project and obtain authorized migration visibility using the SQL editor or authenticated CLI. Read `select version from supabase_migrations.schema_migrations order by version;`. Review pending changes and recovery before applying anything; no database reset is needed.
-2. Verify all eight existing migrations, in order: `20260912000000`, `20260913000000`, `20260915000000`, `20260916000000`, `20260919000000`, `20260922000000`, `20260924000000`, `20260925000000`. Verify RPC grants, owner/membership RLS and `public.location_signals` membership in `supabase_realtime`.
-3. Set only `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in the chosen build environment. Never bundle privileged keys.
-4. Enable email/password and confirmation; configure sender/SMTP/rate limits and retain `{{ .ConfirmationURL }}` in the email template. Allow `smaran-ai://auth/callback` plus the state-bearing pattern `smaran-ai://auth/callback\?state=*`; verify the returned nonce on the installed app.
-5. For Google login, configure OAuth consent/audience/test users and a Web application OAuth client. Register the exact Supabase provider callback, normally `https://<project-ref>.supabase.co/auth/v1/callback`. Store its ID/secret in Supabase's Google provider settings; the secret remains server-side. This code uses browser PKCE, not a native Google sign-in SDK.
-6. Use isolated confirmed owner/caregiver accounts to test login/restore/logout, backup consent, offline edits/reconnect, A/B isolation, pairing scopes/revocation and foreground location sharing. Check actual deployed function versions separately.
-
-The assistant Edge Function authenticates through `auth.getUser`, obtains scoped context through RPC, and keeps `AI_PROVIDER`, `AI_API_URL`, `AI_API_KEY`, `AI_MODEL` server-side. Provider-backed acceptance is NOT VERIFIED; `online-ai` remains not configured. No Deno CLI validation or deployment was performed.
-
-References: [Supabase migration workflow](https://supabase.com/docs/guides/deployment/database-migrations), [native deep links](https://supabase.com/docs/guides/auth/native-mobile-deep-linking), and [repository auth setup](history/MVP24_AUTH_CLOUD_HARDENING.md#13-external-configuration-still-required). Its historical three-migration count is superseded by the eight listed here.
-
-## Secure report delivery — safe disabled boundary, delivery BLOCKED
-
-The current `report-delivery` Edge Function always returns HTTP 503 with `not_configured`; it reads no records and contacts no provider. No client provider/service credentials were found. Local recipient phone normalization, patient ownership, consent/revocation and report references are checked before queueing. Queueing is not a send receipt. Native PDF sharing/email composition remains available, with device delivery unverified.
-
-Before any automatic delivery: implement authenticated worker entry, persisted owner/patient/recipient lookup, current consent and scopes, atomic job claims, idempotent provider requests, bounded retries and verified receipts. Configure an approved WhatsApp Business template and provider credentials server-side only after that implementation. **Adding credentials alone is insufficient.** The deployed handler/version was not inspected; if an older unsafe worker is deployed, disable its triggers or replace it with the fail-closed handler before using real reports. No deployment was made here.
-
-## Security and Android configuration
-
-- Tracked/source secret scans found no credential-pattern matches; only `.env.example` is tracked. `.env`, `.env.local`, signing material, release binaries and generated exports are ignored. Findings are bounded to source/working-tree scans, not a certification of Git history or existing hosted deployments.
-- A clean-cache diagnostic JavaScript export contained the intended public Supabase configuration and no privileged-key pattern matches. An apparent raw-byte Hermes match was traced to the SDK's `sb_secret_` prefix check adjacent to other strings, not a credential. The final clean-cache Hermes export was separately checked for the current public URL/key without logging their values.
-- Inspected app diagnostics contain fixed messages, not raw tokens, contacts, coordinates or report payloads. Synthetic test records remain fixtures; no new demo data or personal files were added.
-- Android identity remains `com.smaran.ai`, app version `1.0.1`, version code `2`, scheme `smaran-ai`. EAS preview produces an internal APK; production produces an AAB. Signing access and selected EAS environment were not validated.
-- Expo config introspection confirms coarse/fine location, Internet and vibration declarations; background location and location foreground service are disabled. Camera/microphone, legacy storage, biometric and overlay permissions have removal directives. This is config introspection, not a final merged APK manifest inspection; notification runtime permission still needs device acceptance.
-- Backup is disabled; full-backup and device-transfer exclusion configuration remains. SQLite is not encrypted with SQLCipher, and local profile switching does not provide user authentication.
-
-## Checks in this continuation
-
-| Command/check | Result |
-|---|---|
-| `npx.cmd tsc --noEmit` | PASS. |
-| `npm.cmd run lint` | PASS, no warnings/errors. |
-| `git diff --check` | PASS; LF/CRLF notices are not failures. |
-| `node scripts/check-final-sih-hardening.cjs` | PASS. |
-| `node scripts/check-regressions.cjs` | Initial aggregate had sandbox PostgreSQL startup restrictions and the historical allowlist assertion; resumed run on 29 September 2026 passes **35/35**. |
-| Elevated `node scripts/check-live-database-sync.cjs` | PASS after migration-gate change: all eight migrations, five SQL fixtures, real SQLite/PostgreSQL persistence, restart/replay, retries, isolation and RLS. Hosted checks explicitly remain blocked as above. |
-| Elevated `node scripts/check-family-pairing.cjs` | PASS: SQL pairing/location, permissions/revocation, input validation and UI harness checks. |
-| Combined regression outcome | **35/35 entry points pass.** `check-visual-ux.cjs` now allows only the two already-approved patient-loading timeout files; its other protected-path checks remain active. |
-| Android production export | Clean-cache `npx.cmd expo export --platform android --clear --output-dir .expo/release-readiness-android`; 1,874 modules and bundled regional assets. Production JS export, not a signed APK/AAB or physical-device acceptance. |
-
-Browser QA on `http://localhost:8099/patient/games/result` reached the existing setup-recovery screen because web SQLite is unsupported; its Retry control rendered. Browser console showed the known local setup initialization error and Expo Notifications web warning. The result flow could not be exercised in browser; physical Android QA remains pending.
-
-The ignored `.expo/release-readiness-android` export is retained for review. The requested commit contains only the six reviewed result-flow, regression-test, allowlist and readiness-documentation files from this checkout; no private-repo or Drive operations were performed.
-
-## Remaining work by submission priority
-
-**MUST FIX BEFORE SIH SUBMISSION**
-
-- Finish the physical-phone acceptance of the rebuilt app: routine choices, Remember Lights controls, result persistence/back behavior, Memories/Home recovery, My Day CRUD/notification permission, report summary/details and sharing, and TalkBack. The prior blocked/partial observations cannot be marked PASS by harnesses.
-- If any older unsafe report worker is deployed, disable it or deploy the fail-closed replacement before processing real reports; current deployment state is unknown.
-- Make the submission's feature claims match the verified scope. Connected-service claims require the external configuration and live tests below; otherwise explicitly retain PARTIAL/BLOCKED status.
-
-**EXTERNAL CONFIGURATION REQUIRED**
-
-- Google Cloud billing/Maps API/key restrictions and the actual signing SHA-1; selected EAS environment/signing, native rebuild and device checks.
-- Supabase migration visibility/deployment, RLS/RPC/Realtime checks, email/Google settings, callback configuration and isolated live identities.
-- Secure delivery worker implementation plus provider setup if automatic delivery is in submission scope; optional assistant provider setup and acceptance if claimed.
-
-**SAFE TO DEFER**
-
-- Automatic WhatsApp delivery and optional AI provider features while clearly unavailable; local reports and manual native sharing cover the implemented path.
-- iOS acceptance, web SQLite support, cloud photo restore and background tracking when excluded from the Android/local submission scope. No emergency tracking promise.
-
-**NOT AN ISSUE**
-
-- Memory Match/Pattern & Shape report-copy mixing: the existing activity-specific fix and regressions pass.
-- Offline local use without an account, explicit backup consent, missing-key fallback and disabled unsafe delivery are intentional boundaries.
-- Sandbox-only Hermes/PostgreSQL failures were resolved by authorized reruns; no architecture replacement or production-code workaround was necessary.
+The remaining external items are not replaceable with test doubles, invented keys, fabricated receipts or another JavaScript export.

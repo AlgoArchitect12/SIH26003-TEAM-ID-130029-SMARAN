@@ -8,7 +8,7 @@ import { PageLayout } from '@constants/layout';
 import { t, type TranslationKey } from '@i18n/index';
 import { CareScopes, effectiveScopes } from '@/src/caregiver/care-circle';
 import { reportSections } from '@/src/caregiver/report-presentation';
-import type { ActivityReport } from '@/src/caregiver/reports';
+import { parseReportFacts, type ActivityReport } from '@/src/caregiver/reports';
 import { careCircleRepository as repo } from '@/src/db/repositories/care-circle.repository';
 import type { ActiveCare } from '@/src/services/care-circle.service';
 import { generateActivityReport } from '@/src/services/reports.service';
@@ -85,7 +85,7 @@ export function ReportsPanel({data}: {data: ActiveCare}) {
       onPress={()=>{try{clearPdf();setSelected(report);setAudience(undefined);}catch{setMessage('reportFailed');}}} />)}
     <SmaranCard style={PageLayout.group}>
       <ThemedText type="cardHeading" accessibilityRole="header">WhatsApp Delivery</ThemedText>
-      <ThemedText>{label('reportNotConfigured')}. {label('reportConsentText')}</ThemedText>
+      <ThemedText>{label('reportConsentText')}</ThemedText>
       <ThemedText type="action">Report Recipients</ThemedText>
       {recipients.map(r=><SmaranButton key={r.id} label={`${data.members.find(m=>m.id===r.care_member_id)?.display_name ?? 'Unknown'} · ${r.normalized_destination} (${r.frequency}, ${r.consent_status})`} accessibilityLabel={`Recipient ${r.normalized_destination}`} variant="outline" disabled={busy} onPress={()=>{setRecipient(r.care_member_id);setFrequency(r.frequency==='manual'?'weekly':r.frequency);setConsent(r.consent_status==='enabled');}} />)}
       <ThemedText type="action">Add / Update Recipient</ThemedText>
@@ -108,10 +108,10 @@ export function ReportsPanel({data}: {data: ActiveCare}) {
     </SmaranCard>
     {selected && recipients.filter(r=>r.consent_status==='enabled').length > 0 && <SmaranCard style={PageLayout.group}>
       <ThemedText type="cardHeading" accessibilityRole="header">Send Report via WhatsApp</ThemedText>
-      <ThemedText>{label('reportNotConfigured')}. {label('reportConsentText')}</ThemedText>
+      <ThemedText>{label('reportDisclaimer')}</ThemedText>
       {recipients.filter(r=>r.consent_status==='enabled').map(r=><SmaranButton key={r.id} label={`Send to ${r.normalized_destination}`} accessibilityLabel={`Send to ${r.normalized_destination}`} disabled={busy} onPress={()=>void run(async()=>{
-        await repo.queueDelivery(data.patient.id,r.id,days===7?'7-day':'30-day',selected.period_start,selected.period_end,selected.id,current);
-        if(current()) setMessage('reportNotConfigured');
+        await repo.queueDelivery(data.patient.id,r.id,parseReportFacts(selected.snapshot).days===7?'7-day':'30-day',selected.period_start,selected.period_end,selected.id,current);
+        if(current()) setMessage('reportShareRequested');
       })} />)}
     </SmaranCard>}
   </>;

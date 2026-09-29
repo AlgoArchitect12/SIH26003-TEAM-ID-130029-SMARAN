@@ -71,7 +71,7 @@ async function startPostgres(directory) {
 function postgresChecks(pg) {
   // Standalone Postgres supplies only the Supabase auth schema/claim function contract.
   // This is SQL/RLS execution, not a hosted JWT or GoTrue verification.
-  pg.sql(`CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;
+  pg.sql(`CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN;
     CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
       SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
@@ -79,7 +79,7 @@ function postgresChecks(pg) {
     GRANT EXECUTE ON FUNCTION auth.uid() TO anon, authenticated;`);
   const grants = () => pg.sql(`SELECT json_agg(x ORDER BY table_name,grantee,privilege_type) FROM
     (SELECT table_name,grantee,privilege_type FROM information_schema.role_table_grants WHERE table_schema='public'
-    AND table_name NOT IN ('pairing_codes','patient_memberships','pairing_attempts','location_sharing','location_points','location_signals')) x;`);
+    AND table_name NOT IN ('pairing_codes','patient_memberships','pairing_attempts','location_sharing','location_points','location_signals','report_send_jobs')) x;`);
   let originalGrants;
   for (const file of fs.readdirSync(path.join(root,'supabase/migrations')).filter(f => f.endsWith('.sql')).sort()) {
     pg.sql(source('supabase/migrations/' + file));
@@ -160,7 +160,7 @@ async function populate(r) {
     await r.day.complete(patient,reminder.id,r.module('src/my-day/types.ts').localDay());
     await r.memories.save(patient,{name:'Synthetic memory',relationship:'Family',description:'Local text'},null);
     for (const game of games) await r.cognitive.saveCompletedSession(sessionInput(patient,game),{...model(patient,game),updatedAt:stamp,sampleCount:patient === 'one' ? 1 : 2});
-    const member = await r.care.save(patient,{display_name:'Synthetic recipient',relationship:'Family',access_role:'family',email:'synthetic@example.invalid',phone:null,scopes:['reports']},()=>true);
+    const member = await r.care.save(patient,{display_name:'Synthetic recipient',relationship:'Family',access_role:'family',email:'synthetic@example.invalid',phone:'+15551234567',scopes:['reports']},()=>true);
     await r.care.saveRecipient(patient, member.id, '+15551234567', 'weekly', true, ()=>true);
     const report = await r.module('src/services/reports.service.ts').generateActivityReport(patient,7,()=>true,new Date('2026-09-13T12:00:00Z'));
     const facts = r.module('src/caregiver/reports.ts').parseReportFacts(report.snapshot);
@@ -470,7 +470,7 @@ function sourceChecks() {
   const files=execFileSync('git',['ls-files','--cached','--others','--exclude-standard','-z'],{cwd:root,encoding:'utf8'}).split('\0').filter(Boolean);
   // Freeze every migration at the release preceding Sync Status, including 014.
   // The family-pairing migration is a new forward file, verified separately.
-  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&!['supabase/migrations/20260924000000_family_pairing.sql','supabase/migrations/20260925000000_realtime_location.sql','src/db/migrations/015_live_location.ts'].includes(f))) {
+  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&!['supabase/migrations/20260924000000_family_pairing.sql','supabase/migrations/20260925000000_realtime_location.sql','supabase/migrations/20260929000000_secure_report_worker.sql','src/db/migrations/015_live_location.ts'].includes(f))) {
     assert.equal(source(file).replace(/\r\n/g,'\n'),execFileSync('git',['show','1dfccf1:'+file],{cwd:root,encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' historical migration unchanged');
   }
   const patterns=[['private key',/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],['AI provider key',/\b(?:sk-proj-|sk-ant-|AIza)[A-Za-z0-9_-]{24,}/],

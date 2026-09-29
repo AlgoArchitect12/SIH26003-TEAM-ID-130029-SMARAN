@@ -3,6 +3,14 @@
     "appVersionSource": "local"
   },
   "build": {
+    "development": {
+      "distribution": "internal",
+      "environment": "development",
+      "android": {
+        "gradleCommand": ":app:assembleDebug",
+        "withoutCredentials": true
+      }
+    },
     "preview": {
       "distribution": "internal",
       "android": {
@@ -15,6 +23,13 @@
         "buildType": "app-bundle"
       },
       "environment": "production"
+    },
+    "production-apk": {
+      "extends": "production",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     }
   }
 }

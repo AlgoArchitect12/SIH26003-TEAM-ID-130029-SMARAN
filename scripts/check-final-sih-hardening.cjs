@@ -136,15 +136,19 @@ async function results() {
 }
 
 async function delivery() {
-  let handler;
-  const source = fs.readFileSync('supabase/functions/report-delivery/index.ts', 'utf8').replace(/^\uFEFF/, '').replace(/^import .*;\r?\n/, '');
-  new Function('Deno', source)({ serve: fn => { handler = fn; } });
-  const response = handler(new Request('https://example.invalid', { method: 'POST', body: '{}' }));
+  const { handleDelivery, deliveryConfig } = load('supabase/functions/report-delivery/contract.ts');
+  const response = await handleDelivery(new Request('https://example.invalid', { method: 'POST', body: '{}' }), {
+    config: deliveryConfig(() => undefined),
+    authenticate: async () => { throw Error('Disabled worker must not access auth'); },
+    claim: async () => { throw Error('Disabled worker must not claim jobs'); },
+    fetch: async () => { throw Error('Disabled worker must never send'); },
+  });
   assert.equal(response.status, 503); assert.deepEqual(await response.json(), { ok: false, error: 'not_configured' });
   const saved = [], rows = [];
   const data = { current: () => true, patient: { id: 'one' }, settings: { language: 'en' }, reports: [], recipients: [],
     members: [{ id: 'member', display_name: 'Fixture recipient', phone: '+15551234567', status: 'local' }] };
   const render = screen('app/caregiver/reports.tsx', {
+    '@/src/caregiver/reports': load('src/caregiver/reports.ts'),
     '@/src/caregiver/care-circle': { CareScopes: ['reports'], effectiveScopes: () => ['reports'] },
     '@/src/caregiver/report-presentation': {}, '@/src/services/reports.service': {},
     '@/src/services/report-pdf.service': { cleanupReportPdfs() {}, ReportEmailUnavailable: class extends Error {}, ReportPdfUnavailable: class extends Error {} },

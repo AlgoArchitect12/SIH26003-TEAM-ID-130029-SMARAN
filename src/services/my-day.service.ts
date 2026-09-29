@@ -15,7 +15,7 @@ export type NotificationResult = { permission: ReminderPermission; failed: boole
 const channelId = 'smaran-reminders';
 const alarmSound = 'smaran_alarm.wav';
 const notificationPrefix = 'smaran-my-day-';
-let scheduledTimezone: string | null = null;
+const scheduledTimezones = new Map<string, string>();
 
 if (Platform.OS !== 'web') Notifications.setNotificationHandler({
   handleNotification: async () => ({ shouldPlaySound: true, shouldSetBadge: false, shouldShowBanner: true, shouldShowList: true }),
@@ -48,7 +48,7 @@ async function reconcile(patientId: string, request = false): Promise<Notificati
     let failed = false;
     const timezone = `${Intl.DateTimeFormat().resolvedOptions().timeZone}:${new Date().getTimezoneOffset()}`;
     // Rebuild daily alarms after cold start or a device timezone/offset change.
-    const timezoneChanged = scheduledTimezone !== timezone;
+    const timezoneChanged = scheduledTimezones.get(patientId) !== timezone;
     for (const reminder of reminders) {
       // A deterministic identifier also covers a crash between native scheduling and SQLite acknowledgement.
       const identifier = `${notificationPrefix}${reminder.id}`;
@@ -94,7 +94,7 @@ async function reconcile(patientId: string, request = false): Promise<Notificati
         }
       }
     } catch { failed = true; }
-    if (!failed) scheduledTimezone = timezone;
+    if (!failed) scheduledTimezones.set(patientId, timezone);
     return { permission, failed };
   } catch { return { permission, failed: true }; }
 }

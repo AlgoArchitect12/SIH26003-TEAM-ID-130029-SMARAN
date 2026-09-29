@@ -65,7 +65,9 @@ function checkMvp22Boundaries() {
   expectedConfig.expo.plugins.push(['expo-location',{locationWhenInUsePermission:'Share your location with the people you explicitly allow.',isAndroidBackgroundLocationEnabled:false,isIosBackgroundLocationEnabled:false,isAndroidForegroundServiceEnabled:false}]);
   assert.deepEqual(JSON.parse(fs.readFileSync('app.json','utf8')),expectedConfig,'only bundled reminder sound and report email plugins change');
   const expectedEas=JSON.parse(baseline('eas.json'));expectedEas.build.preview.environment='preview';expectedEas.build.production.environment='production';
-  assert.deepEqual(JSON.parse(fs.readFileSync('eas.json','utf8')),expectedEas,'only explicit EAS environment selection changes');
+  expectedEas.build.development={distribution:'internal',environment:'development',android:{gradleCommand:':app:assembleDebug',withoutCredentials:true}};
+  expectedEas.build['production-apk']={extends:'production',distribution:'internal',android:{buildType:'apk'}};
+  assert.deepEqual(JSON.parse(fs.readFileSync('eas.json','utf8')),expectedEas,'only reviewed environments, native debug and production APK profiles');
   for(const file of ['plugins/with-private-backup.cjs','src/db/client.web.ts']){
     assert.equal(fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n'),baseline(file).replace(/\r\n/g,'\n'),file+' unchanged');
   }
