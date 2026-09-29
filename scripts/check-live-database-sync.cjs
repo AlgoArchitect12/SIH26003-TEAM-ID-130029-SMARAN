@@ -436,7 +436,7 @@ async function statusChecks() {
 }
 
 function hostedBlockers(versions, identity) {
-  const required=['20260912000000','20260913000000','20260915000000','20260916000000'];
+  const required=fs.readdirSync(path.join(root,'supabase/migrations')).filter(f=>/^\d{14}_.*\.sql$/.test(f)).map(f=>f.slice(0,14));
   const reasons=[];
   if (!Array.isArray(versions)) reasons.push('migration history not accessible with public credentials');
   else if(required.some(v=>!versions.includes(v)))reasons.push('hosted migrations behind source');
@@ -485,8 +485,13 @@ function sourceChecks() {
   assert.ok(execFileSync('git',['check-ignore','.env.local'],{cwd:root,encoding:'utf8'}).trim());
   for(const file of ['auth.ts','auth-storage.ts','sync.ts'])assert.doesNotMatch(source('src/cloud/'+file),/console\.(?:log|debug|warn|error)\s*\(/,'no raw auth/sync diagnostics in production');
   assert.equal(hostedBlockers(null,false).length,2);assert.equal(hostedBlockers(['20260912000000'],true).length,1);
-  assert.equal(hostedBlockers(['20260912000000','20260913000000','20260915000000','20260916000000'],false).length,1);
-  assert.equal(hostedBlockers(['20260912000000','20260913000000','20260915000000','20260916000000'],true).length,0);
+  const versions=fs.readdirSync(path.join(root,'supabase/migrations')).filter(f=>/^\d{14}_.*\.sql$/.test(f)).map(f=>f.slice(0,14));
+  assert.ok(versions.includes('20260925000000'));
+  assert.equal(hostedBlockers(['20260912000000','20260913000000','20260915000000','20260916000000'],false).length,2);
+  assert.equal(hostedBlockers(['20260912000000','20260913000000','20260915000000','20260916000000'],true).length,1);
+  for(const version of versions) assert.deepEqual(hostedBlockers(versions.filter(v=>v!==version),true),['hosted migrations behind source']);
+  assert.deepEqual(hostedBlockers(versions,false),['no verified isolated authenticated test identity']);
+  assert.deepEqual(hostedBlockers(versions,true),[]);
   console.log('PASS historical migrations unchanged, tracked/untracked source secret scan, ignored .env.local, secret-safe diagnostics and hosted BLOCKED gates.');
 }
 async function main() {

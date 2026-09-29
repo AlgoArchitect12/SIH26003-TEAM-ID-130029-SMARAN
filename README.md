@@ -124,7 +124,7 @@ Email/password and Google sign-in, backup consent, a persistent sync queue and v
 
 **✅ Local reports · ⚠️ External delivery**
 
-Generate factual 7/30-day activity summaries with native PDF sharing and email composition. WhatsApp delivery code requires server configuration, an approved provider template and end-to-end verification; opening a share sheet is not proof of delivery.
+Generate factual 7/30-day activity summaries with native PDF sharing and email composition. WhatsApp sending is disabled with HTTP 503 `not_configured`; a secure backend worker, provider configuration and end-to-end verification are still required. Opening a share sheet is not proof of delivery.
 
 ### 🤖 Assistant / AI
 
@@ -232,7 +232,7 @@ All screenshots were captured from the running Android app. Capture details and 
 
 ## 🧪 Validation & Readiness
 
-The [SIH validation report](docs/validation/SIH_VALIDATION.md) records commands, baselines, retries and limitations. Results below distinguish the earlier engineering validation from this README presentation phase; historical milestone reports are not fresh acceptance evidence.
+The [final release-readiness audit](docs/FINAL_RELEASE_READINESS.md) records the current checks and submission blockers. The [SIH validation report](docs/validation/SIH_VALIDATION.md) records earlier commands, baselines, retries and limitations. Results below describe that earlier presentation phase; historical milestone reports are not fresh acceptance evidence.
 
 ### ✅ Verified
 
