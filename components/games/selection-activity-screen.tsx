@@ -24,7 +24,7 @@ import { useCognitiveSessionStore } from '@/src/stores/cognitive-session.store';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import { activityTitleKeys } from '@/src/games/presentation';
 import { preparePatterns, type PatternChallenge, type PatternShape } from '@/src/games/pattern-recognition';
-import { prepareRoutine, type Routine } from '@/src/games/routine-recall';
+import { prepareRoutine, routineStepText, type Routine } from '@/src/games/routine-recall';
 import { prepareFamiliarObjects, prepareSequence, preparePictures, type ObjectTask, type RecallActivity } from '@/src/games/recall-activities';
 import { getMemorySymbol } from '@/src/games/memory-match/assets';
 import { prepareGridActivity, type GridActivity } from '@/src/games/grid-activities';
@@ -157,7 +157,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
   const pattern = data?.patterns?.[selection?.position ?? 0];
   const object = data?.objects?.[selection?.position ?? 0];
   const optionText = (choice: string) => data?.routine
-    ? data.routine.steps.find(step => step.id === choice)?.text ?? ''
+    ? routineStepText(choice, language)
     : data?.grid || data?.puzzle ? choice : data?.patterns ? t(language, shapeKeys[choice as PatternShape]) : t(language, getMemorySymbol(choice as MemorySymbolId).labelKey);
   const position = pattern ? (pattern.missingIndex ?? (pattern.kind === 'match' ? 0 : pattern.sequence.length)) + 1 : (selection?.position ?? 0) + 1;
   const prompt = object ? t(language, data && data.level <= 2 ? 'familiarFind' : object.cue, { answer: optionText(object.answer) })

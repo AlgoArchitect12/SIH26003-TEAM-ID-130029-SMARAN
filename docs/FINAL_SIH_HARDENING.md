@@ -1,0 +1,56 @@
+# Final SIH code hardening — 29 September 2026
+
+This is an engineering follow-up to the prior Android QA, not a replacement human test. No full device QA, screenshots, videos, Google Drive work, deployment, or database reset was performed. The earlier QA observations and media remain historical evidence. Physical-phone confirmation of these changes is pending.
+
+## Investigated and changed
+
+| Area | Finding and change | Verification boundary |
+|---|---|---|
+| Routine Recall | External distractor IDs were resolved only against the current routine, producing empty labels. A shared localized lookup now resolves every choice across all five routines. Preview order and scoring are unchanged. | All five levels and seven languages have nonempty choice labels; wrong/correct selection and accuracy checks pass. Native visual/touch confirmation pending. |
+| My Memories / My Home | Requests invalidated by workspace changes could be discarded without restarting the regional load; patient hooks did not react to switch completion. Hooks now subscribe to the relevant state. Memories clears stale data before a new load. | Controlled component checks reproduce stale requests and verify recovery, empty state, errors and retry. The exact cause of the earlier emulator hang was not captured, so its resolution is not claimed as native acceptance. |
+| Loading resilience | Bootstrap, active-patient reads, Memories reads, caregiver loading and My Day reads now have a 15-second deadline and use their existing error/retry presentation. | Timeout success, failure and never-settling promise checks pass. Timeout does not cancel native work or restart migrations; permanently unavailable storage still requires recovery. |
+| Results | Saved summaries automatically navigated away after 2.4 seconds. They now remain visible until Continue or Back. The visible Back action saves pending results first and stays on the result after a save failure. | Sequence Memory, Chess Puzzle and Word Match retain actual activity/accuracy, reject failed-save navigation and continue only when requested. Existing session persistence/adaptation tests pass. |
+| Reports | Aggregate report copy always included Memory Match's two-card explanation. Explanations are now attached to the appropriate activity. | Real SQLite report generation, weighted totals, activity/patient isolation, immutable snapshots and scope filtering pass. All eleven activity labels retain their own metrics. No schema or historical session rewrite. |
+| My Day | A mount-time request guard could remain invalid after a workspace change. The list now refreshes its guard and clears old loaded content. | Existing create/edit/enable/complete/remove, scheduling denial/failure/retry, duplicate completion and persistence checks pass. Real OS notification delivery remains a device check. |
+| Memories lifecycle | Existing local files, picker and transactional save/cleanup architecture retained. | Existing add/edit/read/remove, copy failure, rollback, cleanup and cross-patient checks pass. Native photo picker remains a phone check. |
+| Caregiver | Existing contacts/scopes/pairing retained. Report recipient edits previously inserted another recipient and did not refresh the list. They now reuse the saved ID and refresh local state, including revocation. | Local CRUD/revocation, report access and recipient update checks pass. Disposable PostgreSQL pairing/RLS checks pass; hosted pairing remains unverified. |
+| WhatsApp | The old Edge Function trusted incoming record payloads, omitted owner filters, addressed nonexistent record IDs, treated serialized snapshots as objects and lacked idempotent delivery. It now returns HTTP 503 `not_configured` without reading records or contacting a provider. UI no longer claims immediate/automatic delivery. | Handler regression confirms failure response. No provider request or deployed function update occurred. Local preferences/queue and manual PDF sharing remain available. A secure delivery worker is still required. |
+| Remember Lights | No new board defect was established. Existing preview/manual playback, foreground guards and large controls remain. No warning suppression was added. | Existing grid interaction/hint/pause/foreground regression passes. Available emulator logs did not reproduce the original debugger warning. Production Android Hermes export passes; native interaction under the release APK remains pending. |
+
+The React review retained effect cleanup, stale-request protection, labelled controls, existing large touch targets, wrapping text and destructive-action confirmations. No dependency, visual redesign, fake memory, fabricated statistic, or migration was added.
+
+## Checks run
+
+| Check | Result |
+|---|---|
+| `npx.cmd tsc --noEmit` | PASS. `.cmd` avoids the machine's blocked PowerShell script shim. |
+| `npm.cmd run lint` | PASS, no lint warnings/errors. |
+| `git diff --check` | PASS. Git's LF/CRLF notices are not whitespace failures. |
+| `node scripts/check-final-sih-hardening.cjs` | PASS: localized choices/scoring, timeout/error/retry, stale workspace/switch recovery, memory isolation, report mapping, persistent results, recipient updates/revocation and disabled delivery. |
+| `node scripts/check-regressions.cjs` | Initial aggregate: 32/35 PASS. Two PostgreSQL fixtures could not start inside the sandbox; both passed on authorized retries outside it. Final combined result: 34/35 entry points passed. |
+| Remaining legacy check | `check-visual-ux.cjs` fails at its old MVP-19A file-change allowlist because `src/services/active-patient.service.ts` now has the required timeout. Contrast checks ran and passed before that assertion. The assertion was not weakened or removed. This is not a claim that the full suite passed. |
+| Android production export | PASS: `EXPO_NO_DOTENV=1`, `CI=1`, `npx.cmd expo export --platform android --output-dir .expo/final-sih-android`; 1,874 modules, Hermes bundle and bundled regional assets. Initial sandbox attempt could not execute Hermes; authorized retry passed. This is bundle verification, not a signed APK/device test. |
+| Browser recovery | Real app at `http://localhost:8099/patient/my-memories`, widths 1536 and 390 (phone height 844). Existing unsupported-web SQLite path reached error/retry, retry remained usable, no horizontal overflow, button height 60px. Three HTTP resources returned 200. Console contained the expected local setup failures and Expo Notifications web warning. No native storage substitution was used. |
+| Hosted service probe | Existing live-database check reached public Auth settings (HTTP 200). Migration history returned HTTP 406; authenticated push/pull/reconnect/account-isolation acceptance remains BLOCKED without verified isolated identities and hosted migration visibility. |
+
+The report-delivery entry point now uses the same native `Deno.serve` convention as the other Edge Functions. It is excluded from mobile TypeScript compilation alongside them; its actual handler is exercised by the Node regression. A Deno CLI/type-check was not available in this environment.
+
+## Configuration and remaining external work
+
+- **Google Maps:** Enable billing and the Maps SDK for Android in the intended Google Cloud project. Set `GOOGLE_MAPS_API_KEY` in the selected EAS environment, restricted to `com.smaran.ai` and the SHA-1 of the actual signing certificate. For iOS, enable its Maps SDK and set `GOOGLE_MAPS_IOS_API_KEY`, restricted to `com.smaran.ai`. Rebuild the native app after key changes. Existing config rejects invalid keys and missing EAS build keys; the map shows its unavailable state without configuration. No credential or billing operation was performed.
+- **Location:** Foreground device permission, device location services, signed-in ownership, explicit sharing consent, authorized caregiver scope, deployed location RPCs/RLS and Realtime publication are all required. Capture remains foreground-only, with bounded offline queues and separate consent epochs. No background/emergency tracking claim.
+- **Supabase/auth/sync:** Keep only `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in client configuration. Apply/verify the existing migrations through `20260925000000_realtime_location.sql` in the intended project, configure email/Google Auth and allow `smaran-ai://auth/callback`, then verify owner/caregiver flows with isolated accounts. No migration, backend rewrite or secret change was made. `.env.example` remains unchanged.
+- **WhatsApp:** Adding `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_ID` alone is insufficient. Before enabling sends, implement authenticated worker entry, persisted owner/patient lookup, current consent/scopes, atomic claims, provider idempotency/retries, truthful delivery receipts and an approved provider template. The replacement fail-closed handler has not been deployed by this task; review any existing deployed worker separately. Queueing is not delivery.
+- **Assistant:** `AI_PROVIDER`, `AI_API_URL`, `AI_API_KEY` and `AI_MODEL` are server configuration only. Provider-backed acceptance remains pending. The existing separate `online-ai` endpoint remains not configured.
+- **Human acceptance:** Recheck native routine labels/taps, Memories/Home recovery, result visibility, report generation, notifications, photo selection and TalkBack using the rebuilt app. No prior QA status is promoted to PASS by these engineering checks.
+
+References consulted: [Expo SDK 54](https://docs.expo.dev/versions/v54.0.0/), [React Native debugging](https://reactnative.dev/docs/debugging) (debugging UI is disabled in release builds), and [Deno HTTP server API](https://docs.deno.com/api/deno/http-server/).
+
+## Change inventory and Git scope
+
+- UI: `app/_layout.tsx`, `app/caregiver/reports.tsx`, `app/patient/games/result.tsx`, `app/patient/my-memories.tsx`, `components/games/selection-activity-screen.tsx`, `components/my-day/my-day-content.tsx`, `components/my-day/shared.tsx`, `components/my-home/shared.tsx`.
+- Logic/config: `src/games/routine-recall.ts`, `src/caregiver/report-presentation.ts`, `src/services/active-patient.service.ts`, `src/services/care-circle.service.ts`, `src/utils/with-timeout.ts`, `supabase/functions/report-delivery/index.ts`, `tsconfig.json`.
+- Checks: `scripts/check-final-sih-hardening.cjs`; existing component harnesses in `scripts/check-privacy-recovery.cjs` and `scripts/check-product-hardening.cjs` gained hook/import support without removing assertions.
+- Documentation: this report and hardening addenda in `docs/SIH_EVIDENCE.md`, `docs/evidence/android-pixel9a/README.md` and the local `docs/HUMAN_QA_REPORT.md`.
+
+Only this task's changes are staged. The earlier QA media and documentation edits, including the previously untracked human QA report, are preserved unstaged. No files in the old private worktree were edited and no private remote was contacted. This existing checkout shares Git metadata with its parent worktree, so normal Git object/index operations use that existing shared directory. The authorized remote is only `public-sih`, branch `main`. No Google Drive operations were performed.

@@ -29,7 +29,7 @@
       ]
     }
   },
-  "exclude": ["supabase/functions/online-ai/index.ts", "supabase/functions/ai-care-assistant/index.ts"],
+  "exclude": ["supabase/functions/online-ai/index.ts", "supabase/functions/ai-care-assistant/index.ts", "supabase/functions/report-delivery/index.ts"],
   "include": [
     "**/*.ts",
     "**/*.tsx",

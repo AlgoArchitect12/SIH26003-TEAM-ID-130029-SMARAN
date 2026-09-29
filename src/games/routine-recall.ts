@@ -30,11 +30,19 @@ export const Routines: Record<DifficultyLevel, Routine> = {
   ] },
 };
 
+export function routineStepText(id: string, language: Language): string {
+  for (const level of DifficultyLevels) {
+    const index = Routines[level].steps.findIndex(step => step.id === id);
+    if (index >= 0) return routineStrings[language][level - 1][index + 1];
+  }
+  throw new Error('Unknown routine step.');
+}
+
 export function prepareRoutine(level: DifficultyLevel, language: Language = 'en'): { routine: Routine; tasks: readonly SelectionTask[] } {
   if (!DifficultyLevels.includes(level)) throw new Error('Invalid activity level.');
   const copy = routineStrings[language][level - 1];
   const routine = { ...Routines[level], title: copy[0],
-    steps: Routines[level].steps.map((step, index) => ({ ...step, text: copy[index + 1] })) };
+    steps: Routines[level].steps.map(step => ({ ...step, text: routineStepText(step.id, language) })) };
   return {
     routine,
     tasks: routine.steps.map((step, index) => {

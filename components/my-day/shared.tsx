@@ -15,6 +15,7 @@ export { category } from '@/src/my-day/presets';
 export function useMyDayPatient() {
   const router = useRouter();
   const revision = usePatientSessionStore(s => s.revision);
+  const switching = usePatientSessionStore(s => s.switching);
   const language = useOnboardingStore(s => s.language) ?? 'en';
   const [patientId, setPatientId] = useState<string | null>(null);
   const [patientName, setPatientName] = useState<string | undefined>();
@@ -26,6 +27,7 @@ export function useMyDayPatient() {
     const current = capturePatientRequest();
     setFailed(false);
     setPatientId(null); setPatientName(undefined);
+    if (switching) return;
     void resolveActivePatient().then(result => {
       if (!active || !current()) return;
       if (result.status !== 'ready') { router.replace('/onboarding/role'); return; }
@@ -42,7 +44,7 @@ export function useMyDayPatient() {
       else setFailed(true);
     });
     return () => { active = false; };
-  }, [attempt, router, revision]);
+  }, [attempt, router, revision, switching]);
   return { patientId, patientName, language, failed, retry };
 }
 export { Field } from '@components/ui/smaran-field';

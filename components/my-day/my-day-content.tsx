@@ -1,7 +1,7 @@
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { AppState, View } from 'react-native';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
@@ -13,7 +13,8 @@ import { myDayRepository } from '@db/repositories/my-day.repository';
 import { myDayService, type NotificationResult } from '@services/my-day.service';
 import { localDay, timeLabel, type Reminder, type ReminderEvent, type TodayReminder } from '@/src/my-day/types';
 import { useThemeColors } from '@/hooks/use-theme-color';
-import { capturePatientRequest, captureReminderManagement } from '@/src/stores/patient-session.store';
+import { capturePatientRequest, captureReminderManagement, usePatientSessionStore } from '@/src/stores/patient-session.store';
+import { withTimeout } from '@/src/utils/with-timeout';
 
 export function MyDayContent({ caregiver = false }: { caregiver?: boolean } = {}) {
   const router = useRouter();
@@ -27,7 +28,12 @@ export function MyDayContent({ caregiver = false }: { caregiver?: boolean } = {}
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
   const locked = useRef(false);
-  const current = useRef(caregiver ? captureReminderManagement() : capturePatientRequest()).current;
+  const revision = usePatientSessionStore(s => s.revision);
+  const switching = usePatientSessionStore(s => s.switching);
+  const current = useMemo(() => {
+    void revision; void switching;
+    return caregiver ? captureReminderManagement() : capturePatientRequest();
+  }, [caregiver, revision, switching]);
   const loadRequest = useRef(0);
   const [removing, setRemoving] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<NotificationResult | null>(null);
@@ -36,12 +42,13 @@ export function MyDayContent({ caregiver = false }: { caregiver?: boolean } = {}
     if (!patientId || !current()) return;
     const request = ++loadRequest.current;
     const now = new Date();
-    const [items, reminders, history] = await Promise.all([myDayRepository.today(patientId, now), myDayRepository.list(patientId), myDayRepository.currentCompletions(patientId, localDay(now))]);
+    const [items, reminders, history] = await withTimeout(Promise.all([myDayRepository.today(patientId, now), myDayRepository.list(patientId), myDayRepository.currentCompletions(patientId, localDay(now))]));
     if (!current() || request !== loadRequest.current) return;
     setToday(items); setAll(reminders); setEvents(history); setError(false); setDisplayDay(localDay(now)); setLoaded(true);
   }, [patientId, current]);
   useFocusEffect(useCallback(() => {
     let active = true;
+    setLoaded(false); setToday([]); setAll([]); setEvents([]); setRemoving(null); setNotifications(null);
     const load = () => { void refresh().catch(() => { if (active && current()) setError(true); }); };
     load();
     if (patientId) void myDayService.sync(patientId).then(result => { if (active && current()) setNotifications(result); });

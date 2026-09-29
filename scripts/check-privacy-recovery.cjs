@@ -25,6 +25,11 @@ function screen(file, overrides, props) {
       if (!previous || deps.some((value, index) => value !== previous.deps[index])) slots[i] = { value: fn, deps };
       return slots[i].value;
     },
+    useMemo: (fn, deps) => {
+      const i = cursor++, previous = slots[i];
+      if (!previous || deps.some((value, index) => value !== previous.deps[index])) slots[i] = { value: fn(), deps };
+      return slots[i].value;
+    },
     useEffect: (fn, deps) => {
       const i = cursor++, previous = slots[i];
       if (!previous || deps.some((value, index) => value !== previous[index])) effects.push(() => { cleanups[i]?.(); cleanups[i] = fn(); });
@@ -40,6 +45,7 @@ function screen(file, overrides, props) {
     if (name === '@/hooks/use-game-transition') return load('hooks/use-game-transition.ts', { ...overrides, react,
       '@react-navigation/native': overrides['@react-navigation/native'] ?? { useIsFocused: () => true }, $timers: clock });
     if (name in overrides) return overrides[name];
+    if (name === '@/src/utils/with-timeout') return load('src/utils/with-timeout.ts');
     if (name === 'react') return react;
     if (name === 'react/jsx-runtime') return require(name);
     if (name === 'react-native') return { View: 'View', StyleSheet: { create: s => s } };

@@ -11,3 +11,7 @@ This evidence was captured from the real SMARAN Android application running on t
 The emulator profile used the synthetic name `Demo Patient`. No personal media or prior PC screenshots/videos were used. The regional image shown is bundled app content.
 
 Two Pattern & Shape sessions were completed, then the app generated a local activity summary. It showed two sessions and 10/10 correct attempts. The detail screen includes generic Memory Match explanatory text that does not match those Pattern & Shape sessions; this discrepancy is documented in the capture notes. Empty My Day and My Memories screens are genuine app states. Location sharing remained paused. The evidence does not verify cloud sync, live maps, account services, or server-backed behavior.
+
+## Final SIH code hardening — 29 September 2026
+
+See [the engineering follow-up](FINAL_SIH_HARDENING.md) for fixes, checks and remaining configuration blockers. The historical captures and QA outcomes above are unchanged; native human confirmation of the fixes is pending.

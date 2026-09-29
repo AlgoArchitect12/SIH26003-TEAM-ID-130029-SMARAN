@@ -13,6 +13,7 @@ import { SmaranCard } from '@components/ui/smaran-card';
 import { memoriesRepository } from '@db/repositories/memories.repository';
 import { t } from '@i18n/index';
 import type { PersonalMemory } from '@/src/memories/types';
+import { withTimeout } from '@/src/utils/with-timeout';
 
 export default function MyMemoriesScreen() {
   const router = useRouter();
@@ -26,7 +27,8 @@ export default function MyMemoriesScreen() {
   useEffect(() => {
     if (!focused) return;
     let active = true;
-    if (patientId) { setFailed(false); void memoriesRepository.list(patientId).then(rows => {
+    setLoaded(false); setMemories([]); setFailed(false);
+    if (patientId) { void withTimeout(memoriesRepository.list(patientId)).then(rows => {
       if (active) { setMemories(rows); setLoaded(true); }
     }).catch(() => { if (active) setFailed(true); }); }
     return () => { active = false; };

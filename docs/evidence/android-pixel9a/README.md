@@ -35,3 +35,7 @@ All images in `assets/screenshots/` were taken from the live emulator using Andr
 Two Pattern & Shape sessions were completed on the emulator before the local caregiver summary was generated. The report showed two sessions, 10/10 correct attempts, 100% accuracy, and zero hints/errors. The report detail screen also contains a generic explanatory paragraph referring to two-card Memory Match attempts; that paragraph does not describe the Pattern & Shape sessions captured here. The screenshots preserve the app as implemented, including this mismatch.
 
 The My Day and My Memories captures show real empty states. Location sharing remained paused. This evidence covers the local emulator flow; it does not establish remote sync, live maps, account services, or server-backed behavior.
+
+## Code follow-up — 29 September 2026
+
+[Final SIH hardening notes](../../FINAL_SIH_HARDENING.md) record the subsequent code fixes and automated checks. No new screenshots or recordings were captured. The evidence above predates those fixes and does not verify their native behavior.

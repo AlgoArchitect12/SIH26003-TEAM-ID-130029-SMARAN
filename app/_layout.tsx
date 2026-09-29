@@ -21,6 +21,7 @@ import { startSyncLifecycle } from '@/src/cloud/sync';
 import { setWorkspace } from '@/src/stores/patient-session.store';
 import { startAdminLifecycle } from '@/src/services/admin.service';
 import { startLocationLifecycle } from '@/src/services/location.service';
+import { withTimeout } from '@/src/utils/with-timeout';
 
 type BootstrapStatus = 'loading' | 'ready' | 'failed';
 
@@ -40,7 +41,7 @@ function DatabaseBootstrap() {
     let active = true;
     setStatus('loading');
 
-    Promise.all([initializeDatabase(), loadAppearance()])
+    withTimeout(Promise.all([initializeDatabase(), loadAppearance()]))
       .then(() => {
         if (active) {
           setStatus('ready');

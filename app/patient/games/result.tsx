@@ -63,10 +63,6 @@ export default function CognitiveResultScreen() {
   const submissionLocked = useRef(false);
   const automaticSave = useRef<() => void>(() => {});
   useGameTransition(status === 'ready' && pending && !saved && !saving && !saveFailed ? 6000 : null, () => automaticSave.current(), paused);
-  useGameTransition(status === 'ready' && saved ? 2400 : null, () => {
-    if (!saved || useCognitiveSessionStore.getState().saved !== saved) return;
-    router.replace({ pathname: `/patient/games/${saved.session.gameType.replaceAll('_', '-')}`, params: { auto: '1' } } as Href);
-  }, paused);
 
   useEffect(() => {
     if (!focused) return;
@@ -142,17 +138,19 @@ export default function CognitiveResultScreen() {
 
   const submit = async (feedback: ActivityFeedbackLabel | null) => {
     const current = capturePatientRequest();
-    if (!current()) return;
-    if (!pending || useCognitiveSessionStore.getState().pending !== pending || submissionLocked.current) return;
+    if (!current()) return false;
+    if (!pending || useCognitiveSessionStore.getState().pending !== pending || submissionLocked.current) return false;
     submissionLocked.current = true;
     setSaving(true);
     setSaveFailed(false);
     try {
       const result = await saveCognitiveResult(pending, feedback);
       if (current()) setSaved(result);
+      return current();
     } catch {
       if (__DEV__) console.error('Completed activity could not be saved');
       if (current()) { setSaveFailed(true); submissionLocked.current = false; }
+      return false;
     } finally {
       if (current()) setSaving(false);
     }
@@ -173,7 +171,10 @@ export default function CognitiveResultScreen() {
         <SmaranButton label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')}
           variant="outline" onPress={() => setPaused(value => !value)} />
         <SmaranButton label={t(language, 'activitiesBack')} accessibilityLabel={t(language, 'activitiesBack')} variant="outline" disabled={saving}
-          onPress={() => { setPaused(true); router.dismissTo('/patient/games'); }} />
+          onPress={() => { void (async () => {
+            if (!saved && !await submit(null)) return;
+            setPaused(true); router.dismissTo('/patient/games');
+          })(); }} />
         <ThemedText accessibilityRole="header" textSize={textSize} type="screenTitle">
           {t(language, 'resultTitle', { name: preferredName })}
         </ThemedText>
@@ -223,6 +224,8 @@ export default function CognitiveResultScreen() {
           </View>
         ) : (
           <View style={styles.actions}>
+            <SmaranButton accessibilityLabel={t(language, 'continue')} label={t(language, 'continue')}
+              onPress={() => router.replace({ pathname: `/patient/games/${saved.session.gameType.replaceAll('_', '-')}`, params: { auto: '1' } } as Href)} />
             <SmaranButton
               accessibilityLabel={t(language, 'whyLevel')}
               label={t(language, 'whyLevel')}

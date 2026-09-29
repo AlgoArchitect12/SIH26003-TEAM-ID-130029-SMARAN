@@ -2,6 +2,7 @@ import { patientRepository } from '@db/repositories/patient.repository';
 import type { PatientProfile, PatientSettings } from '@db/schema.types';
 import { validateRecordId, validateUpdatePatientSettings } from '@/src/utils/validation';
 import { capturePatientRequest } from '../stores/patient-session.store';
+import { withTimeout } from '../utils/with-timeout';
 
 import {
   getSecureValue,
@@ -19,7 +20,11 @@ export type ActivePatientResolution =
 
 export class PatientSelectionRequiredError extends Error {}
 
-export async function resolveActivePatient(): Promise<ActivePatientResolution> {
+export function resolveActivePatient(): Promise<ActivePatientResolution> {
+  return withTimeout(readActivePatient());
+}
+
+async function readActivePatient(): Promise<ActivePatientResolution> {
   const current = capturePatientRequest();
   const [completionFlag, activeProfileId] = await Promise.all([
     getSecureValue(SecureStorageKeys.onboardingCompleted),

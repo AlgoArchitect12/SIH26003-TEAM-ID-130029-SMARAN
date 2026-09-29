@@ -1,4 +1,4 @@
-import { capturePatientRequest } from '@/src/stores/patient-session.store';
+import { capturePatientRequest, usePatientSessionStore } from '@/src/stores/patient-session.store';
 import { Image } from 'expo-image';
 import { useIsFocused } from '@react-navigation/native';
 import { SmaranLoading } from '@components/ui/smaran-loading';
@@ -22,6 +22,8 @@ export const regionalCategoryKeys: Record<RegionalCategory, TranslationKey> = {
 // Read the persisted patient's region, independently of their language or onboarding draft.
 export function useMyHomePatient() {
   const focused = useIsFocused();
+  const revision = usePatientSessionStore(s => s.revision);
+  const switching = usePatientSessionStore(s => s.switching);
   const language = useOnboardingStore(s => s.language) ?? 'en';
   const [state, setState] = useState<Region | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'invalid' | 'failed'>('loading');
@@ -31,6 +33,7 @@ export function useMyHomePatient() {
     let active = true;
     const current = capturePatientRequest();
     setStatus('loading'); setState(null);
+    if (switching) return;
     void resolveActivePatient().then(result => {
       if (!active || !current()) return;
       if (result.status !== 'ready') { setStatus('invalid'); return; }
@@ -42,7 +45,7 @@ export function useMyHomePatient() {
       setState(result.settings.region); setStatus('ready');
     }).catch(() => { if (active && current()) setStatus('failed'); });
     return () => { active = false; };
-  }, [attempt, focused]);
+  }, [attempt, focused, revision, switching]);
   return { state, status, language, retry: () => setAttempt(n => n + 1) };
 }
 

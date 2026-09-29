@@ -13,6 +13,7 @@ function harness(file, overrides = {}, slots = []) {
   let cursor = 0;
   const react = {
     useCallback: fn => fn,
+    useMemo: fn => fn(),
     useState: initial => {
       const i = cursor++;
       if (!(i in slots)) slots[i] = initial;
@@ -27,6 +28,7 @@ function harness(file, overrides = {}, slots = []) {
   const module = { exports: {} };
   new Function('require', 'module', 'exports', code)(name => {
     if (name in overrides) return overrides[name];
+    if (name === '@/src/utils/with-timeout') return load('src/utils/with-timeout.ts');
     if (name === '@/src/stores/patient-session.store') return load('src/stores/patient-session.store.ts');
     if (name === 'react') return react;
     if (name === 'react/jsx-runtime') return require(name);
@@ -83,6 +85,8 @@ async function main() {
   }
   for (const manage of [false, true]) {
     const day = harness('components/my-day/my-day-content.tsx', {
+      '@/src/stores/patient-session.store': { usePatientSessionStore: fn => fn({ revision: 0, switching: false }),
+        capturePatientRequest: () => () => true, captureReminderManagement: () => () => true },
       'expo-router': { useRouter: () => ({}), useFocusEffect() {} },
       '@components/my-day/shared': { useMyDayPatient: () => patient, dayStyles: {}, category: {} },
       '@db/repositories/my-day.repository': { myDayRepository: {} },
