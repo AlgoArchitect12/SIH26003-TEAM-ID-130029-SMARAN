@@ -72,6 +72,9 @@ function contracts() {
     }
   }
   for (const [language, catalog] of Object.entries(extraGameStrings)) {
+    for (const key of ['lightsInstructions', 'numberInstructions']) {
+      assert.ok(!catalog[key].includes(t(language, 'continue')), 'Instructions must not ask for the removed per-answer Continue button');
+    }
     assert.deepEqual(Object.keys(catalog), Object.keys(extraGameStrings.en));
     for (const [key, value] of Object.entries(catalog)) {
       assert.ok(value.trim()); assert.equal(strings[language][key], value);

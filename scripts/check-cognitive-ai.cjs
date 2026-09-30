@@ -245,6 +245,7 @@ async function screenChecks() {
       const byId = id => nodes(tree).find(node => node.props?.testID === id);
       const byLabel = key => nodes(tree).find(node => node.type === 'SmaranButton' && node.props.label === t(language, key));
       const press = node => { assert.ok(node, `${game}: missing control`); assert.ok(!node.props.disabled, `${game}: disabled control`); node.props.onPress(); tree = render(); };
+      const progress = () => nodes(tree).find(node => node.props?.accessibilityRole === 'progressbar').props.accessibilityValue.now;
       assert.ok(text().includes(t(language, activityTitleKeys[game])));
       if (game === 'memory_match') {
         press(byLabel('gameStart'));
@@ -253,6 +254,12 @@ async function screenChecks() {
         assert.deepEqual(cards.map(card => card.props.positionLabel), cards.map((_, index) => new Intl.NumberFormat(language).format(index + 1)));
         const first = 0, wrong = cards.findIndex(card => card.props.symbol.id !== cards[first].props.symbol.id);
         press(byLabel('recallReady'));
+        assert.equal(progress(), 0, 'Memory Match progress starts at zero');
+        press(byLabel('gamePause'));
+        assert.ok(nodes(tree).filter(node => node.type === 'MemoryCard').every(card => card.props.disabled), 'paused memory cards are disabled');
+        render.advance(); tree = render();
+        assert.equal(progress(), 0, 'pause cannot advance pair progress');
+        press(byLabel('gameResume'));
         for (let n = 1; n <= 3; n++) {
           cards = nodes(tree).filter(node => node.type === 'MemoryCard'); press(cards[first]);
           cards = nodes(tree).filter(node => node.type === 'MemoryCard'); press(cards[wrong]);
@@ -273,6 +280,8 @@ async function screenChecks() {
           const a = cards.findIndex(card => !card.props.disabled && card.props.state === 'hidden');
           const b = cards.findIndex((card, index) => index !== a && card.props.symbol.id === cards[a].props.symbol.id && card.props.state !== 'matched');
           press(cards[a]); cards = nodes(tree).filter(node => node.type === 'MemoryCard'); press(cards[b]);
+          const matched = nodes(tree).filter(node => node.type === 'MemoryCard' && node.props.state === 'matched').length;
+          assert.equal(progress(), Math.round(matched / cards.length * 100), 'visible pair progress matches actual matched cards');
           render.advance(); tree = render();
         }
         const value = r.cognitive.getState().pending.telemetry;
@@ -284,6 +293,12 @@ async function screenChecks() {
           while (byId('activity-next-preview')) press(byId('activity-next-preview'));
         }
         press(byId('activity-start'));
+        assert.equal(progress(), 0);
+        press(byLabel('gamePause'));
+        assert.ok(tasks[0].choices.every(choice => byId('choice-' + choice).props.disabled), 'paused choices are disabled');
+        render.advance(); tree = render();
+        assert.equal(progress(), 0);
+        press(byLabel('gameResume'));
         // Recall previews are not mounted after Start, so neither sight nor screen readers receive the answers.
         if (game === 'sequence_memory' || game === 'picture_recall') assert.ok(!nodes(tree).some(node => node.type?.name === 'PictureRow'));
         const wrong = tasks[0].choices.find(choice => choice !== tasks[0].answer);

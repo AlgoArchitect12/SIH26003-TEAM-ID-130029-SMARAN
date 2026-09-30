@@ -192,13 +192,16 @@ export default function CognitiveResultScreen() {
   return (
     <ScreenWrapper contentContainerStyle={styles.screen} scroll>
       <View style={styles.content}>
-        <SmaranButton label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')}
-          variant="outline" onPress={() => setPaused(value => !value)} />
+        <View style={styles.controls}>
+        {!saved && <SmaranButton style={styles.control} label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')}
+          variant={paused ? 'primary' : 'outline'} onPress={() => setPaused(value => !value)} />}
         <SmaranButton label={t(language, 'activitiesBack')} accessibilityLabel={t(language, 'activitiesBack')} variant="outline" disabled={saving}
+          style={styles.control}
           onPress={() => { void (async () => {
             if (!saved && !await submit(null)) return;
             setPaused(true); router.dismissTo('/patient/games');
           })(); }} />
+        </View>
         <PageIntro title={t(language, 'resultTitle', { name: preferredName })} icon="check-circle" />
         <View style={styles.completion}>
           <MaterialIcons name="check-circle" color={colors.success} size={32} accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
@@ -217,7 +220,7 @@ export default function CognitiveResultScreen() {
         </SmaranCard>
 
         {!saved ? (
-          <View style={styles.feedback}>
+          <SmaranCard style={styles.feedback}>
             <ThemedText accessibilityRole="header" textSize={textSize} type="cardHeading">
               {t(language, 'resultQuestion')}
             </ThemedText>
@@ -243,7 +246,7 @@ export default function CognitiveResultScreen() {
             {saveFailed ? (
               <ThemedText accessibilityRole="alert" textSize={textSize}>{t(language, 'saveFailed')}</ThemedText>
             ) : null}
-          </View>
+          </SmaranCard>
         ) : (
           <View style={styles.actions}>
             <SmaranButton accessibilityLabel={t(language, 'continue')} label={t(language, 'continue')}
@@ -281,4 +284,6 @@ const styles = StyleSheet.create({
   recommendation: { gap: Spacing.sm },
   feedback: { gap: Spacing.md },
   actions: { gap: Spacing.md },
+  controls: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
+  control: { flexGrow: 1, flexBasis: 240 },
 });

@@ -7,7 +7,8 @@ import { initialCoach, type CoachState } from '@ai/cognitive-coach';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
-import { Layout, Spacing } from '@constants/layout';
+import { SmaranCard } from '@components/ui/smaran-card';
+import { Layout, Radius, Spacing } from '@constants/layout';
 import type { DifficultyLevel, Language } from '@db/schema.types';
 import { t } from '@i18n/index';
 import { chessSymbols, isLegalChessMove, movementKeys, moveChessPiece, pieceKeys, type ChessPiece, type ChessTask } from '@/src/games/chess-puzzle';
@@ -110,7 +111,7 @@ export function PuzzleActivityBoard({ paused = false, activity, selection, level
   }, paused);
 
   return <View style={styles.group} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
-    <ThemedText accessibilityLiveRegion="polite" type="cardHeading">{prompt}</ThemedText>
+    <SmaranCard><ThemedText accessibilityLiveRegion="polite" type="cardHeading">{prompt}</ThemedText></SmaranCard>
     {sudoku && values && <>
       <View testID="sudoku-board" style={[styles.board, { borderColor: colors.text }]}>
         {Array.from({ length: sudoku.size }, (_, r) => <View key={r} style={styles.row}>
@@ -125,8 +126,8 @@ export function PuzzleActivityBoard({ paused = false, activity, selection, level
               disabled={!interactiveSudoku || locked || !!n} onPress={() => focusTask(String(i))}
               style={[styles.cell, { minHeight: Layout.minTouchTarget, borderColor: colors.text,
                 borderRightWidth: c === sudoku.regionWidth - 1 ? 3 : 1, borderBottomWidth: r % 2 === 1 ? 3 : 1,
-                backgroundColor: guided ? colors.surfaceSelected : colors.surface }, selected && styles.selected]}>
-              <ThemedText accessible={false} style={{ fontWeight: fixed ? '700' : '400' }}>{n || (selected ? '□' : '·')}</ThemedText>
+                backgroundColor: done.has(String(i)) ? colors.successSurface : guided ? colors.surfaceSelected : colors.surface }, selected && [styles.selected, { borderColor: colors.primary }]]}>
+              <ThemedText accessible={false} style={{ fontWeight: fixed || selected ? '700' : '400' }}>{n || (selected ? '□' : '·')}</ThemedText>
             </Pressable>;
           })}
         </View>)}
@@ -143,7 +144,7 @@ export function PuzzleActivityBoard({ paused = false, activity, selection, level
         piece: t(language, pieceKeys[chess.board[chess.source].kind]), square: chess.source,
       })}</ThemedText>
       <ScrollView horizontal contentContainerStyle={{ flexGrow: 1 }}>
-      <View testID="chess-board" style={[styles.board, { width: Math.max(width, 8 * Layout.minTouchTarget), borderColor: colors.text }]}>
+      <View testID="chess-board" style={[styles.board, { width: Math.max(width, 8 * Layout.largeButtonHeight + 4), borderColor: colors.text }]}>
         {Array.from({ length: 8 }, (_, r) => <View key={r} style={styles.row}>
           {Array.from({ length: 8 }, (_, c) => {
             const s = String.fromCharCode(97 + c) + (8 - r), piece = chessBoard[s];
@@ -153,14 +154,16 @@ export function PuzzleActivityBoard({ paused = false, activity, selection, level
             const label = t(language, 'chessSquare', { square: s, piece: piece ? t(language, piece.side === 'white' ? 'chessWhite' : 'chessBlack') + ' ' + t(language, pieceKeys[piece.kind]) : t(language, 'chessEmpty'),
               mark: source ? t(language, 'chessSource') : target ? t(language, 'chessTarget') : legalHint ? t(language, 'chessLegal') : '' });
             const playable = chess.kind !== 'recognize' && chess.choices.includes(s);
+            const feedback = playable ? choiceFeedback(s, task.answer, selection) : null;
             return <Pressable key={s} accessible accessibilityRole={playable ? 'button' : 'image'} accessibilityLabel={label}
-              accessibilityState={{ selected: source, disabled: playable && locked }} disabled={!playable || locked}
+              accessibilityState={{ selected: source || feedback === 'correct', disabled: playable && locked }} disabled={!playable || locked}
+              accessibilityHint={feedback === 'wrong' ? t(language, 'answerWrong') : undefined}
               onPress={() => pick(s)}
-              style={[styles.chessCell, { backgroundColor: (r + c) % 2 ? colors.text : colors.surface, borderColor: colors.accent }, marked && styles.selected]}>
-              <Text accessible={false} allowFontScaling={false} style={{ fontSize: Math.min(32, Math.max(18, width / 8 * 0.55)), color: (r + c) % 2 ? colors.surface : colors.text }}>
+              style={[styles.chessCell, { backgroundColor: (r + c) % 2 ? colors.surfaceSelected : colors.surface, borderColor: colors.border }, marked && [styles.selected, { borderColor: colors.primary }], answerFeedbackStyle(feedback, colors)]}>
+              <Text accessible={false} allowFontScaling={false} style={{ fontSize: 32, color: colors.text }}>
                 {piece ? chessSymbols[piece.side][piece.kind] : marked ? '◇' : ' '}
               </Text>
-              <Text accessible={false} allowFontScaling={false} style={{ fontSize: 10, color: (r + c) % 2 ? colors.surface : colors.text }}>{s}</Text>
+              <ThemedText accessible={false} type="secondary">{s}</ThemedText>
             </Pressable>;
           })}
         </View>)}
@@ -170,6 +173,7 @@ export function PuzzleActivityBoard({ paused = false, activity, selection, level
     </>}
     {words && <View style={styles.group}>
       {words.pairs.map(item => <SmaranButton key={item.id} testID={'word-focus-' + item.id} variant="outline"
+        style={[styles.choice, done.has(item.id) && { backgroundColor: colors.successSurface, borderColor: colors.success }]}
         label={(done.has(item.id) ? '✓ ' : '') + t(language, item.left)} accessibilityLabel={t(language, item.left) + (done.has(item.id) ? '. ' + t(language, 'activityFinished') : '')}
         accessibilityState={{ selected: task.id === item.id }} disabled={locked || done.has(item.id)} onPress={() => focusTask(item.id)} />)}
     </View>}
@@ -183,13 +187,17 @@ export function PuzzleActivityBoard({ paused = false, activity, selection, level
           accessibilityState={feedback === 'correct' ? { selected: true } : undefined}
           accessibilityHint={feedback === 'wrong' ? t(language, 'answerWrong') : undefined}
           icon={feedback === 'wrong' ? <AnswerFeedbackMark feedback={feedback} colors={colors} /> : undefined}
-          style={answerFeedbackStyle(feedback, colors)}
+          style={[styles.choice, answerFeedbackStyle(feedback, colors)]}
           disabled={locked || (words !== null && done.has(choice)) || (selection.hintLevel === 3 && choice !== task.answer)}
           onPress={() => pick(choice)} />;
       })}
     </View>
-    {!!feedback && <ThemedText type="cardHeading" accessibilityLiveRegion="polite">{feedback}</ThemedText>}
-    {!!guidance && <ThemedText accessibilityLiveRegion="polite">{guidance}</ThemedText>}
+    {!!feedback && <SmaranCard style={answerFeedbackStyle(selection.feedback === 'correct' ? 'correct' : 'wrong', colors)}>
+      <ThemedText type="cardHeading" accessibilityLiveRegion="polite">{feedback}</ThemedText>
+    </SmaranCard>}
+    {!!guidance && <SmaranCard style={{ backgroundColor: colors.warningSurface, borderColor: colors.warning }}>
+      <ThemedText accessibilityLiveRegion="polite">{guidance}</ThemedText>
+    </SmaranCard>}
     {voice && !!(feedback || guidance) && <ReadScreenButton language={language} labelKey="coachHear" text={feedback + ' ' + guidance} />}
     {!selection.awaitingContinue && <SmaranButton testID="activity-hint" variant="outline" label={t(language, 'gameHint')} accessibilityLabel={t(language, 'gameHint')}
       disabled={selection.hintLevel === 3} onPress={hint} />}
@@ -197,9 +205,10 @@ export function PuzzleActivityBoard({ paused = false, activity, selection, level
 }
 const styles = StyleSheet.create({
   group: { gap: Spacing.md },
+  choice: { minHeight: Layout.cardMinHeight, borderRadius: Radius.card },
   board: { borderWidth: 2, width: '100%' },
   row: { flexDirection: 'row' },
   cell: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center', borderWidth: 1, paddingVertical: Spacing.sm },
-  chessCell: { flex: 1, minWidth: 0, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  chessCell: { flex: 1, minWidth: 0, minHeight: Layout.cardMinHeight, alignItems: 'center', justifyContent: 'center', borderWidth: 1, paddingVertical: Spacing.sm },
   selected: { borderWidth: 3, borderStyle: 'dashed' },
 });

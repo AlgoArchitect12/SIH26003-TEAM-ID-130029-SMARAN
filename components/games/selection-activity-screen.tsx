@@ -15,7 +15,7 @@ import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { ProgressIndicator } from '@components/ui/progress-indicator';
-import { Spacing } from '@constants/layout';
+import { Layout, PageLayout, Radius, Spacing } from '@constants/layout';
 import { cognitiveRepository } from '@db/repositories/cognitive.repository';
 import type { AdaptiveModelState, CognitiveActivityType, CognitiveSession, DifficultyLevel, Language, PatientSettings } from '@db/schema.types';
 import { t, type TranslationKey } from '@i18n/index';
@@ -62,7 +62,7 @@ function ShapeRow({ shapes, language }: { shapes: readonly (PatternShape | null)
   return <View style={styles.shapes}>
     {shapes.map((shape, index) => <View key={index} accessible accessibilityRole="image"
       accessibilityLabel={shape === null ? t(language, 'patternGap', { position: String(index + 1) }) : t(language, 'patternItem', { position: String(index + 1), total: String(shapes.length), shape: t(language, shapeKeys[shape]) })}
-      style={[styles.shape, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+      style={[styles.shape, { borderColor: shape === null ? colors.primary : colors.border, backgroundColor: shape === null ? colors.surfaceSelected : colors.surface, borderStyle: shape === null ? 'dashed' : 'solid' }]}>
       <ThemedText type="secondary" accessible={false}>{index + 1}</ThemedText>
       {shape === null ? <ThemedText type="screenTitle" accessible={false}>?</ThemedText> : <MaterialIcons name={shapeIcons[shape]} size={40} color={colors.text}
         accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />}
@@ -78,7 +78,7 @@ function PictureRow({ pictures, language, ordered }: { pictures: readonly Memory
       accessibilityLabel={ordered ? t(language, 'recallItem', { position: String(index + 1), total: String(pictures.length), picture: label }) : label}>
       {ordered && <ThemedText accessible={false} type="secondary">{index + 1}</ThemedText>}
       <MaterialIcons name={symbol.icon} size={48} color={colors.text} accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
-      <ThemedText accessible={false}>{label}</ThemedText>
+      <ThemedText accessible={false} style={{ textAlign: 'center' }}>{label}</ThemedText>
     </View>;
   })}</View>;
 }
@@ -190,32 +190,36 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
 
   return <ScreenWrapper scroll><View style={styles.content}>
     <SmaranButton accessibilityLabel={t(language, 'activitiesBack')} label={t(language, 'activitiesBack')} onPress={back} variant="outline" />
-    <ThemedText accessibilityRole="header" type="screenTitle">{title}</ThemedText>
+    <SmaranCard style={[styles.group, { backgroundColor: colors.surfaceSelected }]}>
+      <ThemedText accessibilityRole="header" type="screenTitle">{title}</ThemedText>
+      {data && <ThemedText type="secondary">{t(language, 'gameLevel', { level: String(data.level) })}</ThemedText>}
+      <ThemedText>{instructions}</ThemedText>
+      {data?.settings.voiceGuidance && !selection && <ReadScreenButton language={language} labelKey="activityHear" text={title + '. ' + instructions} />}
+    </SmaranCard>
     {!data ? <>
       {failed ? <ThemedText accessibilityRole="alert">{t(language, 'activityPrepareFailed')}</ThemedText> : <SmaranLoading label={t(language, 'gameLoading')} />}
       {failed && <SmaranButton accessibilityLabel={t(language, 'retry')} label={t(language, 'retry')} onPress={() => setAttempt(value => value + 1)} />}
     </> : <>
       {selection && <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
-        <SmaranButton style={{ flexGrow: 1, flexBasis: 140 }} label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')} variant="outline" onPress={() => setPaused(value => !value)} />
+        <SmaranButton style={{ flexGrow: 1, flexBasis: 140 }} label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')} variant={paused ? 'primary' : 'outline'} onPress={() => setPaused(value => !value)} />
         <SmaranButton style={{ flexGrow: 1, flexBasis: 140 }} label={t(language, 'gameRestart')} accessibilityLabel={t(language, 'gameRestart')} variant="outline" onPress={() => setAttempt(value => value + 1)} />
       </View>}
-      <SmaranCard style={styles.group}>
-        <ThemedText type="secondary">{t(language, 'gameLevel', { level: String(data.level) })}</ThemedText>
-        <ThemedText>{instructions}</ThemedText>
-      </SmaranCard>
-      {data.settings.voiceGuidance && !selection && <ReadScreenButton language={language} labelKey="activityHear" text={title + '. ' + instructions} />}
       {data.routine && <>
         <ThemedText accessibilityLanguage={language} type="cardHeading">{data.routine.title}</ThemedText>
       </>}
       {!selection ? <>
         {data.routine && <SmaranCard style={styles.group}>
           <ThemedText>{t(language, 'routinePreview')}</ThemedText>
-          {data.routine.steps.map((step, index) => <ThemedText key={step.id} accessibilityLanguage={language}>{index + 1}. {step.text}</ThemedText>)}
+          {data.routine.steps.map((step, index) => <View key={step.id} style={[styles.previewStep, { borderColor: colors.divider }]}>
+            <ThemedText accessibilityLanguage={language}>{index + 1}. {step.text}</ThemedText>
+          </View>)}
           {data.settings.voiceGuidance && <ReadScreenButton language={language} labelKey="routineHear"
             text={data.routine.steps.map((step, index) => (index + 1) + '. ' + step.text).join(' ')} />}
         </SmaranCard>}
         {data.recall && <SmaranCard style={styles.group}>
           <ThemedText>{t(language, gameType === 'sequence_memory' ? 'sequencePreview' : 'picturePreview')}</ThemedText>
+          {gameType === 'sequence_memory' && <ProgressIndicator current={sequencePreviewIndex + 1} total={data.recall.preview.length}
+            label={t(language, 'recallItem', { position: String(sequencePreviewIndex + 1), total: String(data.recall.preview.length), picture: optionText(data.recall.preview[sequencePreviewIndex]) })} />}
           {gameType === 'sequence_memory' ? (
             <PictureRow pictures={[data.recall.preview[sequencePreviewIndex]]} language={language} ordered={false} />
           ) : (
@@ -239,16 +243,17 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
           onChange={change => { if (!paused && data.isCurrent() && current.current) update(change(current.current)); }} /> : data.grid ? <GridActivityBoard paused={paused} key={Math.floor(selection.position / data.grid.roundLength)} activity={data.grid} selection={selection}
           language={language} voice={data.settings.voiceGuidance} isCurrent={data.isCurrent} onContinue={finishOrContinue}
           onChange={change => { if (!paused && data.isCurrent() && current.current) update(change(current.current)); }} /> : <>
-        {pattern && <View style={styles.group}>
+        {pattern && <SmaranCard padding={Spacing.md} style={styles.group}>
           {pattern.kind !== 'match' && <>
             <ThemedText>{t(language, 'patternRepeat')}</ThemedText>
             <ShapeRow shapes={pattern.group} language={language} />
           </>}
           <ShapeRow shapes={pattern.kind === 'next' ? [...pattern.sequence, null]
             : pattern.sequence.map((shape, index) => index === pattern.missingIndex ? null : shape)} language={language} />
-        </View>}
-        {data.routine && <ThemedText accessibilityRole="header" type="cardHeading">{t(language, selection.position === 0 ? 'routineFirst' : 'routineNext')}</ThemedText>}
-        {(object || data.recall) && <ThemedText accessibilityRole="header" type="cardHeading">{prompt}</ThemedText>}
+        </SmaranCard>}
+        {(data.routine || object || data.recall) && <SmaranCard style={styles.group}>
+          <ThemedText accessibilityRole="header" type="cardHeading">{prompt}</ThemedText>
+        </SmaranCard>}
         {data.settings.voiceGuidance && !selection.awaitingContinue && <ReadScreenButton language={language} text={prompt + ' ' + (task?.choices.map(optionText).join('. ') ?? '')} />}
         <View style={styles.group}>
           {task?.choices.map(choice => {
@@ -263,15 +268,15 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
             icon={!data.routine || feedback ? <>
               {!data.routine ? <MaterialIcons name={pattern ? shapeIcons[choice as PatternShape] : getMemorySymbol(choice as MemorySymbolId).icon} size={36} color={colors.text}
                 accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" /> : null}
-              <AnswerFeedbackMark feedback={feedback} colors={colors} />
+              {feedback === 'wrong' && <AnswerFeedbackMark feedback={feedback} colors={colors} />}
             </> : undefined}
-            style={answerFeedbackStyle(feedback, colors)}
+            style={[styles.choice, answerFeedbackStyle(feedback, colors)]}
             onPress={() => { if (data.isCurrent() && current.current) update(chooseSelection(current.current, data.tasks, choice, Date.now())); }} />;
           })}
         </View>
-        {selection.feedback && <ThemedText accessibilityLiveRegion="polite" type="cardHeading">
-          {feedbackText}
-        </ThemedText>}
+        {selection.feedback && <SmaranCard style={answerFeedbackStyle(selection.feedback === 'correct' ? 'correct' : 'wrong', colors)}>
+          <ThemedText accessibilityLiveRegion="polite" type="cardHeading">{feedbackText}</ThemedText>
+        </SmaranCard>}
         {hintText && !selection.awaitingContinue && <SmaranCard style={[styles.group, { backgroundColor: colors.warningSurface, borderColor: colors.warning }]}>
           <ThemedText accessibilityLiveRegion="polite">{hintText}</ThemedText>
           {selection.hintLevel === 2 && data.recall && <PictureRow pictures={data.recall.preview} language={language} ordered={gameType === 'sequence_memory'} />}
@@ -291,9 +296,11 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
 }
 
 const styles = StyleSheet.create({
-  content: { alignSelf: 'center', width: '100%', maxWidth: 680, gap: Spacing.lg },
+  content: PageLayout.content,
   group: { gap: Spacing.md },
-  shapes: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  shape: { minWidth: 64, minHeight: 80, borderWidth: 2, borderRadius: 12, padding: Spacing.xs, alignItems: 'center', justifyContent: 'center' },
-  picture: { flexBasis: 120, flexGrow: 1, maxWidth: '100%', minHeight: 112, borderWidth: 2, borderRadius: 12, padding: Spacing.sm, gap: Spacing.xs, alignItems: 'center', justifyContent: 'center' },
+  choice: { minHeight: Layout.cardMinHeight, borderRadius: Radius.card },
+  previewStep: { borderBottomWidth: 1, paddingBottom: Spacing.md },
+  shapes: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
+  shape: { minWidth: 64, minHeight: 88, borderWidth: 2, borderRadius: Radius.button, padding: Spacing.sm, alignItems: 'center', justifyContent: 'center' },
+  picture: { flexBasis: 120, flexGrow: 1, maxWidth: '100%', minHeight: 144, borderWidth: 2, borderRadius: Radius.card, padding: Spacing.md, gap: Spacing.sm, alignItems: 'center', justifyContent: 'center' },
 });

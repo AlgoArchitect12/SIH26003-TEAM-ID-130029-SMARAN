@@ -3,9 +3,9 @@ import type { Language } from '../db/schema.types';
 // Catalog and interpolation parity are checked; native-speaker review remains required.
 const en = {
   lightsTitle: 'Remember the Lights', lightsSubtitle: 'Remember a gentle sequence of light positions',
-  lightsInstructions: 'Watch the lights, then tap the same positions in the same order. Take your time. After each correct tap, choose Continue.',
+  lightsInstructions: 'Watch the lights, then tap the same positions in the same order. Take your time.',
   numberTitle: 'Number Path', numberSubtitle: 'Find numbers in order, from 1 to 10',
-  numberInstructions: 'Tap the numbers in order, starting with 1. After each correct number, choose Continue. Take your time.',
+  numberInstructions: 'Tap the numbers in order, starting with 1. Take your time.',
   gridRound: 'Round {current} of {total}', lightsWatch: 'Watch the sequence',
   lightsShowing: 'Step {position} of {total}: light {number}', lightsNext: 'Show next light',
   lightsReady: 'I am ready to tap', lightsTurn: 'Your turn. Tap position {position} in the sequence.',
@@ -20,9 +20,9 @@ const en = {
 };
 const hi: Record<keyof typeof en, string> = {
   lightsTitle: 'रोशनियाँ याद रखें', lightsSubtitle: 'रोशनी के स्थानों का सरल क्रम याद रखें',
-  lightsInstructions: 'रोशनियाँ देखें, फिर उन्हीं स्थानों को उसी क्रम में छुएँ। आराम से करें। हर सही चुनाव के बाद आगे बढ़ें चुनें।',
+  lightsInstructions: 'रोशनियाँ देखें, फिर उन्हीं स्थानों को उसी क्रम में छुएँ। आराम से करें।',
   numberTitle: 'संख्याओं का रास्ता', numberSubtitle: '1 से 10 तक संख्याएँ क्रम में खोजें',
-  numberInstructions: '1 से शुरू करके संख्याओं को क्रम में छुएँ। हर सही संख्या के बाद आगे बढ़ें चुनें। आराम से करें।',
+  numberInstructions: '1 से शुरू करके संख्याओं को क्रम में छुएँ। आराम से करें।',
   gridRound: 'दौर {current}, कुल {total}', lightsWatch: 'क्रम देखें',
   lightsShowing: 'चरण {position}, कुल {total}: रोशनी {number}', lightsNext: 'अगली रोशनी दिखाएँ',
   lightsReady: 'मैं छूने के लिए तैयार हूँ', lightsTurn: 'अब आपकी बारी। क्रम में स्थान {position} को छुएँ।',
@@ -36,9 +36,9 @@ const hi: Record<keyof typeof en, string> = {
 };
 const as: Record<keyof typeof en, string> = {
   lightsTitle: 'পোহৰবোৰ মনত ৰাখক', lightsSubtitle: 'পোহৰৰ স্থানৰ সহজ ক্ৰম মনত ৰাখক',
-  lightsInstructions: 'পোহৰবোৰ চাওক, তাৰ পিছত একে স্থান একে ক্ৰমত চুই দিয়ক। লাহে লাহে কৰক। প্ৰতিটো শুদ্ধ উত্তৰৰ পিছত আগবাঢ়ক বাছক।',
+  lightsInstructions: 'পোহৰবোৰ চাওক, তাৰ পিছত একে স্থান একে ক্ৰমত চুই দিয়ক। লাহে লাহে কৰক।',
   numberTitle: 'সংখ্যাৰ পথ', numberSubtitle: '1 ৰ পৰা 10 লৈ সংখ্যা ক্ৰমত বিচাৰক',
-  numberInstructions: '1 ৰ পৰা আৰম্ভ কৰি সংখ্যাবোৰ ক্ৰমত চুই দিয়ক। প্ৰতিটো শুদ্ধ সংখ্যাৰ পিছত আগবাঢ়ক বাছক। লাহে লাহে কৰক।',
+  numberInstructions: '1 ৰ পৰা আৰম্ভ কৰি সংখ্যাবোৰ ক্ৰমত চুই দিয়ক। লাহে লাহে কৰক।',
   gridRound: 'পৰ্যায় {current}, মুঠ {total}', lightsWatch: 'ক্ৰমটো চাওক',
   lightsShowing: 'খোজ {position}, মুঠ {total}: পোহৰ {number}', lightsNext: 'পৰৱৰ্তী পোহৰ দেখুৱাওক',
   lightsReady: 'মই চুবলৈ সাজু', lightsTurn: 'এতিয়া আপোনাৰ পাল। ক্ৰমৰ {position} স্থানটো চুই দিয়ক।',
@@ -52,9 +52,9 @@ const as: Record<keyof typeof en, string> = {
 };
 const bn: Record<keyof typeof en, string> = {
   lightsTitle: 'আলোগুলো মনে রাখুন', lightsSubtitle: 'আলোর অবস্থানের সহজ ক্রম মনে রাখুন',
-  lightsInstructions: 'আলোগুলো দেখুন, তারপর একই অবস্থান একই ক্রমে ছুঁয়ে দিন। ধীরে করুন। প্রতিটি সঠিক উত্তরের পরে এগিয়ে যান বাছুন।',
+  lightsInstructions: 'আলোগুলো দেখুন, তারপর একই অবস্থান একই ক্রমে ছুঁয়ে দিন। ধীরে করুন।',
   numberTitle: 'সংখ্যার পথ', numberSubtitle: '1 থেকে 10 পর্যন্ত সংখ্যা ক্রমে খুঁজুন',
-  numberInstructions: '1 থেকে শুরু করে সংখ্যাগুলো ক্রমে ছুঁয়ে দিন। প্রতিটি সঠিক সংখ্যার পরে এগিয়ে যান বাছুন। ধীরে করুন।',
+  numberInstructions: '1 থেকে শুরু করে সংখ্যাগুলো ক্রমে ছুঁয়ে দিন। ধীরে করুন।',
   gridRound: 'পর্ব {current}, মোট {total}', lightsWatch: 'ক্রমটি দেখুন',
   lightsShowing: 'ধাপ {position}, মোট {total}: আলো {number}', lightsNext: 'পরের আলো দেখান',
   lightsReady: 'আমি ছোঁয়ার জন্য প্রস্তুত', lightsTurn: 'এবার আপনার পালা। ক্রমের {position} অবস্থানটি ছুঁয়ে দিন।',
@@ -68,9 +68,9 @@ const bn: Record<keyof typeof en, string> = {
 };
 const mni: Record<keyof typeof en, string> = {
   lightsTitle: 'মঙালশিং নিংশিংউ', lightsSubtitle: 'মঙালগী মফমশিংগী মথং মনাও নিংশিংউ',
-  lightsInstructions: 'মঙালশিং য়েংউ, অদুদগী মফম অদুশিং মথং মনাও মান্ননা নম্মু। তপ তপ তৌ। অচুম্বা খুদিংগী মতুংদা মখা চৎপা খল্লু।',
+  lightsInstructions: 'মঙালশিং য়েংউ, অদুদগী মফম অদুশিং মথং মনাও মান্ননা নম্মু। তপ তপ তৌ।',
   numberTitle: 'মশিংগী লম্বী', numberSubtitle: '1 দগী 10 ফাওবা মশিং মথং মনাওদা থিয়ু',
-  numberInstructions: '1 দগী হৌদুনা মশিংশিং মথং মনাওদা নম্মু। অচুম্বা মশিং খুদিংগী মতুংদা মখা চৎপা খল্লু। তপ তপ তৌ।',
+  numberInstructions: '1 দগী হৌদুনা মশিংশিং মথং মনাওদা নম্মু। তপ তপ তৌ।',
   gridRound: 'শরুক {current}, অপুনবা {total}', lightsWatch: 'মথং মনাও য়েংউ',
   lightsShowing: 'থৌওং {position}, অপুনবা {total}: মঙাল {number}', lightsNext: 'মথংগী মঙাল উৎলু',
   lightsReady: 'ঐ নম্নবা থৌরাং লৈরে', lightsTurn: 'হৌজিক নঙগী শরুক। মথং মনাওগী মফম {position} নম্মু।',
@@ -84,9 +84,9 @@ const mni: Record<keyof typeof en, string> = {
 };
 const kha: Record<keyof typeof en, string> = {
   lightsTitle: 'Kynmaw ia ki jingshai', lightsSubtitle: 'Kynmaw ia ka jingbud jong ki jaka jingshai',
-  lightsInstructions: 'Peit ia ki jingshai, nangta nion ia kijuh ki jaka ha kajuh ka jingbud. Shim por. Hadien ka jingjied kaba dei, jied Bteng.',
+  lightsInstructions: 'Peit ia ki jingshai, nangta nion ia kijuh ki jaka ha kajuh ka jingbud. Shim por.',
   numberTitle: 'Lynti jingkhein', numberSubtitle: 'Wad ia ki nombar katkum ka jingbud, na 1 haduh 10',
-  numberInstructions: 'Nion ia ki nombar katkum ka jingbud, sdang na 1. Hadien u nombar uba dei, jied Bteng. Shim por.',
+  numberInstructions: 'Nion ia ki nombar katkum ka jingbud, sdang na 1. Shim por.',
   gridRound: 'Wat {current} na {total}', lightsWatch: 'Peit ia ka jingbud',
   lightsShowing: 'Sienjam {position} na {total}: jingshai {number}', lightsNext: 'Pyni ia ka jingshai kaba bud',
   lightsReady: 'Nga la kloi ban nion', lightsTurn: 'Mynta ka pali jong phi. Nion ia ka jaka {position} ha ka jingbud.',
@@ -100,9 +100,9 @@ const kha: Record<keyof typeof en, string> = {
 };
 const lus: Record<keyof typeof en, string> = {
   lightsTitle: 'Engte hriatreng rawh', lightsSubtitle: 'Eng hmunte indawt dan hriatreng rawh',
-  lightsInstructions: 'Engte en la, hmun ngaite indawt dan ngaiin khawih rawh. Muangchangin ti rawh. I khawih a dik zelin Chhunzawm thlang rawh.',
+  lightsInstructions: 'Engte en la, hmun ngaite indawt dan ngaiin khawih rawh. Muangchangin ti rawh.',
   numberTitle: 'Number kawng', numberSubtitle: '1 atanga 10 thleng numberte indawtin zawng rawh',
-  numberInstructions: '1 atangin numberte indawtin khawih rawh. Number dik i khawih zelin Chhunzawm thlang rawh. Muangchangin ti rawh.',
+  numberInstructions: '1 atangin numberte indawtin khawih rawh. Muangchangin ti rawh.',
   gridRound: 'Tum {current}, a vai {total}', lightsWatch: 'Indawt dan en rawh',
   lightsShowing: 'Tih dan {position}, a vai {total}: eng {number}', lightsNext: 'Eng dawt entir rawh',
   lightsReady: 'Khawih turin ka inpeih tawh', lightsTurn: 'I turn a ni. Indawt dana hmun {position} khawih rawh.',

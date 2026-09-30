@@ -7,7 +7,8 @@ import { coachHintKey } from '@ai/cognitive-coach';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
-import { Spacing } from '@constants/layout';
+import { SmaranCard } from '@components/ui/smaran-card';
+import { Radius, Spacing } from '@constants/layout';
 import type { Language } from '@db/schema.types';
 import { t } from '@i18n/index';
 import type { GridActivity } from '@/src/games/grid-activities';
@@ -101,11 +102,13 @@ export function GridActivityBoard({ paused = false, activity, selection, languag
   }) : t(language, activity.showNext || selection.hintLevel ? 'numberNext' : 'numberTurn', { answer: task.answer });
 
   return <View style={styles.group}>
+    <SmaranCard style={styles.group}>
     <ThemedText type="secondary">{t(language, 'gridRound', { current: String(round + 1), total: String(activity.rounds) })}</ThemedText>
     <ThemedText accessibilityLiveRegion="polite" type="cardHeading">{prompt}</ThemedText>
     {lights && phase === 'answer' && <ThemedText accessibilityLiveRegion="polite">{t(language, 'lightsProgress', {
       current: String(selection.correctSelections - round * activity.roundLength), total: String(activity.roundLength),
     })}</ThemedText>}
+    </SmaranCard>
     <View style={styles.grid}>
     {(lights ? activity.tiles : task.choices).map((tile, index) => {
         const done = !lights && activity.tasks.slice(0, selection.correctSelections).some(item => item.answer === tile);
@@ -122,18 +125,22 @@ export function GridActivityBoard({ paused = false, activity, selection, languag
           accessibilityState={{ selected: done || tile === activeLight || feedback === 'correct' }}
           accessibilityHint={guided ? hint || prompt : feedback === 'wrong' ? t(language, 'answerWrong') : undefined}
           disabled={disabled} variant="outline" reducedMotionOverride hapticsEnabled={!reducedMotion}
-          icon={feedback ? <AnswerFeedbackMark feedback={feedback} colors={colors} /> : undefined}
+          icon={feedback === 'wrong' ? <AnswerFeedbackMark feedback={feedback} colors={colors} /> : undefined}
           style={[styles.tile,
             { borderColor: colors.border, borderWidth: 2, backgroundColor: colors.surface },
             emphasized && !feedback ? { borderColor: colors.primary, borderWidth: 4, backgroundColor: colors.surfaceSelected } : null,
-            !feedback && done ? { backgroundColor: colors.surfaceMuted } : null,
+            !feedback && done ? { backgroundColor: colors.successSurface, borderColor: colors.success } : null,
             answerFeedbackStyle(feedback, colors),
           ]}
           textStyle={{ color: colors.text }} onPress={() => pick(tile)} />;
       })}
     </View>
-    {!!feedback && <ThemedText accessibilityLiveRegion="polite" type="cardHeading">{feedback}</ThemedText>}
-    {!!hint && <ThemedText accessibilityLiveRegion="polite">{hint}</ThemedText>}
+    {!!feedback && <SmaranCard style={answerFeedbackStyle(selection.feedback === 'correct' ? 'correct' : 'wrong', colors)}>
+      <ThemedText accessibilityLiveRegion="polite" type="cardHeading">{feedback}</ThemedText>
+    </SmaranCard>}
+    {!!hint && <SmaranCard style={{ backgroundColor: colors.warningSurface, borderColor: colors.warning }}>
+      <ThemedText accessibilityLiveRegion="polite">{hint}</ThemedText>
+    </SmaranCard>}
     {voice && phase !== 'playback' && <ReadScreenButton language={language} labelKey="coachHear" text={[prompt, feedback, hint].filter(Boolean).join(' ')} />}
     {phase === 'preview' && <>
       <SmaranButton testID="lights-manual" label={t(language, 'lightsManual')} accessibilityLabel={t(language, 'lightsManual')}
@@ -159,6 +166,6 @@ export function GridActivityBoard({ paused = false, activity, selection, languag
 
 const styles = StyleSheet.create({
   group: { gap: Spacing.md },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  tile: { flexBasis: '46%', flexGrow: 1, minHeight: 88, paddingHorizontal: Spacing.sm },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
+  tile: { flexBasis: '46%', flexGrow: 1, minHeight: 104, borderRadius: Radius.card, paddingHorizontal: Spacing.sm },
 });

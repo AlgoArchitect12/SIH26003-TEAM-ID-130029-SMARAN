@@ -88,16 +88,16 @@ export function MemoryCard({
         style={[
           styles.face,
           {
-            backgroundColor: colors.actionPrimary,
+            backgroundColor: colors.surfaceSelected,
             borderColor: highContrast ? colors.text : colors.primary,
             borderWidth: highContrast ? 3 : 2,
           },
           frontStyle,
         ]}>
-        <ThemedText accessible={false} type="secondary" style={{ color: colors.onActionPrimary }}>{positionLabel}</ThemedText>
+        <ThemedText accessible={false} type="secondary" style={{ color: colors.primary }}>{positionLabel}</ThemedText>
         <MaterialIcons
           accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-          color={colors.onActionPrimary}
+          color={colors.primary}
           name="help-outline"
           size={Math.min(52, size * 0.34)}
         />
@@ -107,7 +107,7 @@ export function MemoryCard({
           styles.face,
           {
             backgroundColor: state === 'matched' ? colors.successSurface : mismatched ? colors.errorSurface : colors.surface,
-            borderColor: highContrast || hinted ? colors.text : state === 'matched' ? colors.success : mismatched ? colors.error : colors.accent,
+            borderColor: highContrast || hinted ? colors.text : state === 'matched' ? colors.success : mismatched ? colors.error : colors.primary,
             borderStyle: hinted ? 'dashed' : 'solid',
             borderWidth: highContrast || hinted ? 3 : mismatched ? 3 : 2,
           },
@@ -116,10 +116,9 @@ export function MemoryCard({
         <ThemedText accessible={false} type="secondary">{positionLabel}</ThemedText>
         <MaterialIcons
           accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-          color={state === 'matched' ? colors.textSecondary : colors.primary}
+          color={state === 'matched' ? colors.success : colors.primary}
           name={symbol.icon}
           size={Math.min(64, size * 0.4)}
-          style={state === 'matched' ? { opacity: 0.55 } : undefined}
         />
         {state === 'matched' ? (
           <MaterialIcons
@@ -133,7 +132,7 @@ export function MemoryCard({
           <MaterialIcons
             accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
             color={colors.error}
-            name="error-outline"
+            name="lightbulb-outline"
             size={22}
             style={styles.check}
           />

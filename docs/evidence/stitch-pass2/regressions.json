@@ -1,0 +1,150 @@
+[
+  {
+    "file": "check-ai-assistant.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-analytics.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-auth-cloud-hardening.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-auth-sync-migration.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-auth-sync.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-care-circle-reports.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-cognitive-ai.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-cognitive-expansion.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-cognitive-migration.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-daily-voice.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-dependency-security.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-elderly-ux.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-extra-cognitive-games.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-family-pairing.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-final-sih-hardening.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-final-ux-game-stabilization.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-live-database-sync.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-mvp22-boundaries.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-my-care.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-my-day.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-my-home.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-my-memories.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-native-hardening.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-privacy-recovery.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-product-hardening.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-product-polish.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-profile-switching.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-realtime-location.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-release-stabilization.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-report-delivery.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-role-person-switch.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-speech-voices.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-stitch-ui.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-sync-status.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-three-cognitive-games.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-ux-overhaul.cjs",
+    "passed": true
+  },
+  {
+    "file": "check-visual-ux.cjs",
+    "passed": true
+  }
+]

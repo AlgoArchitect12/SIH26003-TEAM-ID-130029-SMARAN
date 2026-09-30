@@ -15,7 +15,9 @@ import { MemoryCard } from '@components/games/memory-card';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
-import { Radius, Spacing } from '@constants/layout';
+import { SmaranCard } from '@components/ui/smaran-card';
+import { ProgressIndicator } from '@components/ui/progress-indicator';
+import { PageLayout, Radius, Spacing } from '@constants/layout';
 import type { TextSizePreference } from '@constants/typography';
 import { cognitiveRepository } from '@db/repositories/cognitive.repository';
 import type { AdaptiveModelState, CognitiveSession, PatientSettings } from '@db/schema.types';
@@ -283,21 +285,21 @@ export default function MemoryMatchScreen() {
         <View style={styles.navigation}>
           <SmaranButton accessibilityLabel={t(language, 'activitiesBack')} label={t(language, 'activitiesBack')} onPress={leave} variant="outline" />
         </View>
-        <View style={styles.heading}>
+        <SmaranCard style={[styles.heading, { backgroundColor: colors.surfaceSelected }]}>
           <ThemedText accessibilityRole="header" textSize={textSize} type="screenTitle">
             {t(language, 'gameTitle')}
           </ThemedText>
-          <ThemedText textSize={textSize} type="defaultSemiBold">
+          <ThemedText textSize={textSize} type="secondary">
             {t(language, 'gameLevel', { level: String(difficulty) })}
           </ThemedText>
           <ThemedText textSize={textSize}>{t(language, 'gameInstructions')}</ThemedText>
-        </View>
+        </SmaranCard>
 
         {settings.voiceGuidance && game.status !== 'PREVIEW' ? <ReadScreenButton language={language} text={speechText} /> : null}
-        {game.status !== 'IDLE' && <View style={styles.heading}>
+        {game.status !== 'IDLE' && <View style={styles.controls}>
           <SmaranButton label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')}
-            variant="outline" onPress={() => setPaused(value => !value)} />
-          <SmaranButton label={t(language, 'gameRestart')} accessibilityLabel={t(language, 'gameRestart')} variant="outline" onPress={() => {
+            style={styles.control} variant={paused ? 'primary' : 'outline'} onPress={() => setPaused(value => !value)} />
+          <SmaranButton style={styles.control} label={t(language, 'gameRestart')} accessibilityLabel={t(language, 'gameRestart')} variant="outline" onPress={() => {
             completionStarted.current = false; telemetry.current = null;
             setPaused(false); setFeedbackCue(null); updateCoach(initialCoach); updateGame(createMemoryGame(difficulty));
           }} />
@@ -313,16 +315,11 @@ export default function MemoryMatchScreen() {
           />
         ) : (
           <>
-            <View accessibilityLiveRegion="polite" style={styles.progressRow}>
-              <ThemedText textSize={textSize} type="defaultSemiBold">
-                {game.status === 'PREVIEW'
-                  ? t(language, 'gamePreview')
-                  : t(language, 'gamePairsFound', {
-                      matched: String(matchedPairs),
-                      total: String(config.pairs),
-                    })}
-              </ThemedText>
-            </View>
+            <ProgressIndicator current={matchedPairs} total={config.pairs}
+              label={t(language, 'gamePairsFound', { matched: String(matchedPairs), total: String(config.pairs) })} />
+            {game.status === 'PREVIEW' && <SmaranCard>
+              <ThemedText accessibilityLiveRegion="polite" textSize={textSize} type="cardHeading">{t(language, 'gamePreview')}</ThemedText>
+            </SmaranCard>}
             <View style={[styles.board, { gap: Spacing.md, width: boardWidth }]}>
               {game.cards.map((card, index) => {
                 const symbol = getMemorySymbol(card.symbolId);
@@ -364,7 +361,9 @@ export default function MemoryMatchScreen() {
                 tone={feedbackCue === 'match' ? 'success' : 'retry'}
               />
             ) : null}
-            {hintText && feedbackCue !== 'match' && <ThemedText accessibilityLiveRegion="polite" textSize={textSize}>{hintText}</ThemedText>}
+            {hintText && feedbackCue !== 'match' && <SmaranCard style={{ backgroundColor: colors.warningSurface, borderColor: colors.warning }}>
+              <ThemedText accessibilityLiveRegion="polite" textSize={textSize}>{hintText}</ThemedText>
+            </SmaranCard>}
             {settings.voiceGuidance && (feedbackText || hintText) && <ReadScreenButton language={language} labelKey="coachHear" text={feedbackText + ' ' + (feedbackCue === 'match' ? '' : hintText)} />}
             {game.status === 'PREVIEW' && <SmaranButton label={t(language, 'recallReady')} accessibilityLabel={t(language, 'recallReady')}
               onPress={() => {
@@ -394,11 +393,12 @@ export default function MemoryMatchScreen() {
 
 const styles = StyleSheet.create({
   screen: { flexGrow: 1, padding: Spacing.md },
-  content: { alignSelf: 'center', gap: Spacing.lg, maxWidth: 680, width: '100%' },
+  content: PageLayout.content,
   centered: { alignItems: 'center', gap: Spacing.lg, justifyContent: 'center' },
   navigation: { alignItems: 'flex-start' },
-  heading: { gap: Spacing.sm },
-  progressRow: { alignItems: 'center' },
+  heading: { gap: Spacing.md },
+  controls: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
+  control: { flexGrow: 1, flexBasis: 140 },
   board: { alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
-  hintPanel: { borderRadius: Radius.card, borderWidth: 1, gap: Spacing.md, padding: Spacing.md },
+  hintPanel: { borderRadius: Radius.card, borderWidth: 2, gap: Spacing.md, padding: Spacing.md },
 });
