@@ -14,8 +14,11 @@ import { freshness, newerSnapshot, type SafeZone } from '@/src/location/live';
 import { setLocationSharing, useLocationStore, watchPatientLocation, type LiveLocationState } from '@/src/services/location.service';
 import { LocationMap } from './location-map';
 import { DeviceBattery } from '@components/location/device-battery';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useThemeColors } from '@/hooks/use-theme-color';
 const errors:TranslationKey[]=['gpsDenied','gpsDisabled','gpsForbidden','gpsSignIn','gpsOffline','gpsFailed','gpsConsentRequired','gpsInvalidZone'];
 export function LocationPanel({patientId,language,device=false}: {patientId:string;language:Language;device?:boolean}) {
+  const colors = useThemeColors();
   const focused=useIsFocused(), router=useRouter(), revision=useAuthStore(s=>s.revision), auth=useAuthStore(s=>s.status);
   const local=useLocationStore();
   const [live,setLive]=useState<LiveLocationState>({snapshot:null,status:'gpsLoading'});
@@ -54,8 +57,8 @@ export function LocationPanel({patientId,language,device=false}: {patientId:stri
   const button=(key:TranslationKey,run:()=>void,disabled=false)=><SmaranButton label={t(language,key)} accessibilityLabel={t(language,key)}
     disabled={busy||disabled} variant="outline" onPress={run}/>;
   return <View style={{gap:16}}>
-    {device && <DeviceBattery language={language} />}
-    <SmaranCard style={{gap:12}}>
+    <SmaranCard style={{gap:16, backgroundColor: colors.surfaceSelected}}>
+      <MaterialIcons name="verified-user" size={36} color={colors.primary} accessible={false} aria-hidden />
       {!!snapshot?.display_name&&<ThemedText type="cardHeading" accessibilityRole="header">{snapshot.display_name}</ThemedText>}
       <ThemedText>{t(language,'gpsConsent')}</ThemedText>
       <ThemedText type="secondary">{t(language,'gpsForeground')}</ThemedText>
@@ -75,6 +78,7 @@ export function LocationPanel({patientId,language,device=false}: {patientId:stri
       {device&&(local.status==='gpsDenied'||local.status==='gpsDisabled')&&button('menuSettings',()=>void Linking.openSettings().catch(()=>setMessage('gpsFailed')))}
       {button('retry',()=>setAttempt(n=>n+1))}
     </SmaranCard>
+    {device && <DeviceBattery language={language} />}
     <ThemedText type="cardHeading" accessibilityRole="header">{t(language,freshness(point,now))}</ThemedText>
     {point&&freshness(point,now)!=='gpsUnavailable'&&<>
       <LocationMap point={point} zone={snapshot?.zone??null} language={language}/>

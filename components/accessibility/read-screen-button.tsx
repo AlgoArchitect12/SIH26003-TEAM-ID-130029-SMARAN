@@ -221,14 +221,14 @@ export function ReadScreenButton({
             aria-hidden
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
-            color={colors.text}
+            color={colors.onActionAccent}
             name={isSpeaking ? 'volume-off' : 'volume-up'}
             size={24}
           />
         }
         label={label}
         onPress={() => void handlePress()}
-        variant="outline"
+        variant="accent"
       />
 
       {outcome === 'unavailable' || outcome === 'failed' ? (

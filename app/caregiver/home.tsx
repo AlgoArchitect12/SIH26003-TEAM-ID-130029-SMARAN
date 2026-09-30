@@ -14,6 +14,7 @@ import { category } from '@components/my-day/shared';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
+import { PageIntro } from '@components/ui/page-intro';
 import { PageLayout, Spacing } from '@constants/layout';
 import { t, type TranslationKey } from '@i18n/index';
 import { PatientSelectionRequiredError, resolveActivePatient } from '@services/active-patient.service';
@@ -105,8 +106,7 @@ export default function CaregiverHomeScreen() {
     <Stack.Screen options={{ animation: 'none' }} />
     <SmaranButton label={t(language, data ? 'backHome' : 'back')} accessibilityLabel={t(language, data ? 'backHome' : 'back')} variant="outline" onPress={back} />
     <View style={styles.group}>
-      <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeCareTitle')}</ThemedText>
-      <ThemedText type="secondary">{t(language, 'careLocal')}</ThemedText>
+      <PageIntro title={t(language, 'homeCareTitle')} description={t(language, 'careLocal')} icon="volunteer-activism" />
       <CurrentPerson name={data?.patient.preferredName} language={language} caregiver />
       <SyncStatus language={language} patientId={status === 'ready' ? data?.patient.id ?? null : null} />
     </View>

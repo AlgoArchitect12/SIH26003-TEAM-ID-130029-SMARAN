@@ -68,7 +68,7 @@ export function SmaranCard({
     {
       backgroundColor: selected ? colors.surfaceSelected : colors.surfaceRaised,
       borderColor: selected ? colors.primary : colors.border,
-      borderWidth: selected || highContrast ? 3 : 1,
+      borderWidth: selected || highContrast ? 3 : 1.5,
       padding,
     },
     style,
@@ -125,6 +125,6 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   pressedMotion: {
-    transform: [{ scale: 0.99 }],
+    transform: [{ translateY: 2 }],
   },
 });

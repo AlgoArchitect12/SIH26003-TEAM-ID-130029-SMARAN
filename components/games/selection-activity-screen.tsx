@@ -14,6 +14,7 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { SmaranCard } from '@components/ui/smaran-card';
+import { ProgressIndicator } from '@components/ui/progress-indicator';
 import { Spacing } from '@constants/layout';
 import { cognitiveRepository } from '@db/repositories/cognitive.repository';
 import type { AdaptiveModelState, CognitiveActivityType, CognitiveSession, DifficultyLevel, Language, PatientSettings } from '@db/schema.types';
@@ -194,14 +195,14 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
       {failed ? <ThemedText accessibilityRole="alert">{t(language, 'activityPrepareFailed')}</ThemedText> : <SmaranLoading label={t(language, 'gameLoading')} />}
       {failed && <SmaranButton accessibilityLabel={t(language, 'retry')} label={t(language, 'retry')} onPress={() => setAttempt(value => value + 1)} />}
     </> : <>
-      {selection && <View style={styles.group}>
-        <SmaranButton label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')} variant="outline" onPress={() => setPaused(value => !value)} />
-        <SmaranButton label={t(language, 'gameRestart')} accessibilityLabel={t(language, 'gameRestart')} variant="outline" onPress={() => setAttempt(value => value + 1)} />
+      {selection && <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
+        <SmaranButton style={{ flexGrow: 1, flexBasis: 140 }} label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')} variant="outline" onPress={() => setPaused(value => !value)} />
+        <SmaranButton style={{ flexGrow: 1, flexBasis: 140 }} label={t(language, 'gameRestart')} accessibilityLabel={t(language, 'gameRestart')} variant="outline" onPress={() => setAttempt(value => value + 1)} />
       </View>}
-      <View style={styles.group}>
+      <SmaranCard style={styles.group}>
         <ThemedText type="secondary">{t(language, 'gameLevel', { level: String(data.level) })}</ThemedText>
         <ThemedText>{instructions}</ThemedText>
-      </View>
+      </SmaranCard>
       {data.settings.voiceGuidance && !selection && <ReadScreenButton language={language} labelKey="activityHear" text={title + '. ' + instructions} />}
       {data.routine && <>
         <ThemedText accessibilityLanguage={language} type="cardHeading">{data.routine.title}</ThemedText>
@@ -231,7 +232,8 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
             onPress={() => { if (data.isCurrent() && !current.current) update(createSelection(data.tasks, Date.now())); }} />
         )}
       </> : <>
-        <ThemedText accessibilityLiveRegion="polite" type="action">{t(language, 'activityProgress', { current: String(selection.correctSelections), total: String(data.tasks.length) })}</ThemedText>
+        <ProgressIndicator current={selection.correctSelections} total={data.tasks.length}
+          label={t(language, 'activityProgress', { current: String(selection.correctSelections), total: String(data.tasks.length) })} />
         {data.puzzle ? <PuzzleActivityBoard paused={paused} activity={data.puzzle} selection={selection} level={data.level}
           language={language} voice={data.settings.voiceGuidance} isCurrent={data.isCurrent} onContinue={finishOrContinue}
           onChange={change => { if (!paused && data.isCurrent() && current.current) update(change(current.current)); }} /> : data.grid ? <GridActivityBoard paused={paused} key={Math.floor(selection.position / data.grid.roundLength)} activity={data.grid} selection={selection}
@@ -270,7 +272,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
         {selection.feedback && <ThemedText accessibilityLiveRegion="polite" type="cardHeading">
           {feedbackText}
         </ThemedText>}
-        {hintText && !selection.awaitingContinue && <SmaranCard style={styles.group}>
+        {hintText && !selection.awaitingContinue && <SmaranCard style={[styles.group, { backgroundColor: colors.warningSurface, borderColor: colors.warning }]}>
           <ThemedText accessibilityLiveRegion="polite">{hintText}</ThemedText>
           {selection.hintLevel === 2 && data.recall && <PictureRow pictures={data.recall.preview} language={language} ordered={gameType === 'sequence_memory'} />}
           {selection.hintLevel === 2 && object && <PictureRow pictures={[object.answer]} language={language} ordered={false} />}

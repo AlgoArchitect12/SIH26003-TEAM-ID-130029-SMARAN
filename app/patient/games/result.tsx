@@ -15,6 +15,7 @@ import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
+import { PageIntro } from '@components/ui/page-intro';
 import { PageLayout, Spacing } from '@constants/layout';
 import type { TextSizePreference } from '@constants/typography';
 import type { ActivityFeedbackLabel, PatientSettings } from '@db/schema.types';
@@ -198,14 +199,12 @@ export default function CognitiveResultScreen() {
             if (!saved && !await submit(null)) return;
             setPaused(true); router.dismissTo('/patient/games');
           })(); }} />
-        <ThemedText accessibilityRole="header" textSize={textSize} type="screenTitle">
-          {t(language, 'resultTitle', { name: preferredName })}
-        </ThemedText>
+        <PageIntro title={t(language, 'resultTitle', { name: preferredName })} icon="check-circle" />
         <View style={styles.completion}>
           <MaterialIcons name="check-circle" color={colors.success} size={32} accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
           <ThemedText textSize={textSize} type="action" style={{ flex: 1 }}>{t(language, 'activityFinished')}</ThemedText>
         </View>
-        <SmaranCard style={styles.summary}>
+        <SmaranCard style={[styles.summary, { borderColor: colors.success, backgroundColor: colors.successSurface }]}>
           <ThemedText textSize={textSize} type="cardHeading">{activity}</ThemedText>
           <ThemedText textSize={textSize}>{completedSummary}</ThemedText>
           <ThemedText textSize={textSize}>{t(language, 'activityAccuracy', { accuracy: new Intl.NumberFormat(language, { style: 'percent', maximumFractionDigits: 0 }).format(metrics.accuracy) })}</ThemedText>

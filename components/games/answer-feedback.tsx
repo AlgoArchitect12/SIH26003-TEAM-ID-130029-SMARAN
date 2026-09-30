@@ -23,7 +23,7 @@ export function AnswerFeedbackMark({ feedback, colors }: { feedback: AnswerFeedb
   return <MaterialIcons
     accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
     color={feedback === 'correct' ? colors.success : colors.error}
-    name={feedback === 'correct' ? 'check-circle' : 'error-outline'}
+    name={feedback === 'correct' ? 'check-circle' : 'lightbulb-outline'}
     size={24}
   />;
 }

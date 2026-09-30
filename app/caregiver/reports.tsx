@@ -5,6 +5,7 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { PageLayout } from '@constants/layout';
+import { useThemeColors } from '@/hooks/use-theme-color';
 import { t, type TranslationKey } from '@i18n/index';
 import { CareScopes, effectiveScopes } from '@/src/caregiver/care-circle';
 import { reportSections } from '@/src/caregiver/report-presentation';
@@ -15,6 +16,7 @@ import { generateActivityReport } from '@/src/services/reports.service';
 import { cleanupReportPdfs, prepareReportPdf, removeReportPdf, ReportPdfUnavailable, ReportEmailUnavailable } from '@/src/services/report-pdf.service';
 
 export function ReportsPanel({data}: {data: ActiveCare}) {
+  const colors = useThemeColors();
   const language = data.settings.language, label = (key:TranslationKey)=>t(language,key);
   const [days,setDays] = useState<7|30>(7), [reports,setReports] = useState(data.reports);
   const [selected,setSelected] = useState<ActivityReport|null>(null), [audience,setAudience] = useState<string|undefined>();
@@ -55,7 +57,7 @@ export function ReportsPanel({data}: {data: ActiveCare}) {
   return <>
     <ThemedText>{label('circleLocalNotice')}</ThemedText>
     <View style={{flexDirection:'row',flexWrap:'wrap',gap:12}}>{([7,30] as const).map(d=><SmaranButton key={d} label={label(d===7?'analytics7':'analytics30')}
-      accessibilityLabel={label(d===7?'analytics7':'analytics30')} variant="outline" disabled={busy} accessibilityState={{selected:days===d}} onPress={()=>setDays(d)} />)}</View>
+      accessibilityLabel={label(d===7?'analytics7':'analytics30')} variant={days===d?'primary':'outline'} disabled={busy} accessibilityState={{selected:days===d}} onPress={()=>setDays(d)} />)}</View>
     <SmaranButton label={label('reportGenerate')} accessibilityLabel={label('reportGenerate')} disabled={busy} loading={busy} onPress={()=>void run(async()=>{
       const report=await generateActivityReport(data.patient.id,days,current);
       if(current()){setReports(rows=>[report,...rows]);setSelected(report);setAudience(undefined);}
@@ -67,7 +69,7 @@ export function ReportsPanel({data}: {data: ActiveCare}) {
         onPress={()=>{try{clearPdf();setAudience(undefined);}catch{setMessage('reportFailed');}}} />
       {eligible.map(m=><SmaranButton key={m.id} label={m.display_name} accessibilityLabel={m.display_name} variant="outline" disabled={busy} accessibilityState={{selected:audience===m.id}}
         onPress={()=>{try{clearPdf();setAudience(m.id);}catch{setMessage('reportFailed');}}} />)}
-      {canReport ? reportSections(selected,language,scopes).map((section,i)=><View key={i} style={PageLayout.group}>
+      {canReport ? reportSections(selected,language,scopes).map((section,i)=><View key={i} style={[PageLayout.group, { padding: 16, borderRadius: 14, backgroundColor: colors.surfaceMuted }]}>
         <ThemedText type="cardHeading" accessibilityRole="header">{section.title}</ThemedText>
         {section.lines.map((line,j)=><ThemedText key={j}>{line}</ThemedText>)}
       </View>) : <ThemedText>{label('reportNoAccess')}</ThemedText>}

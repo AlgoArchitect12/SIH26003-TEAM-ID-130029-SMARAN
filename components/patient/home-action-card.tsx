@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 
 import { ThemedText } from '@components/themed-text';
 import { SmaranCard } from '@components/ui/smaran-card';
@@ -14,6 +14,7 @@ type HomeActionCardProps = {
   featured?: boolean;
   highContrast: boolean;
   icon: ComponentProps<typeof MaterialIcons>['name'];
+  imageSource?: ImageSourcePropType;
   onPress: () => void;
   reducedMotion: boolean;
   textSize: TextSizePreference;
@@ -26,6 +27,7 @@ export function HomeActionCard({
   featured = false,
   highContrast,
   icon,
+  imageSource,
   onPress,
   reducedMotion,
   textSize,
@@ -40,7 +42,7 @@ export function HomeActionCard({
       accessibilityHint={accessibilityHint}
       accessibilityLabel={`${title}. ${description}`}
       onPress={onPress}
-      padding={featured ? Spacing.lg : Spacing.md}
+      padding={0}
       reducedMotionOverride={reducedMotion ? true : null}
       style={[
         styles.card,
@@ -51,6 +53,9 @@ export function HomeActionCard({
           borderWidth: contrast ? 3 : 2,
         },
       ]}>
+      {imageSource && <Image source={imageSource} accessible={false} aria-hidden resizeMode="cover"
+        style={{ width: '100%', height: 180, borderTopLeftRadius: Radius.card - 2, borderTopRightRadius: Radius.card - 2 }} />}
+      <View style={[styles.row, { padding: featured ? Spacing.lg : Spacing.md }]}>
       <View
         style={[
           styles.icon,
@@ -71,16 +76,20 @@ export function HomeActionCard({
           {description}
         </ThemedText>
       </View>
+      <MaterialIcons name="arrow-forward" size={24} color={foreground} accessible={false} aria-hidden />
+      </View>
     </SmaranCard>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    minHeight: 104,
+  },
+  row: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: Spacing.md,
-    minHeight: 104,
   },
   featured: {
     minHeight: 156,

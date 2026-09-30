@@ -41,7 +41,7 @@ function screen(file, overrides, props) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   }).outputText;
   new Function('require', 'module', 'exports', '__DEV__', code)(name => {
-    if (name === 'expo-router') return { useLocalSearchParams: () => ({}), useRouter: () => ({ push() {}, dismissTo() {} }), ...overrides[name] };
+    if (name === 'expo-router') return { usePathname: () => '/', useLocalSearchParams: () => ({}), useRouter: () => ({ push() {}, dismissTo() {} }), ...overrides[name] };
     if (name === '@/hooks/use-game-transition') return load('hooks/use-game-transition.ts', { ...overrides, react,
       '@react-navigation/native': overrides['@react-navigation/native'] ?? { useIsFocused: () => true }, $timers: clock });
     if (name === '@react-navigation/native') return {
@@ -53,8 +53,17 @@ function screen(file, overrides, props) {
     if (name === 'react') return react;
     if (name === 'react/jsx-runtime') return require(name);
     if (name === 'react-native') return { View: 'View', StyleSheet: { create: s => s } };
+    if (name === '@expo/vector-icons') return { MaterialIcons: 'MaterialIcons' };
     if (name === '@i18n/index') return load('src/i18n/index.ts');
     if (name === '@constants/layout') return load('constants/layout.ts', { 'react-native': { Platform: { select: s => s.web } } });
+    if (name === '@/hooks/use-theme-color') return { useThemeColors: () => load('constants/colors.ts').Colors.light };
+    // Render shared presentation so existing assertions still inspect visible copy.
+    if (name === '@components/ui/page-intro' || name === '@components/ui/progress-indicator') return load(name.replace('@components/', 'components/') + '.tsx', {
+      'react-native': { View: 'View' }, '@expo/vector-icons': { MaterialIcons: 'MaterialIcons' },
+      '@components/themed-text': { ThemedText: 'ThemedText' }, '@components/ui/smaran-card': { SmaranCard: 'SmaranCard' },
+      '@constants/layout': { PageLayout: { group: {} } },
+      '@/hooks/use-theme-color': overrides['@/hooks/use-theme-color'] ?? { useThemeColors: () => ({}) },
+    });
     if (name.startsWith('@components/')) return new Proxy({}, { get: (_, key) => String(key) });
     if (name === '@services/onboarding-recovery.service') return { ensureInitialRoute: () => null };
     if (name === 'expo-router') return { useRouter: () => ({ push: () => {}, dismissTo: () => {} }) };

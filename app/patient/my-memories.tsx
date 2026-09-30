@@ -10,6 +10,7 @@ import { useMyDayPatient as usePatient } from '@components/my-day/shared';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
+import { PageIntro } from '@components/ui/page-intro';
 import { memoriesRepository } from '@db/repositories/memories.repository';
 import { t } from '@i18n/index';
 import type { PersonalMemory } from '@/src/memories/types';
@@ -38,19 +39,18 @@ export default function MyMemoriesScreen() {
     loaded && !memories.length ? `${t(language, 'memoryEmpty')} ${t(language, 'memoryEmptyHelp')}` : ''].join(' ');
   return <ScreenWrapper scroll><View style={styles.content}>
     <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" onPress={() => router.dismissTo('/patient/home')} />
-    <View style={styles.heading}>
-      <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeMemoriesTitle')}</ThemedText>
-      <ThemedText type="secondary">{t(language, 'memoryIntro')}</ThemedText>
-    </View>
+    <PageIntro title={t(language, 'homeMemoriesTitle')} description={t(language, 'memoryIntro')} icon="photo-library">
+      <ReadScreenButton language={language} text={speech} />
+    </PageIntro>
     {cleanup === '1' && <ThemedText accessibilityRole="alert">{t(language, 'memoryMediaCleanup')}</ThemedText>}
     {(failed || patientFailed) ? <View style={styles.group} accessibilityRole="alert">
       <ThemedText>{t(language, 'memoryFailed')}</ThemedText>
       <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={() => { retryPatient(); setAttempt(n => n + 1); }} />
     </View> : !loaded && <SmaranLoading label={t(language, 'loadingSetup')} />}
-    {loaded && !failed && !memories.length && <View style={styles.group}>
+    {loaded && !failed && !memories.length && <SmaranCard style={styles.group}>
       <ThemedText type="cardHeading">{t(language, 'memoryEmpty')}</ThemedText>
       <ThemedText>{t(language, 'memoryEmptyHelp')}</ThemedText>
-    </View>}
+    </SmaranCard>}
     {patientId && <SmaranButton label={t(language, 'memoryAdd')} accessibilityLabel={t(language, 'memoryAdd')} size="large" onPress={() => router.push('/patient/my-memory-editor')} />}
     {memories.map(memory => <SmaranCard key={memory.id} accessibilityLabel={`${memory.name}. ${memory.relationship}. ${t(language, 'memoryOpen')}`}
       onPress={() => router.push({ pathname: '/patient/my-memory', params: { id: memory.id } })}>
@@ -61,6 +61,5 @@ export default function MyMemoriesScreen() {
         <ThemedText type="defaultSemiBold">{t(language, 'memoryOpen')}</ThemedText>
       </View>
     </SmaranCard>)}
-    <ReadScreenButton language={language} text={speech} />
   </View></ScreenWrapper>;
 }

@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
+import { PageIntro } from '@components/ui/page-intro';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { CurrentPerson } from '@components/patient/current-person';
@@ -19,10 +20,11 @@ import { applyPatientSettings } from '@/src/services/profile-switching.service';
 
 export function CareNavigation({language}: {language: Language}) {
   const router = useRouter();
+  const pathname = usePathname();
   const links = [['circleOverview','/caregiver/home'],['circleActivity','/caregiver/activity'],['circleReminders','/caregiver/reminders'],
     ['reportTitle','/caregiver/reports'],['circleTitle','/caregiver/circle'],['aiTitle','/caregiver/assistant'],['gpsTitle','/caregiver/location']] as const;
   return <View style={{flexDirection:'row',flexWrap:'wrap',gap:12}}>{links.map(([key,path]) =>
-    <SmaranButton key={key} label={t(language,key)} accessibilityLabel={t(language,key)} variant="outline"
+    <SmaranButton key={key} label={t(language,key)} accessibilityLabel={t(language,key)} variant="outline" accessibilityState={{ selected: pathname === path }}
       style={{flexGrow:1,flexBasis:180}} onPress={()=>router.replace(path)} />)}</View>;
 }
 export function CareWorkspace({title,children}: {title: TranslationKey; children: (data: ActiveCare, refresh:()=>void) => ReactNode}) {
@@ -42,13 +44,13 @@ export function CareWorkspace({title,children}: {title: TranslationKey; children
   },[focused,revision,accountRevision,attempt]);
   const visible = focused && loadedAccount === accountRevision && data?.current() ? data : null;
   return <ScreenWrapper scroll><View style={PageLayout.content}>
-    <ThemedText type="screenTitle" accessibilityRole="header">{t(language,title)}</ThemedText>
+    <PageIntro title={t(language,title)} description={t(language,'careLocal')} icon="volunteer-activism" />
     <CurrentPerson name={visible?.patient.preferredName} language={language} caregiver />
     <SyncStatus language={language} patientId={visible?.patient.id ?? null} />
-    <CareNavigation language={language} />
     {failed ? <View style={PageLayout.group}><ThemedText accessibilityRole="alert">{t(language,'circleFailed')}</ThemedText>
       <SmaranButton label={t(language,'retry')} accessibilityLabel={t(language,'retry')} onPress={()=>setAttempt(n=>n+1)} /></View>
       : visible ? <View key={`${visible.patient.id}-${revision}-${accountRevision}`} style={PageLayout.group}>{children(visible,()=>setAttempt(n=>n+1))}</View>
         : <SmaranLoading label={t(language,'loadingSetup')} />}
+    <CareNavigation language={language} />
   </View></ScreenWrapper>;
 }

@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { SmaranButton } from '@components/ui/smaran-button';
-import { ThemedText } from '@components/themed-text';
+import { PageIntro } from '@components/ui/page-intro';
 import { PageLayout } from '@constants/layout';
 import { t } from '@i18n/index';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
@@ -22,7 +22,7 @@ export default function PairingScreen() {
     return()=>{live=false;};
   },[revision,accountRevision]);
   return <ScreenWrapper scroll><View style={PageLayout.content}>
-    <ThemedText type="screenTitle">{t(language,'pairingTitle')}</ThemedText>
+    <PageIntro title={t(language,'pairingTitle')} icon="devices" />
     <SmaranButton label={t(language,'back')} accessibilityLabel={t(language,'back')} variant="outline" onPress={()=>router.replace('/account')}/>
     <PairingPanel key={`${revision}-${accountRevision}`} data={data}/>
   </View></ScreenWrapper>;

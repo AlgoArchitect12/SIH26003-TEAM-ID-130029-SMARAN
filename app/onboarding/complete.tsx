@@ -92,7 +92,7 @@ export default function CompleteScreen() {
 
   if (!data) {
     return (
-      <ScreenWrapper contentContainerStyle={styles.loadingScreen} scroll>
+      <ScreenWrapper header={null} contentContainerStyle={styles.loadingScreen} scroll>
         <SmaranBrand />
         {failed ? (
           <View accessibilityRole="alert" style={styles.loadingContent}>

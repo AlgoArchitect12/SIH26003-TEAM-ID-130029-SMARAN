@@ -12,7 +12,7 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
 import { SmaranLoading } from '@components/ui/smaran-loading';
-import { SmaranBrand } from '@components/ui/smaran-brand';
+import { PageIntro } from '@components/ui/page-intro';
 import { PageLayout, Radius, Spacing } from '@constants/layout';
 import { useMyDayPatient } from '@components/my-day/shared';
 import { myDayRepository } from '@db/repositories/my-day.repository';
@@ -62,7 +62,6 @@ export default function PatientHomeScreen() {
   }, [patientId, attempt]));
   const button = (label: string, onPress: () => void) => <SmaranButton label={label} accessibilityLabel={label} onPress={onPress} variant="outline" />;
   if (failed || patientFailed || !data) return <ScreenWrapper scroll><View style={styles.content}>
-    <SmaranBrand />
     {failed || patientFailed ? <>
       <ThemedText accessibilityRole="alert">{t(language, 'homeLoadFailed')}</ThemedText>
       {button(t(language, 'retry'), () => { retry(); setAttempt(n => n + 1); })}
@@ -77,26 +76,17 @@ export default function PatientHomeScreen() {
   const speech = [greeting, date, t(language, 'dayToday'), todayText, t(language, 'homeTrainTitle'),
     t(language, 'homeTrainDescription'), t(language, 'familiarMemory'), memory ? `${memory.name}. ${memory.relationship}` : t(language, 'memoryEmpty')].join('. ');
   return <ScreenWrapper scroll><View style={styles.content}>
-    <View style={styles.brand}>
-      <SmaranBrand />
-    </View>
-    <View style={PageLayout.heading}>
-      <ThemedText type="screenTitle">{greeting}</ThemedText>
-      <ThemedText type="secondary">{date}</ThemedText>
-    </View>
+    <PageIntro title={greeting} description={`${getRegionName(language, settings.region)} · ${date}`} icon={now.getHours() < 17 ? 'wb-sunny' : 'nights-stay'}>
+      {preferences.voiceGuidance && <ReadScreenButton language={language} text={speech} />}
+    </PageIntro>
+    <HomeActionCard featured title={t(language, 'homeTrainTitle')} description={t(language, 'homeTrainDescription')}
+      imageSource={regional?.imageAsset}
+      accessibilityHint={t(language, 'activitiesOpen')} icon="psychology" highContrast={preferences.highContrast}
+      reducedMotion={preferences.reducedMotion} textSize={textSize} onPress={() => router.navigate('/patient/games')} />
     <SmaranCard style={[styles.group, { borderLeftWidth: 5, borderLeftColor: colors.primary }]}>
       <ThemedText type="cardHeading">{t(language, 'dayToday')}</ThemedText>
       <ThemedText type={reminder ? 'action' : 'body'}>{todayText}</ThemedText>
       {button(t(language, 'homeDayTitle'), () => router.navigate('/patient/my-day'))}
-    </SmaranCard>
-    <HomeActionCard featured title={t(language, 'homeTrainTitle')} description={t(language, 'homeTrainDescription')}
-      accessibilityHint={t(language, 'activitiesOpen')} icon="psychology" highContrast={preferences.highContrast}
-      reducedMotion={preferences.reducedMotion} textSize={textSize} onPress={() => router.navigate('/patient/games')} />
-    <SmaranCard style={styles.group}>
-      <ThemedText type="cardHeading">{t(language,'gpsPatientTitle')}</ThemedText>
-      <ThemedText>{t(language,location.patientId===patientId?location.status:'gpsPaused')}</ThemedText>
-      {location.patientId===patientId&&location.point&&<ThemedText>{t(language,freshness(location.point))}</ThemedText>}
-      {button(t(language, 'gpsPatientTitle'), () => router.navigate('/patient/location'))}
     </SmaranCard>
     <View style={styles.group}>
       <ThemedText type="cardHeading">{t(language, 'familiarMemory')}</ThemedText>
@@ -121,7 +111,12 @@ export default function PatientHomeScreen() {
         {button(t(language, 'memoryOpen'), () => router.navigate({ pathname: '/patient/my-home-memory', params: { id: regional.id } }))}
       </SmaranCard>
     </View>}
-    {preferences.voiceGuidance && <ReadScreenButton language={language} text={speech} />}
+    <SmaranCard style={styles.group}>
+      <ThemedText type="cardHeading">{t(language,'gpsPatientTitle')}</ThemedText>
+      <ThemedText>{t(language,location.patientId===patientId?location.status:'gpsPaused')}</ThemedText>
+      {location.patientId===patientId&&location.point&&<ThemedText>{t(language,freshness(location.point))}</ThemedText>}
+      {button(t(language, 'gpsPatientTitle'), () => router.navigate('/patient/location'))}
+    </SmaranCard>
     <View style={styles.brand}>
       <MaterialIcons name="offline-pin" size={24} color={colors.success} accessible={false} aria-hidden />
       <ThemedText type="secondary">{t(language, 'readyOffline')}</ThemedText>

@@ -68,7 +68,7 @@ export default function AccessibilityScreen() {
       onBack={() => router.dismissTo('/onboarding/language')}
       step={3}
       title={t(language, 'accessibilityTitle')}>
-      <View style={styles.preference}>
+      <SmaranCard style={styles.preference}>
         <ThemedText type="cardHeading">{t(language, 'textSize')}</ThemedText>
         <View style={styles.choices}>
           {textSizes.map((textSize) => (
@@ -83,7 +83,7 @@ export default function AccessibilityScreen() {
             />
           ))}
         </View>
-      </View>
+      </SmaranCard>
 
       <SmaranCard
         accessibilityLabel={t(language, 'previewTitle')}
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   toggleCard: { minHeight: 96 },
-  toggleRow: { alignItems: 'flex-start', gap: Spacing.sm },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   toggleTitle: { flex: 1 },
   preview: {
     gap: Spacing.sm,

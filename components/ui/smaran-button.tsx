@@ -109,7 +109,7 @@ export function SmaranButton({
         styles.button,
         focused && { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: 3, outlineOffset: 3 },
         {
-          backgroundColor: disabled ? colors.disabled : selectedVariant.backgroundColor,
+          backgroundColor: disabled ? colors.disabled : accessibilityState?.selected && variant === 'outline' ? colors.surfaceSelected : selectedVariant.backgroundColor,
           borderColor: accessibilityState?.selected ? colors.primary : disabled ? colors.border : selectedVariant.borderColor,
           borderStyle: disabled ? 'dashed' : 'solid',
           minHeight: size === 'large' ? Layout.largeButtonHeight : Layout.buttonHeight,
@@ -161,6 +161,6 @@ const styles = StyleSheet.create({
     opacity: 0.88,
   },
   pressedMotion: {
-    transform: [{ scale: 0.98 }],
+    transform: [{ translateY: 2 }],
   },
 });

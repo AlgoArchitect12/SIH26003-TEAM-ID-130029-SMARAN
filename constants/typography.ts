@@ -9,12 +9,12 @@ export const TextSizeMultipliers: Record<TextSizePreference, number> = {
 };
 
 export const Typography = {
-  screenTitle: { fontSize: 34, fontWeight: '700', lineHeight: 42 },
+  screenTitle: { fontSize: 30, fontWeight: '700', lineHeight: 40 },
   cardHeading: { fontSize: 24, fontWeight: '600', lineHeight: 32 },
   action: { fontSize: 22, fontWeight: '600', lineHeight: 30 },
-  body: { fontSize: 20, fontWeight: '400', lineHeight: 30 },
-  secondary: { fontSize: 18, fontWeight: '500', lineHeight: 26 },
-  caption: { fontSize: 17, fontWeight: '500', lineHeight: 24 },
+  body: { fontSize: 20, fontWeight: '400', lineHeight: 32 },
+  secondary: { fontSize: 18, fontWeight: '500', lineHeight: 29 },
+  caption: { fontSize: 18, fontWeight: '500', lineHeight: 27 },
   link: { fontSize: 20, fontWeight: '600', lineHeight: 30, textDecorationLine: 'underline' },
 } as const satisfies Record<string, TextStyle>;
 

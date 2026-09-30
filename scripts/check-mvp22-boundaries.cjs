@@ -71,7 +71,10 @@ function checkMvp22Boundaries() {
   expectedConfig.expo.android.blockedPermissions = expectedConfig.expo.android.blockedPermissions.filter(p => p !== 'android.permission.RECORD_AUDIO');
   expectedConfig.expo.plugins.find(p => Array.isArray(p) && p[0] === 'expo-image-picker')[1].microphonePermission = 'Allow Smaran to record a voice memory on this device.';
   expectedConfig.expo.plugins.unshift(['expo-audio', {microphonePermission:'Allow Smaran to record a voice memory on this device.',recordAudioAndroid:true}]);
-  assert.deepEqual(JSON.parse(fs.readFileSync('app.json','utf8')),expectedConfig,'only reviewed reminder, report, location and foreground voice-memory plugins change');
+  // Stitch pass 1 changes only the two native canvas colors, not plugin behavior.
+  expectedConfig.expo.android.adaptiveIcon.backgroundColor = '#FAF8F5';
+  expectedConfig.expo.plugins.find(p => Array.isArray(p) && p[0] === 'expo-splash-screen')[1].backgroundColor = '#FAF8F5';
+  assert.deepEqual(JSON.parse(fs.readFileSync('app.json','utf8')),expectedConfig,'only reviewed native plugins and Stitch canvas colors change');
   const expectedEas=JSON.parse(baseline('eas.json'));expectedEas.build.preview.environment='preview';expectedEas.build.production.environment='production';
   expectedEas.build.development={distribution:'internal',environment:'development',android:{gradleCommand:':app:assembleDebug',withoutCredentials:true}};
   expectedEas.build['production-apk']={extends:'production',distribution:'internal',android:{buildType:'apk'}};

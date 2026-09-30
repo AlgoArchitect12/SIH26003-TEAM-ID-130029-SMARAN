@@ -7,6 +7,8 @@ import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
+import { PageIntro } from '@components/ui/page-intro';
+import { ProgressIndicator } from '@components/ui/progress-indicator';
 import { category, dayStyles as styles, NotificationNotice, useMyDayPatient } from '@components/my-day/shared';
 import { t } from '@i18n/index';
 import { myDayRepository } from '@db/repositories/my-day.repository';
@@ -83,10 +85,14 @@ export function MyDayContent({ caregiver = false }: { caregiver?: boolean } = {}
     !content.length ? t(language, managing ? 'dayEmpty' : 'careNoRoutine') : ''].join(' ');
   return <ScreenWrapper scroll><View style={styles.content}>
     {button('backHome', () => router.dismissTo(caregiver ? '/caregiver/home' : '/patient/home'))}
-    <View style={styles.heading}>
-      <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeDayTitle')}</ThemedText>
-      <ThemedText type="secondary">{t(language, 'dayIntro')}</ThemedText>
-    </View>
+    <PageIntro title={t(language, 'homeDayTitle')} description={t(language, 'dayIntro')} icon="event-note">
+      <ThemedText type="action">{new Intl.DateTimeFormat(language, { dateStyle: 'full' }).format(new Date(`${displayDay}T12:00:00`))}</ThemedText>
+      {loaded && <>
+        <ProgressIndicator current={today.filter(item => item.completed).length} total={today.length}
+          label={t(language, 'careDoneCount', { done: String(today.filter(item => item.completed).length), total: String(today.length) })} />
+        <ReadScreenButton language={language} text={speech} />
+      </>}
+    </PageIntro>
     {(error || patientFailed) && <View accessibilityRole="alert" style={styles.group}>
       <ThemedText>{t(language, 'dayFailed')}</ThemedText>
       {button('retry', () => { if (patientFailed) retry(); else void act(refresh); })}
@@ -102,14 +108,14 @@ export function MyDayContent({ caregiver = false }: { caregiver?: boolean } = {}
         const state = !reminder.isEnabled ? t(language, 'dayDisabled') : completed ? completionLabel(reminder) : t(language, 'dayPending');
         const doneKey = reminder.type === 'hydration' ? 'dayDrankWater' : 'dayDone';
         const summary = `${t(language, category[reminder.type].key)}. ${reminder.title}. ${timeLabel(language, reminder.timeOfDay)}. ${reminder.note}. ${reminder.repeatRule === 'daily' ? t(language, 'dayDaily') : reminder.scheduledDate}. ${state}`;
-        return <View key={reminder.id} style={[styles.card, { backgroundColor: completed ? colors.successSurface : colors.surface, borderColor: completed ? colors.success : colors.border }]}>
+        return <View key={reminder.id} style={[styles.card, { borderLeftWidth: 5, backgroundColor: completed ? colors.successSurface : colors.surface, borderColor: completed ? colors.success : colors.border }]}>
           <View accessible accessibilityLabel={summary} style={styles.group}>
             <View style={styles.category}>
               <MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" name={category[reminder.type].icon} color={colors.primary} size={32} />
-              <ThemedText style={styles.copy}>{t(language, category[reminder.type].key)}</ThemedText>
+              <ThemedText type="action" style={[styles.copy, { color: colors.primary }]}>{timeLabel(language, reminder.timeOfDay)}</ThemedText>
             </View>
             <ThemedText type="cardHeading">{reminder.title}</ThemedText>
-            <ThemedText type="cardHeading">{timeLabel(language, reminder.timeOfDay)}</ThemedText>
+            <ThemedText type="secondary">{t(language, category[reminder.type].key)}</ThemedText>
             <ThemedText type="secondary">{reminder.repeatRule === 'daily' ? t(language, 'dayDaily') : reminder.scheduledDate}</ThemedText>
             {!!reminder.note && <ThemedText>{reminder.note}</ThemedText>}
             {reminder.type === 'hydration' && <ThemedText type="secondary">{t(language, 'dayWaterTapOnly')}</ThemedText>}
@@ -134,7 +140,6 @@ export function MyDayContent({ caregiver = false }: { caregiver?: boolean } = {}
           </>}
         </View>;
       })}
-      <ReadScreenButton language={language} text={speech} />
       <ThemedText type="secondary">{t(language, 'voiceInputUnavailable')}</ThemedText>
       {caregiver && <NotificationNotice result={notifications} busy={busy}
         onRetry={() => void act(() => myDayService.sync(patientId!))}

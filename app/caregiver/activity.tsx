@@ -9,6 +9,7 @@ import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { SmaranCard } from '@components/ui/smaran-card';
+import { PageIntro } from '@components/ui/page-intro';
 import { SmaranLoading } from '@components/ui/smaran-loading';
 import { PageLayout, Spacing } from '@constants/layout';
 import { useThemeColors } from '@/hooks/use-theme-color';
@@ -103,10 +104,7 @@ export default function ActivityHistoryScreen() {
     <Stack.Screen options={{ animation: 'none' }} />
     <SmaranButton label={t(language, 'back')} accessibilityLabel={t(language, 'back')} variant="outline"
       onPress={() => router.dismissTo('/caregiver/home')} />
-    <View style={PageLayout.heading}>
-      <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'analyticsTitle')}</ThemedText>
-      <ThemedText type="secondary">{t(language, 'careLocal')}</ThemedText>
-    </View>
+    <PageIntro title={t(language, 'analyticsTitle')} description={t(language, 'careLocal')} icon="insights" />
     <View style={styles.group}>
       {([7, 30] as const).map(value => <SmaranButton key={value} label={t(language, value === 7 ? 'analytics7' : 'analytics30')}
         accessibilityLabel={t(language, value === 7 ? 'analytics7' : 'analytics30')} variant={days === value ? 'primary' : 'outline'}

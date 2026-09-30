@@ -7,6 +7,7 @@ import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { HomeActionCard } from '@components/patient/home-action-card';
 import { SmaranLoading } from '@components/ui/smaran-loading';
+import { PageIntro } from '@components/ui/page-intro';
 import { useTextSize } from '@/hooks/use-text-size';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { PageLayout } from '@constants/layout';
@@ -55,10 +56,10 @@ export default function ActivitiesScreen() {
   }, [attempt, router]);
   return <ScreenWrapper scroll><View style={styles.content}>
     <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" onPress={() => router.dismissTo('/patient/home')} />
-    <View style={PageLayout.heading}>
-      <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeTrainTitle')}</ThemedText>
-      <ThemedText type="secondary">{t(language, 'activitiesChoose')}</ThemedText>
-    </View>
+    <PageIntro title={t(language, 'homeTrainTitle')} description={t(language, 'activitiesChoose')} icon="psychology">
+      {voice && <ReadScreenButton language={language} text={[t(language, 'activitiesChoose'),
+        ...CognitiveActivityTypes.map(game => t(language, activityTitleKeys[game]) + '. ' + t(language, activities[game].subtitle))].join(' ')} />}
+    </PageIntro>
     {status === 'loading' && <SmaranLoading label={t(language, 'gameLoading')} />}
     {status === 'failed' && <>
       <ThemedText accessibilityRole="alert">{t(language, 'activityPrepareFailed')}</ThemedText>
@@ -70,8 +71,6 @@ export default function ActivitiesScreen() {
         accessibilityHint={t(language, 'gameStart')} icon={activities[game].icon}
         highContrast={accessibility.highContrast} reducedMotion={accessibility.reducedMotion} textSize={textSize}
         onPress={() => router.push(activities[game].route)} />)}
-      {voice && <ReadScreenButton language={language} text={[t(language, 'activitiesChoose'),
-        ...CognitiveActivityTypes.map(game => t(language, activityTitleKeys[game]) + '. ' + t(language, activities[game].subtitle))].join(' ')} />}
     </>}
   </View></ScreenWrapper>;
 }

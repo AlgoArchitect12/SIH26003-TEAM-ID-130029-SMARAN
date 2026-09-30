@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Layout, Spacing } from '@constants/layout';
 import { useThemeColors } from '@/hooks/use-theme-color';
+import { SmaranBrand } from '@components/ui/smaran-brand';
 
 export type ScreenWrapperProps = PropsWithChildren<{
   contentContainerStyle?: StyleProp<ViewStyle>;
@@ -35,7 +36,10 @@ export function ScreenWrapper({
 }: ScreenWrapperProps) {
   const pathname = usePathname();
   const hasNavigation = isPatientNavigationVisible(pathname);
-  const backgroundColor = useThemeColors().background;
+  const colors = useThemeColors();
+  const backgroundColor = colors.background;
+  const shellHeader = header === undefined && (pathname.startsWith('/patient') || pathname.startsWith('/caregiver') || pathname.startsWith('/onboarding'))
+    ? <SmaranBrand /> : header;
 
   return (
     <SafeAreaView edges={hasNavigation ? ['top', 'right', 'left'] : ['top', 'right', 'bottom', 'left']} style={[styles.safeArea, { backgroundColor }, style]}>
@@ -44,7 +48,7 @@ export function ScreenWrapper({
         enabled={keyboardAvoiding}
         keyboardVerticalOffset={keyboardVerticalOffset}
         style={styles.fill}>
-        {header ? <View style={styles.header}>{header}</View> : null}
+        {shellHeader ? <View style={[styles.header, { borderBottomWidth: 1.5, borderColor: colors.divider }]}>{shellHeader}</View> : null}
         {scroll ? (
           <ScrollView
             contentContainerStyle={[styles.content, contentContainerStyle]}
@@ -74,6 +78,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: Layout.minTouchTarget,
     paddingHorizontal: Layout.pagePadding,
+    paddingVertical: Spacing.sm,
   },
   content: {
     alignSelf: 'center',

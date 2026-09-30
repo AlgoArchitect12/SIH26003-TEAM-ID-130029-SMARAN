@@ -5,7 +5,8 @@ import { StyleSheet, View } from 'react-native';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
-import { SmaranBrand } from '@components/ui/smaran-brand';
+import { PageIntro } from '@components/ui/page-intro';
+import { ProgressIndicator } from '@components/ui/progress-indicator';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { useThemeColors } from '@/hooks/use-theme-color';
 import { Spacing } from '@constants/layout';
@@ -42,7 +43,6 @@ export function OnboardingScreen({
     <ScreenWrapper contentContainerStyle={styles.scrollContent} scroll>
       <View style={styles.content}>
         {step === 1 && <>
-          <SmaranBrand />
           <ThemedText type="secondary" style={{ textAlign: 'center' }}>{t(language, 'appTagline')}</ThemedText>
         </>}
         {onBack ? (
@@ -56,21 +56,12 @@ export function OnboardingScreen({
             variant="outline"
           />
         ) : null}
-        <View style={styles.introduction}>
-          {step ? (
-            <ThemedText type="caption">
-              {t(language, 'stepProgress', { current: String(step), total: role === 'caregiver' ? '6' : '5' })}
-            </ThemedText>
-          ) : null}
-          <ThemedText accessibilityRole="header" type="screenTitle">
-            {title}
-          </ThemedText>
-          <ThemedText>{description}</ThemedText>
-        </View>
+        {step ? <ProgressIndicator current={step} total={role === 'caregiver' ? 6 : 5}
+          label={t(language, 'stepProgress', { current: String(step), total: role === 'caregiver' ? '6' : '5' })} /> : null}
+        <PageIntro title={title} description={description} icon="spa">
+          {showReadAloud && <ReadScreenButton language={language} text={speechText ?? `${title}. ${description}`} />}
+        </PageIntro>
         {children}
-        {showReadAloud ? (
-          <ReadScreenButton language={language} text={speechText ?? `${title}. ${description}`} />
-        ) : null}
       </View>
     </ScreenWrapper>
   );

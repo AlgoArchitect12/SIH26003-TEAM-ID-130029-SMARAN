@@ -14,9 +14,11 @@ import { patientRepository } from '@db/repositories/patient.repository';
 import { Languages, TextSizes, type UpdatePatientSettingsInput } from '@db/schema.types';
 import { getLanguageName, getTextSizeName, t } from '@i18n/index';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
+import { useThemeColors } from '@/hooks/use-theme-color';
 
 export default function SettingsScreen() {
   const patient = useMyDayPatient();
+  const colors = useThemeColors();
   const { section } = useLocalSearchParams<{ section?: string }>();
   const language = patient.language;
   const preferences = useOnboardingStore(s => s.accessibility);
@@ -45,13 +47,16 @@ export default function SettingsScreen() {
       <SelectionCard key={option} icon="language" title={getLanguageName(option)} selectedLabel={t(language, 'selected')}
         disabled={status === 'saving'}
         selected={language === option} onPress={() => void save({ language: option })} />)
-      : <View style={{ gap: 16 }}>
+      : <SmaranCard style={{ gap: 16 }}>
         {section !== 'voice' && <>
           <ThemedText type="cardHeading">{t(language, 'textSize')}</ThemedText>
           {TextSizes.map(option => <SelectionCard key={option} icon="text-fields" title={getTextSizeName(language, option)}
             disabled={status === 'saving'}
             selectedLabel={t(language, 'selected')} selected={preferences.textSize === option} onPress={() => void save({ textSize: option })} />)}
-          <ThemedText>{t(language, 'previewBody')}</ThemedText>
+          <View style={{ gap: 8, padding: 16, borderRadius: 14, backgroundColor: colors.surfaceSelected }}>
+            <ThemedText type="action">{t(language, 'previewTitle')}</ThemedText>
+            <ThemedText>{t(language, 'previewBody')}</ThemedText>
+          </View>
         </>}
         {(section === 'voice' ? ['voiceGuidance'] as const : ['reducedMotion'] as const).map(key => <SmaranCard key={key}
           accessibilityRole="switch" checked={preferences[key]} selected={preferences[key]} disabled={status === 'saving'}
@@ -62,7 +67,7 @@ export default function SettingsScreen() {
         </SmaranCard>)}
         {section === 'voice' && <ReadScreenButton language={language} text={t(language, 'previewBody')} />}
         {section === 'voice' && <VoiceCapabilities language={language} />}
-      </View>}
+      </SmaranCard>}
     {status !== 'idle' && <ThemedText accessibilityLiveRegion="polite" accessibilityRole={status === 'failed' ? 'alert' : undefined}>
       {t(language, status === 'saving' ? 'saving' : status === 'saved' ? 'saved' : 'settingsSaveFailed')}
     </ThemedText>}

@@ -1,13 +1,14 @@
 import { Field } from '@components/ui/smaran-field';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { OnboardingScreen } from '@components/onboarding/onboarding-screen';
 import { DateOfBirthField } from '@components/onboarding/date-of-birth-field';
 import { parseDateOfBirth } from '@/src/utils/date-of-birth';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
+import { SmaranCard } from '@components/ui/smaran-card';
 import { Spacing } from '@constants/layout';
 import { t } from '@i18n/index';
 import {
@@ -49,7 +50,7 @@ export default function ProfileScreen() {
       showReadAloud={accessibility.voiceGuidance}
       step={4}
       title={t(language, 'profileTitle')}>
-      <View style={styles.form}>
+      <SmaranCard style={styles.form}>
         <Field label={t(language, 'preferredName')} autoCapitalize="words" maxLength={80}
           value={profile.preferredName} onChangeText={preferredName => setProfileDraft({ preferredName })}
           placeholder={t(language, 'preferredNamePlaceholder')} />
@@ -64,7 +65,7 @@ export default function ProfileScreen() {
           value={profile.emergencyPhone} onChangeText={emergencyPhone => setProfileDraft({ emergencyPhone })}
           placeholder={t(language, 'emergencyPhonePlaceholder')} />
         {errors.emergencyPhone && <ThemedText accessibilityRole="alert">{errors.emergencyPhone}</ThemedText>}
-      </View>
+      </SmaranCard>
 
       {errors.save ? (
         <ThemedText accessibilityRole="alert">

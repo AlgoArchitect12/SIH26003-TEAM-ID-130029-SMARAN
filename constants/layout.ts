@@ -28,9 +28,9 @@ export const PageLayout = {
 } as const satisfies Record<string, ViewStyle>;
 
 export const Radius = {
-  card: 16,
+  card: 20,
   largeCard: 24,
-  button: 16,
+  button: 14,
 } as const;
 
 export const Elevation = {
