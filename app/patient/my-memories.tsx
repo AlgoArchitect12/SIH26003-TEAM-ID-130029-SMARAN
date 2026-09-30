@@ -42,7 +42,7 @@ export default function MyMemoriesScreen() {
       <ThemedText type="screenTitle" accessibilityRole="header">{t(language, 'homeMemoriesTitle')}</ThemedText>
       <ThemedText type="secondary">{t(language, 'memoryIntro')}</ThemedText>
     </View>
-    {cleanup === '1' && <ThemedText accessibilityRole="alert">{t(language, 'memoryRemovedCleanup')}</ThemedText>}
+    {cleanup === '1' && <ThemedText accessibilityRole="alert">{t(language, 'memoryMediaCleanup')}</ThemedText>}
     {(failed || patientFailed) ? <View style={styles.group} accessibilityRole="alert">
       <ThemedText>{t(language, 'memoryFailed')}</ThemedText>
       <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} onPress={() => { retryPatient(); setAttempt(n => n + 1); }} />

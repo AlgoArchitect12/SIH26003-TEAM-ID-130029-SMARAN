@@ -2,7 +2,7 @@ import { validateRecordId } from '../utils/validation';
 
 export type PersonalMemoryInput = { name: string; relationship: string; description: string };
 export type PersonalMemory = PersonalMemoryInput & {
-  id: string; patientId: string; photoPath: string | null; createdAt: string; updatedAt: string;
+  id: string; patientId: string; photoPath: string | null; audioPath: string | null; createdAt: string; updatedAt: string;
 };
 export type SelectedMemoryPhoto = { uri: string; extension: string };
 export type MemoryPhotoChange = { kind: 'keep' } | { kind: 'remove' } | { kind: 'replace'; photo: SelectedMemoryPhoto };
@@ -29,5 +29,12 @@ export function validateMemoryPhotoPath(patientId: string, value: string | null)
   if (value === null) return null;
   if (typeof value !== 'string' || !value.startsWith(memoryPatientDirectory(patientId) + '/') ||
     !/^memories\/[a-zA-Z0-9_-]+\/[a-f0-9]{32}\.(jpg|png|webp|heic|heif|avif|gif)$/u.test(value)) throw new MemoryError('photo');
+  return value;
+}
+
+export function validateMemoryAudioPath(patientId: string, value: string | null) {
+  if (value === null) return null;
+  if (typeof value !== 'string' || !value.startsWith(memoryPatientDirectory(patientId) + '/') ||
+    !/^memories\/[a-zA-Z0-9_-]+\/[a-f0-9]{32}\.m4a$/u.test(value)) throw new MemoryError('invalid');
   return value;
 }

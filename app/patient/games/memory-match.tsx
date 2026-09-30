@@ -293,7 +293,7 @@ export default function MemoryMatchScreen() {
           <ThemedText textSize={textSize}>{t(language, 'gameInstructions')}</ThemedText>
         </View>
 
-        {settings.voiceGuidance ? <ReadScreenButton language={language} text={speechText} /> : null}
+        {settings.voiceGuidance && game.status !== 'PREVIEW' ? <ReadScreenButton language={language} text={speechText} /> : null}
         {game.status !== 'IDLE' && <View style={styles.heading}>
           <SmaranButton label={t(language, paused ? 'gameResume' : 'gamePause')} accessibilityLabel={t(language, paused ? 'gameResume' : 'gamePause')}
             variant="outline" onPress={() => setPaused(value => !value)} />

@@ -67,7 +67,7 @@ async function workerChecks() {
 }
 
 async function main() {
-  for (const file of fs.readdirSync('src/db/migrations').filter(f => /^\d{3}_/.test(f)).map(f => 'src/db/migrations/' + f)) {
+  for (const file of fs.readdirSync('src/db/migrations').filter(f => /^\d{3}_/.test(f) && f !== '016_voice_memories.ts').map(f => 'src/db/migrations/' + f)) {
     const original = execFileSync('git', ['show', `d99ec29:${file}`], { encoding: 'utf8' });
     assert.equal(fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n'), original.replace(/\r\n/g, '\n'), file + ' unchanged');
   }

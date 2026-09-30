@@ -15,6 +15,7 @@ import { threeCognitiveGamesMigration } from './012_three_cognitive_games';
 import { reportDeliveryMigration } from './013_report_delivery';
 import { patientLocationMigration } from './014_patient_location';
 import { liveLocationMigration } from './015_live_location';
+import { voiceMemoriesMigration } from './016_voice_memories';
 
 const migrations = [
   coreBootstrapMigration,
@@ -32,6 +33,7 @@ const migrations = [
   reportDeliveryMigration,
   patientLocationMigration,
   liveLocationMigration,
+  voiceMemoriesMigration,
 ] as const;
 
 type AppliedMigrationRow = { version: number };

@@ -134,7 +134,7 @@ export function GridActivityBoard({ paused = false, activity, selection, languag
     </View>
     {!!feedback && <ThemedText accessibilityLiveRegion="polite" type="cardHeading">{feedback}</ThemedText>}
     {!!hint && <ThemedText accessibilityLiveRegion="polite">{hint}</ThemedText>}
-    {voice && <ReadScreenButton language={language} labelKey="coachHear" text={[prompt, feedback, hint].filter(Boolean).join(' ')} />}
+    {voice && phase !== 'playback' && <ReadScreenButton language={language} labelKey="coachHear" text={[prompt, feedback, hint].filter(Boolean).join(' ')} />}
     {phase === 'preview' && <>
       <SmaranButton testID="lights-manual" label={t(language, 'lightsManual')} accessibilityLabel={t(language, 'lightsManual')}
         variant="outline" accessibilityState={{ selected: atMyPace }} disabled={reducedMotion || screenReader} onPress={() => setManual(value => !value)} />

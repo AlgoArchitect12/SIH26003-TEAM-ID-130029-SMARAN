@@ -227,7 +227,66 @@ async function resultNavigation() {
 }
 
 async function main() {
+  await prdCapabilities();
   await loading(); routineAndReports(); await results(); await delivery(); await resultNavigation();
   console.log('PASS: bounded loads, stale workspace and switch recovery, Memories empty/error/retry, all localized routine choices/scoring, activity report mapping, persistent saved results and fail-closed delivery.');
+}
+async function prdCapabilities() {
+  let phone = '+919876543210', current = true, opened = [];
+  const emergency = load('src/services/emergency.service.ts', {
+    'react-native': { Platform: {OS:'android'}, Linking: {openURL: async url => opened.push(url)} },
+    '../db/repositories/patient.repository': {patientRepository:{getProfileById: async () => ({emergencyPhone:phone,emergencyName:'Synthetic contact'})}},
+    '../stores/patient-session.store': {capturePatientRequest: () => () => current},
+  });
+  assert.equal((await emergency.readEmergencyContact('one')).phone, phone);
+  assert.equal(opened.length, 0, 'lookup never opens dialer');
+  await emergency.openEmergencyDialer('one',phone); assert.deepEqual(opened,['tel:'+phone]);
+  current=false; await assert.rejects(emergency.openEmergencyDialer('one',phone)); current=true;
+  await assert.rejects(emergency.openEmergencyDialer('one','+919999999999'));
+  for(const bad of ['tel:+919876543210','+919876543210;123','*123#','https://example.invalid']) {
+    phone=bad; await assert.rejects(emergency.readEmergencyContact('one'));
+  }
+  phone=null; assert.equal(await emergency.readEmergencyContact('one'),null); assert.equal(opened.length,1);
+  let level=.42, available=true;
+  const battery=load('src/services/device-status.service.ts', {
+    'react-native':{Platform:{OS:'android'}},
+    'expo-battery':{isAvailableAsync:async()=>available,getBatteryLevelAsync:async()=>level},
+  });
+  assert.equal(await battery.readBatteryPercent(),42);
+  for(level of [-1,NaN,Infinity,1.1])assert.equal(await battery.readBatteryPercent(),null);
+  level=0;assert.equal(await battery.readBatteryPercent(),0);
+  available=false;assert.equal(await battery.readBatteryPercent(),null);
+  await voiceControls();
+  console.log('PASS: confirmed dialer boundary, malformed/changed contacts, profile switch, real battery boundary, recording permission/recovery/delete controls');
+}
+async function voiceControls() {
+  let granted=false, saveFails=false, guard=false, app, recording=false, calls=[], path=null;
+  const recorder={uri:'file:///cache/voice.m4a',prepareToRecordAsync:async()=>calls.push('prepare'),
+    record:()=>{recording=true;calls.push('record');},stop:async()=>{recording=false;calls.push('stop');}};
+  const player={replace(){},pause(){},play(){calls.push('play');},seekTo:async()=>{}};
+  const render=screen('components/memories/voice-memory.tsx',{
+    'react-native':{View:'View',Platform:{OS:'android'},AppState:{currentState:'active',addEventListener:(_e,fn)=>{app=fn;return{remove(){}};}}},
+    '@react-navigation/native':{useIsFocused:()=>true,usePreventRemove:value=>{guard=value;}},
+    'expo-audio':{RecordingPresets:{HIGH_QUALITY:{}},AudioModule:{requestRecordingPermissionsAsync:async()=>({granted})},
+      setAudioModeAsync:async()=>{},useAudioRecorder:()=>recorder,useAudioRecorderState:()=>({durationMillis:1000}),
+      useAudioPlayer:()=>player,useAudioPlayerStatus:()=>({playing:false,duration:5,currentTime:0})},
+    '@/src/stores/patient-session.store':{capturePatientRequest:()=>()=>true},
+    '@services/speech.service':{stopSpeech:async()=>{}},
+    '@services/memory-media.service':{memoryMedia:{resolve:()=>path,discardRecording:()=>calls.push('discard')}},
+    '@services/memories.service':{memoriesService:{saveRecording:async(_p,_id,uri)=>{
+      if(saveFails)throw Error('synthetic save failure');path=uri?'memories/one/voice.m4a':null;calls.push(uri?'save':'delete');return{audioPath:path,cleanupFailed:false};}}},
+  },{memory:{id:'memory',patientId:'one',audioPath:null},language:'en',onBusy(){}});
+  const press=async key=>{const button=nodes(render()).find(n=>n.props?.label===t('en',key));assert.ok(button,key);button.props.onPress();await tick();render();};
+  await press('voiceRecord');assert.ok(!calls.includes('record'));assert.equal(guard,false);
+  granted=true;await press('voiceRecord');assert.ok(recording);assert.equal(guard,true);
+  saveFails=true;await press('voiceStop');assert.ok(!recording);assert.equal(guard,true);
+  assert.ok(nodes(render()).some(n=>n.props?.label===t('en','voiceRetry')));
+  saveFails=false;await press('voiceRetry');assert.equal(guard,false);assert.ok(calls.includes('save'));
+  await press('voicePlay');assert.ok(calls.includes('play'));
+  await press('voiceDelete');assert.ok(!calls.includes('delete'),'first press asks confirmation');
+  const confirmations=nodes(render()).filter(n=>n.props?.label===t('en','voiceDelete'));
+  confirmations.at(-1).props.onPress();await tick();render();assert.ok(calls.includes('delete'));
+  await press('voiceRecord');app('background');await tick();render();assert.equal(recording,false);
+  render.unmount();
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

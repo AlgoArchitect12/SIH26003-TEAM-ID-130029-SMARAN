@@ -1,7 +1,7 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
-import { MemoryError, memoryPatientDirectory, validateMemoryPhotoPath, type SelectedMemoryPhoto } from '../memories/types';
+import { MemoryError, memoryPatientDirectory, validateMemoryPhotoPath, validateMemoryAudioPath, type SelectedMemoryPhoto } from '../memories/types';
 
 export type PhotoPickResult = { status: 'selected'; photo: SelectedMemoryPhoto } | { status: 'canceled' | 'denied' | 'failed' | 'unavailable' };
 const maxPhotoBytes = 20 * 1024 * 1024;
@@ -15,7 +15,8 @@ function pickerFile(photo: SelectedMemoryPhoto) {
   return file;
 }
 function managedFile(patientId: string, path: string) {
-  validateMemoryPhotoPath(patientId, path);
+  if (path.endsWith('.m4a')) validateMemoryAudioPath(patientId, path);
+  else validateMemoryPhotoPath(patientId, path);
   const directory = new Directory(Paths.document, memoryPatientDirectory(patientId));
   const file = new File(Paths.document, path);
   if (!file.uri.startsWith(directory.uri.replace(/\/$/u, '') + '/')) throw new MemoryError('photo');
@@ -68,4 +69,31 @@ function remove(patientId: string, path: string) {
   const file = managedFile(patientId, path);
   if (file.exists) file.delete();
 }
-export const memoryMedia = { pick, importPhoto, resolve, remove };
+function recordingFile(uri: string) {
+  if (Platform.OS === 'web' || !uri.startsWith('file:///') || decodeURIComponent(uri).split('/').includes('..')) throw new MemoryError('invalid');
+  const file = new File(uri);
+  if (!file.uri.startsWith(Paths.cache.uri.replace(/\/$/u, '') + '/') || !file.uri.endsWith('.m4a')) throw new MemoryError('invalid');
+  return file;
+}
+function importRecording(patientId: string, uri: string, fileId: string) {
+  if (!/^[a-f0-9]{32}$/u.test(fileId)) throw new MemoryError('invalid');
+  const source = recordingFile(uri);
+  if (!source.exists || source.size <= 0 || source.size > 10 * 1024 * 1024) throw new MemoryError('invalid');
+  const path = `${memoryPatientDirectory(patientId)}/${fileId}.m4a`;
+  const target = managedFile(patientId, path);
+  if (target.exists) throw new MemoryError('save');
+  new Directory(Paths.document, memoryPatientDirectory(patientId)).create({ intermediates: true, idempotent: true });
+  try {
+    source.copy(target);
+    if (!target.exists || target.size !== source.size) throw new MemoryError('save');
+    return path;
+  } catch {
+    try { if (target.exists) target.delete(); } catch { throw new MemoryError('cleanup'); }
+    throw new MemoryError('save');
+  }
+}
+function discardRecording(uri: string) {
+  const file = recordingFile(uri);
+  if (file.exists) file.delete();
+}
+export const memoryMedia = { pick, importPhoto, importRecording, discardRecording, resolve, remove };

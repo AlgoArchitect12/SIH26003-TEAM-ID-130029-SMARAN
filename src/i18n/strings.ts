@@ -1,3 +1,4 @@
+import { prdStrings } from './prd-strings';
 import { locationStrings } from './location-strings';
 import { uxStrings } from './ux-strings';
 import { stabilizationStrings } from './stabilization-strings';
@@ -17,6 +18,7 @@ import type { Language, Region } from '@db/schema.types';
 import { regionalRegionNames, regionalStrings } from './regional-strings';
 
 const english = {
+  ...prdStrings,
   ...accountStrings.en,
   ...locationStrings.en,
   ...syncStrings.en,
@@ -301,6 +303,7 @@ const assameseGame = {
 } as const;
 
 const hindi = {
+  ...prdStrings,
   ...uxStrings.hi,
   ...accountStrings.hi,
   ...locationStrings.hi,
@@ -409,6 +412,7 @@ const hindi = {
 } satisfies TranslationCatalog;
 
 const assamese = {
+  ...prdStrings,
   ...uxStrings.as,
   ...accountStrings.as,
   ...locationStrings.as,

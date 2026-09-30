@@ -202,7 +202,7 @@ export function SelectionActivityScreen({ gameType }: { gameType: SelectionActiv
         <ThemedText type="secondary">{t(language, 'gameLevel', { level: String(data.level) })}</ThemedText>
         <ThemedText>{instructions}</ThemedText>
       </View>
-      {data.settings.voiceGuidance && <ReadScreenButton language={language} labelKey="activityHear" text={title + '. ' + instructions} />}
+      {data.settings.voiceGuidance && !selection && <ReadScreenButton language={language} labelKey="activityHear" text={title + '. ' + instructions} />}
       {data.routine && <>
         <ThemedText accessibilityLanguage={language} type="cardHeading">{data.routine.title}</ThemedText>
       </>}

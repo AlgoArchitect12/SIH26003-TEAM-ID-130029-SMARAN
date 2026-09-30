@@ -150,8 +150,10 @@ function checkContracts() {
   const unapproved = output => output.trim().split(/\r?\n/).filter(file => file && !authorized.has(file));
   assert.deepEqual(unapproved(execFileSync('git', ['diff', '--name-only', '5381c76', '--', ...protectedPaths], { encoding: 'utf8' })), []);
   assert.deepEqual(unapproved(execFileSync('git', ['ls-files', '--others', '--exclude-standard', '--', ...protectedPaths], { encoding: 'utf8' })), []);
-  assert.ok(JSON.parse(source('app.json')).expo.android.blockedPermissions.includes('android.permission.RECORD_AUDIO'));
-  console.log('PASS contracts: five presets, factual water semantics, seven catalog/placeholder parity, privacy-safe copy, touch fallback, large controls, medical boundary, protected paths/no microphone or cloud additions');
+  const config = JSON.parse(source('app.json')).expo;
+  assert.ok(!config.android.blockedPermissions.includes('android.permission.RECORD_AUDIO'));
+  assert.equal(config.plugins.find(p => Array.isArray(p) && p[0] === 'expo-audio')[1].recordAudioAndroid, true);
+  console.log('PASS contracts: five presets, factual water semantics, seven catalog/placeholder parity, privacy-safe copy, touch fallback, large controls, medical boundary, protected paths and explicitly configured voice-memory microphone');
 }
 
 async function main() {

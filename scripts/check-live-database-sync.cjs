@@ -137,7 +137,7 @@ async function runtime(filename) {
   r.snapshot = () => Object.fromEntries(r.sqlite.prepare("SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name").all().map(({name}) => [name,r.rows(name)]));
   r.hash = () => createHash('sha256').update(JSON.stringify(r.snapshot())).digest('hex');
   r.integrity = () => { assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok'); assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(),[]); };
-  assert.equal(r.rows('schema_migrations').length, 15); r.integrity();
+  assert.equal(r.rows('schema_migrations').length, 16); r.integrity();
   return r;
 }
 function attachSync(r, h) {
@@ -470,7 +470,7 @@ function sourceChecks() {
   const files=execFileSync('git',['ls-files','--cached','--others','--exclude-standard','-z'],{cwd:root,encoding:'utf8'}).split('\0').filter(Boolean);
   // Freeze every migration at the release preceding Sync Status, including 014.
   // The family-pairing migration is a new forward file, verified separately.
-  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&!['supabase/migrations/20260924000000_family_pairing.sql','supabase/migrations/20260925000000_realtime_location.sql','supabase/migrations/20260929000000_secure_report_worker.sql','src/db/migrations/015_live_location.ts'].includes(f))) {
+  for(const file of files.filter(f=>(/^src\/db\/migrations\/\d/.test(f)||/^supabase\/migrations\//.test(f))&&!['supabase/migrations/20260924000000_family_pairing.sql','supabase/migrations/20260925000000_realtime_location.sql','supabase/migrations/20260929000000_secure_report_worker.sql','src/db/migrations/015_live_location.ts','src/db/migrations/016_voice_memories.ts'].includes(f))) {
     assert.equal(source(file).replace(/\r\n/g,'\n'),execFileSync('git',['show','1dfccf1:'+file],{cwd:root,encoding:'utf8'}).replace(/\r\n/g,'\n'),file+' historical migration unchanged');
   }
   const patterns=[['private key',/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],['AI provider key',/\b(?:sk-proj-|sk-ant-|AIza)[A-Za-z0-9_-]{24,}/],

@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { PatientPage } from '@components/patient/patient-page';
+import { EmergencyContact } from '@components/caregiver/emergency-contact';
 import { Field, useMyDayPatient } from '@components/my-day/shared';
 import { DateOfBirthField } from '@components/onboarding/date-of-birth-field';
 import { SmaranButton } from '@components/ui/smaran-button';
@@ -64,6 +65,7 @@ export default function ProfileScreen() {
       {!!message && <ThemedText accessibilityLiveRegion="polite">{message}</ThemedText>}
       <SmaranButton label={t(language, busy ? 'saving' : 'saveChanges')} accessibilityLabel={t(language, 'saveChanges')}
         onPress={() => void save()} disabled={busy} loading={busy} />
+      {patientId && !busy && <EmergencyContact key={patientId} patientId={patientId} language={language} />}
     </>}
   </PatientPage>;
 }

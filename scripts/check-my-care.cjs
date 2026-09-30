@@ -99,6 +99,7 @@ async function main() {
     await complete('moved-appointment', day, '16:00'); // old completion must not complete tomorrow's occurrence
     result = await dashboard(patient, now);
     assert.equal(result.routine.today.length, 4); assert.equal(result.routine.done, 1); assert.equal(result.routine.pending, 3);
+    assert.equal(100 * result.routine.done / result.routine.today.length, 25, 'daily completion uses the real scoped records, not a PRD example');
     assert.deepEqual(result.routine.today, await dayRepo.today(patient, now), 'same My Day semantics');
     assert.equal(result.upcoming[0].reminder.id, 'next');
     assert.equal(result.appointment.reminder.id, 'appointment');
@@ -112,7 +113,7 @@ async function main() {
     assert.ok(result.recentActivity.some(item => item.kind === 'reminder'), 'genuine completion history including removed reminders');
     assert.ok(result.recentActivity.filter(item => item.kind === 'reminder').every(item => item.name === undefined), 'no invented historical title');
 
-    const memory = async (id, owner, created, updated, photo = null) => db.runAsync('INSERT INTO personal_memories VALUES (?,?,?,?,?,?,?,?)',
+    const memory = async (id, owner, created, updated, photo = null) => db.runAsync('INSERT INTO personal_memories (id,patient_id,name,relationship,description,photo_path,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)',
       id, owner, `Stored ${id}`, 'Stored relationship', 'Stored description', photo, created, updated);
     await memory('memory-old', patient, stamp(-4), stamp(-4));
     await memory('memory-new', patient, stamp(-3), iso(-100), `memories/${patient}/${'a'.repeat(32)}.jpg`);
@@ -149,7 +150,7 @@ async function main() {
     await assert.rejects(resolver.resolveActivePatient(), /More than one local patient/, 'Missing flags cannot pick between patients');
     flags.active = 'missing'; await assert.rejects(resolver.resolveActivePatient(), /Saved patient setup/);
     assert.equal(flags.active, 'missing', 'Recovery must preserve flags');
-    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 15);
+    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM schema_migrations').get().n, 16);
     assert.equal(w.end.getHours(), 0); assert.equal(w.last7.getHours(), 0);
     assert.equal(localDay(w.last7), '2026-03-02'); assert.equal(localDay(w.previous7), '2026-02-23');
     if (process.env.TZ === 'America/New_York') assert.equal((w.end - w.today) / 3600000, 23);
@@ -176,7 +177,7 @@ async function main() {
   assert.match(screen, /useIsFocused/u); assert.match(screen, /\[focused, attempt, router\]/u);
   assert.match(screen, /MemoryPhoto/u); assert.doesNotMatch(screen, /numberOfLines|ellipsizeMode/u);
   assert.deepEqual(fs.readdirSync(path.join(__dirname, '../src/db/migrations')).filter(file => /^\d/u.test(file)).sort(),
-    ['001_core_bootstrap.ts','002_cognitive_adaptation.ts','003_multilingual_expansion.ts','004_my_day.ts','005_my_memories.ts','006_cognitive_expansion.ts','007_cognitive_ai_expansion.ts','008_auth_sync.ts','009_extra_cognitive_games.ts','010_care_circle_reports.ts','011_sync_consent.ts','012_three_cognitive_games.ts', '013_report_delivery.ts', '014_patient_location.ts','015_live_location.ts']);
+    ['001_core_bootstrap.ts','002_cognitive_adaptation.ts','003_multilingual_expansion.ts','004_my_day.ts','005_my_memories.ts','006_cognitive_expansion.ts','007_cognitive_ai_expansion.ts','008_auth_sync.ts','009_extra_cognitive_games.ts','010_care_circle_reports.ts','011_sync_consent.ts','012_three_cognitive_games.ts', '013_report_delivery.ts', '014_patient_location.ts','015_live_location.ts','016_voice_memories.ts']);
   const { validateMemoryPhotoPath } = load('src/memories/types.ts');
   assert.throws(() => validateMemoryPhotoPath('care-one', 'memories/care-two/' + 'a'.repeat(32) + '.jpg'));
   assert.throws(() => validateMemoryPhotoPath('care-one', '../outside.jpg'));

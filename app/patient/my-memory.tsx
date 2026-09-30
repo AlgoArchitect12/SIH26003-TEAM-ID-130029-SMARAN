@@ -7,6 +7,7 @@ import { View } from 'react-native';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { MemoryPhoto, memoryStyles as styles } from '@components/memories/memory-photo';
+import { VoiceMemory } from '@components/memories/voice-memory';
 import { useMyDayPatient as usePatient } from '@components/my-day/shared';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
@@ -26,6 +27,7 @@ export default function MemoryDetailScreen() {
   const [attempt, setAttempt] = useState(0);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [audioBusy, setAudioBusy] = useState(false);
   const locked = useRef(false);
   useEffect(() => {
     if (!focused) return;
@@ -40,7 +42,7 @@ export default function MemoryDetailScreen() {
   const remove = async () => {
     const current = capturePatientRequest();
     if (!current()) return;
-    if (!memory || !patientId || locked.current) return;
+    if (!memory || !patientId || locked.current || audioBusy) return;
     locked.current = true; setBusy(true);
     try {
       const result = await memoriesService.remove(patientId, memory.id);
@@ -56,21 +58,22 @@ export default function MemoryDetailScreen() {
       {!missing && <SmaranButton label={t(language, 'retry')} accessibilityLabel={t(language, 'retry')} disabled={busy} onPress={() => { retryPatient(); setAttempt(n => n + 1); }} />}
     </View>}
     {!memory && !failed && !patientFailed && !missing && <SmaranLoading label={t(language, 'loadingSetup')} />}
-    {memory && !missing && <>
+    {memory && memory.patientId === patientId && !missing && <>
       <MemoryPhoto patientId={memory.patientId} path={memory.photoPath} name={memory.name} language={language} />
       <ThemedText type="screenTitle" accessibilityRole="header">{memory.name}</ThemedText>
       {!!memory.relationship && <ThemedText type="secondary">{memory.relationship}</ThemedText>}
       {!!memory.description && <ThemedText>{memory.description}</ThemedText>}
-      <ReadScreenButton language={language} labelKey="memoryHear" text={[t(language, 'memorySpeakIntro', { name: memory.name }), memory.relationship, memory.description].filter(Boolean).join(' ')} />
+      {!audioBusy && <ReadScreenButton language={language} labelKey="memoryHear" text={[t(language, 'memorySpeakIntro', { name: memory.name }), memory.relationship, memory.description].filter(Boolean).join(' ')} />}
+      {focused && <VoiceMemory key={memory.patientId + memory.id} memory={memory} language={language} onBusy={setAudioBusy} />}
       {cleanup === '1' && <ThemedText accessibilityRole="alert">{t(language, 'memorySavedCleanup')}</ThemedText>}
-      <SmaranButton label={t(language, 'memoryEdit')} accessibilityLabel={t(language, 'memoryEdit')} variant="outline" disabled={busy}
+      <SmaranButton label={t(language, 'memoryEdit')} accessibilityLabel={t(language, 'memoryEdit')} variant="outline" disabled={busy || audioBusy}
         onPress={() => router.push({ pathname: '/patient/my-memory-editor', params: { id: memory.id } })} />
       {confirm ? <View style={styles.group} accessibilityRole="alert">
         <ThemedText type="cardHeading">{t(language, 'memoryRemoveConfirm')}</ThemedText>
         <ThemedText>{t(language, 'memoryRemoveExplain')}</ThemedText>
         <SmaranButton label={t(language, 'memoryKeep')} accessibilityLabel={t(language, 'memoryKeep')} disabled={busy} onPress={() => setConfirm(false)} />
-        <SmaranButton label={t(language, 'memoryRemove')} accessibilityLabel={t(language, 'memoryRemove')} disabled={busy} loading={busy} variant="outline" onPress={() => void remove()} />
-      </View> : <SmaranButton label={t(language, 'memoryRemove')} accessibilityLabel={t(language, 'memoryRemove')} variant="outline" onPress={() => setConfirm(true)} />}
+        <SmaranButton label={t(language, 'memoryRemove')} accessibilityLabel={t(language, 'memoryRemove')} disabled={busy || audioBusy} loading={busy} variant="outline" onPress={() => void remove()} />
+      </View> : <SmaranButton label={t(language, 'memoryRemove')} accessibilityLabel={t(language, 'memoryRemove')} variant="outline" disabled={audioBusy} onPress={() => setConfirm(true)} />}
     </>}
     <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" disabled={busy} onPress={() => router.dismissTo('/patient/home')} />
   </View></ScreenWrapper>;

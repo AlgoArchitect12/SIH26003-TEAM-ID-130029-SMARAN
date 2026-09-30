@@ -103,7 +103,7 @@ async function main() {
     const before = await snapshot();
     const { runMigrations } = load('src/db/migrations/index.ts');
     await runMigrations(db); await runMigrations(db);
-    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 15);
+    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 16);
     assert.deepEqual(await snapshot(), before);
     console.log('PASS: real migration 001-007 upgrade, idempotent runner, existing patient/cognitive/My Day data preserved');
 
@@ -113,7 +113,7 @@ async function main() {
       await assert.rejects(repo.save(patient, { ...input, ...bad }, null));
     }
     await assert.rejects(repo.save('missing-patient', input, null), /FOREIGN KEY/u);
-    const rawInsert = (id, name, relationship, description, photoPath = null) => db.runAsync('INSERT INTO personal_memories VALUES (?,?,?,?,?,?,?,?)', id, patient, name, relationship, description, photoPath, 'now', 'now');
+    const rawInsert = (id, name, relationship, description, photoPath = null) => db.runAsync('INSERT INTO personal_memories (id,patient_id,name,relationship,description,photo_path,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)', id, patient, name, relationship, description, photoPath, 'now', 'now');
     await assert.rejects(rawInsert('invalid', ' ', '', ''), /CHECK/u);
     await assert.rejects(rawInsert('invalid', 'n'.repeat(101), '', ''), /CHECK/u);
     await assert.rejects(rawInsert('invalid', 'name', 'r'.repeat(101), ''), /CHECK/u);
@@ -230,10 +230,39 @@ async function main() {
     assert.deepEqual(await db.getAllAsync('PRAGMA foreign_key_check'), []);
     assert.deepEqual(await snapshot(), before);
     console.log('PASS: create/replace rollback, commit-before-cleanup, remove-photo/remove-memory failures, serialized replacement, no unrelated data changes');
+    const voice = (await service.save(patient, input, {kind:'keep'})).memory;
+    const recording = path.join(cache, 'recording.m4a');
+    const recordingUri = pathToFileURL(recording).href;
+    fs.writeFileSync(recording, 'synthetic audio file fixture');
+    const savedVoice = await service.saveRecording(patient, voice.id, recordingUri, () => true);
+    assert.ok(exists(savedVoice.audioPath)); assert.ok(!fs.existsSync(recording));
+    restart(); assert.equal((await repo.get(patient, voice.id)).audioPath, savedVoice.audioPath);
+    await service.save(patient, changed, {kind:'keep'}, voice.id);
+    assert.equal((await repo.get(patient, voice.id)).audioPath, savedVoice.audioPath, 'editing text preserves recording');
+    await assert.rejects(service.saveRecording(other, voice.id, null, () => true));
+    await assert.rejects(service.saveRecording(patient, voice.id, null, () => false));
+    const {validateMemoryAudioPath} = load('src/memories/types.ts');
+    for(const bad of ['../outside.m4a', `memories/${other}/${'a'.repeat(32)}.m4a`, `memories/${patient}/%2e%2e/file.m4a`]) assert.throws(() => validateMemoryAudioPath(patient, bad));
+    fs.writeFileSync(recording, 'retry fixture');
+    await db.execAsync("CREATE TRIGGER qa_fail_audio BEFORE UPDATE OF audio_path ON personal_memories BEGIN SELECT RAISE(ABORT,'injected audio failure'); END;");
+    const voiceFiles = () => fs.readdirSync(document, {recursive:true}).filter(name => name.endsWith('.m4a')).sort();
+    const priorVoiceFiles = voiceFiles();
+    await assert.rejects(service.saveRecording(patient, voice.id, recordingUri, () => true), /injected audio/);
+    assert.deepEqual(voiceFiles(), priorVoiceFiles); assert.ok(fs.existsSync(recording), 'retry retains temporary source');
+    assert.equal((await repo.get(patient, voice.id)).audioPath, savedVoice.audioPath);
+    await db.execAsync('DROP TRIGGER qa_fail_audio');
+    const replacedVoice = await service.saveRecording(patient, voice.id, recordingUri, () => true);
+    assert.ok(!exists(savedVoice.audioPath)); assert.ok(exists(replacedVoice.audioPath));
+    const wire = load('src/db/migrations/008_auth_sync.ts');
+    assert.ok(!JSON.stringify(wire).includes('audio_path'), 'local audio is excluded from wire columns');
+    await service.remove(patient, voice.id);
+    assert.ok(!exists(replacedVoice.audioPath)); assert.equal(await repo.get(patient, voice.id), null);
+    assert.deepEqual(await db.getAllAsync('PRAGMA foreign_key_check'), []);
+    console.log('PASS: local voice persistence/restart, text edit preservation, scoped paths, failed-save recovery, replacement/delete and sync exclusion');
     // Fresh-install path uses the same production migration runner too.
     sqlite.close(); sqlite = new DatabaseSync(':memory:'); sqlite.exec('PRAGMA foreign_keys=ON');
     await runMigrations(db); await runMigrations(db);
-    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 15);
+    assert.equal((await db.getAllAsync('SELECT * FROM schema_migrations')).length, 16);
     assert.deepEqual(await db.getAllAsync('PRAGMA foreign_key_check'), []);
     console.log('PASS: fresh migration chain. Expo Android ImagePicker/FileSystem: NOT NATIVE VERIFIED.');
   } finally {

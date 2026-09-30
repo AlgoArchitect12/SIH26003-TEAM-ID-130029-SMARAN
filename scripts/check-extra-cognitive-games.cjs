@@ -95,7 +95,11 @@ function contracts() {
     const before = JSON.parse(execFileSync('git',['show','a58ea61:'+file],{encoding:'utf8'}));
     const after = JSON.parse(fs.readFileSync(file,'utf8'));
     const dependencies = file === 'package.json' ? after.dependencies : after.packages[''].dependencies;
-    for (const [name,version] of Object.entries({'expo-network':'~8.0.8','expo-print':'~15.0.8','expo-sharing':'~14.0.8','expo-mail-composer':'~15.0.8','expo-location':'~19.0.8','react-native-maps':'1.20.1'})) {
+    if (file === 'package-lock.json') {
+      assert.deepEqual(after.packages['node_modules/expo-asset'], before.packages['node_modules/expo/node_modules/expo-asset'], 'SDK asset peer hoisted without upgrade');
+      delete before.packages['node_modules/expo/node_modules/expo-asset'];
+    }
+    for (const [name,version] of Object.entries({'expo-network':'~8.0.8','expo-print':'~15.0.8','expo-sharing':'~14.0.8','expo-mail-composer':'~15.0.8','expo-location':'~19.0.8','react-native-maps':'1.20.1','expo-audio':'~1.1.1','expo-battery':'~10.0.8','expo-asset':'~12.0.13'})) {
       assert.equal(dependencies[name],version,name + ' required'); delete dependencies[name];
       if (file === 'package-lock.json') { assert.equal(after.packages['node_modules/'+name].version,version.replace(/^~/,'')); delete after.packages['node_modules/'+name]; }
     }
@@ -177,7 +181,7 @@ async function migrationChecks() {
     } } } }).runMigrations;
     await runThrough11(r.db);
     const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(), after, 'registry replay is idempotent');
-    assert.equal(r.rows('schema_migrations').length, 15);
+    assert.equal(r.rows('schema_migrations').length, 16);
     for (const game of extra) {
       const count = prepare(game, 1).tasks.length;
       const row = { ...rowFor('sequence_memory', 'new-' + game, 'one', 1), game_type: game, steps_completed: count,
@@ -198,7 +202,7 @@ async function migrationChecks() {
   for (const fk of [0, 1]) {
     const r = await runtime();
     try { r.sqlite.exec(`PRAGMA foreign_keys=${fk}`); await r.run(r.db); await r.run(r.db);
-      assert.equal(r.rows('schema_migrations').length, 15); assert.equal(r.rows('cognitive_sessions').length, 0);
+      assert.equal(r.rows('schema_migrations').length, 16); assert.equal(r.rows('cognitive_sessions').length, 0);
       assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(), []);
     } finally { r.sqlite.close(); }
   }

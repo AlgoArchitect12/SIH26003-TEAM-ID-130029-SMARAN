@@ -91,11 +91,12 @@ async function main() {
     await run(db); await run(db);
     for (const table of tables) {
       if (table === 'schema_migrations') assert.deepEqual(rows(table).slice(0,7),before[table]);
+      else if (table === 'personal_memories') assert.deepEqual(rows(table).map(({audio_path,...row}) => { assert.equal(audio_path,null); return row; }), before[table].map(row=>({...row})));
       else assert.deepEqual(rows(table),before[table],'every row/field/rowid '+table);
       assert.deepEqual(sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(),fks[table]);
     }
     assert.equal(checked008,1,'production runner reaches the preserved 008 boundary exactly once');
-    assert.equal(rows('schema_migrations').length, 15);
+    assert.equal(rows('schema_migrations').length, 16);
     assert.equal(rows('sync_outbox').length,0,'local-only migration does not enqueue');
     const repo = load('src/db/repositories/sync.repository.ts',{'../client':{getDatabase:async()=>db}}).syncRepository;
     await repo.link(A,()=>true);
@@ -120,7 +121,7 @@ async function main() {
   for (const foreignKeys of [0,1]) {
     const {sqlite,db}=createDatabase();
     try { sqlite.exec(`PRAGMA foreign_keys=${foreignKeys}`); await load('src/db/migrations/index.ts').runMigrations(db);
-      assert.equal(sqlite.prepare('SELECT count(*) n FROM schema_migrations').get().n, 15);
+      assert.equal(sqlite.prepare('SELECT count(*) n FROM schema_migrations').get().n, 16);
       assert.deepEqual(sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
     } finally { sqlite.close(); }
   }

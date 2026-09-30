@@ -7,7 +7,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState, type PropsWithChildren } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { MemoryPhoto } from '@components/memories/memory-photo';
 import { category } from '@components/my-day/shared';
@@ -49,6 +49,14 @@ export default function CaregiverHomeScreen() {
   const [data, setData] = useState<CaregiverDashboard | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'missing' | 'failed'>('loading');
   const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!focused) return;
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const timer = setTimeout(() => setAttempt(n => n + 1), midnight.getTime() - now.getTime() + 50);
+    const app = AppState.addEventListener('change', state => { if (state === 'active') setAttempt(n => n + 1); });
+    return () => { clearTimeout(timer); app.remove(); };
+  }, [focused, attempt]);
   useEffect(() => {
     if (!focused) return;
     setWorkspace('caregiver');
@@ -145,6 +153,8 @@ export default function CaregiverHomeScreen() {
         </SmaranCard>)}
       </Section>
       <Section title={t(language, 'careRoutine')}>
+        {!!data.routine.today.length && <ThemedText>{t(language, 'routineRate', { percent: number(100 * data.routine.done / data.routine.today.length) })}</ThemedText>}
+        <ThemedText type="secondary">{t(language, 'routineRateHelp')}</ThemedText>
         <ThemedText>{t(language, 'carePending', { count: number(data.routine.pending) })}</ThemedText>
         {!data.routine.today.length && <View style={styles.group}><ThemedText>{t(language, 'careNoRoutine')}</ThemedText><SmaranButton label={t(language, 'dayAdd')} accessibilityLabel={t(language, 'dayAdd')} onPress={() => router.push('/caregiver/reminder')} variant="outline" /></View>}
         {data.routine.today.map(reminder => <SmaranCard key={reminder.id} style={styles.group}>

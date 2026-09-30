@@ -1,4 +1,54 @@
-# Final remaining-work audit — 29 September 2026
+# PRD completion update — 30 September 2026
+
+Baseline `e783167ac8178d451df5fb886dc95e617fb6d2f0`; branch `feature/prd-completion`. This update supersedes the older microphone, migration-count and native-debug-build statements below. The 29 September audit is retained as dated history.
+
+**Repository implementation is ready for device acceptance; full production/PRD acceptance remains NO-GO.** See the [complete PRD matrix](PRD_IMPLEMENTATION_MATRIX.md) for all eleven capabilities, metric definitions, privacy and rollout recovery.
+
+## Changes and boundaries
+
+- Added confirmed dialing of the user's saved emergency contact, local voice-memory recording/playback/retry/delete, on-demand local battery status and today's actual routine-completion percentage. Existing activity response-latency history is retained. Read-aloud controls no longer overlap timed visual previews; scoring and game engines are unchanged.
+- Added local migration 016, preserving 001–015 and existing data. Audio references and bytes stay outside the explicit cloud allowlist. New copy uses the existing localization catalogs with an explicit English fallback pending human review.
+- Preserved the server-side report-delivery boundary, consent/scopes, claims, idempotency, bounded retries and signed receipts. No provider message, hosted mutation or deployment was performed.
+- Local LAN/mDNS/Bluetooth synchronization and heritage soundscapes are **NOT IMPLEMENTED**. Remote battery and longitudinal routine-adherence percentages are also absent. Emergency dispatch, clinical interpretation and universal Assamese/Indian-English voice availability are **NOT SAFE TO CLAIM**.
+
+## Current validation
+
+| Check | Current result |
+|---|---|
+| `npx tsc --noEmit`, `npm run lint`, `git diff --check` | PASS; lint has no warnings/errors |
+| `node scripts/check-final-sih-hardening.cjs` | PASS, including confirmed dialer, battery boundaries and recording controls/retry/delete/background |
+| `node scripts/check-regressions.cjs` | **35/35 PASS**; ignored logs/results in `.expo/regressions/` |
+| Voice-memory storage | Real SQLite/files: restart, text-edit preservation, isolation, path rejection, rollback/retry, replacement/delete and cloud exclusion |
+| Routine/latency/report/privacy | Existing analytics, My Care/My Day, cognitive, delivery, auth and real local PostgreSQL regressions PASS |
+| Android clean production export | PASS: 1,892 modules, 76 assets, 6.39 MB Hermes; `.expo/prd-completion-android` |
+| Source secret scans | PASS in auth/live-database checks; changed-source review found no private credentials or real patient fixtures |
+| `npm audit --json` | 21 advisories: 17 moderate, 4 high, 0 critical; unresolved |
+| Production-signed APK/AAB | NOT PRODUCED; debug artifact described below |
+
+An earlier overlapping-build run had two 180-second child-process timeouts and passed 33/35; the isolated rerun passed all 35, without increasing timeouts or weakening assertions. Historical dependency checks now admit only the exact SDK-compatible audio/battery/asset additions, verify the unchanged hoisted asset dependency, and continue comparing other dependencies/configuration. Tests exercise real SQLite/files and synthetic native/provider boundaries; they do not demonstrate physical microphone, dialer, battery or delivery behavior.
+
+Browser QA used the actual `/patient/my-memory` route at 390×844 and 1440×900, with no screenshots/video. Web SQLite is intentionally unsupported, so the app displayed saved-setup recovery. Retry responded and returned to that recovery state; no horizontal overflow; accessible Retry button height 60 px; all three resource requests returned HTTP 200. Console contained the expected local-setup error on load/retry and Expo Notifications web warning. **Feature screens, native recording and OS APIs were not browser-verified.** No storage/auth bypass was added. Automatically generated browser text logs were removed from the worktree after inspection.
+
+Dependency advisories include high findings in `brace-expansion`, `image-size`, `postcss` and `undici`, plus moderate Expo/navigation/transitive findings. No automatic dependency upgrade was applied: resolving these requires a separately validated compatible dependency update. Source-secret checks passing does not mean the dependency tree is vulnerability-free.
+
+Android native debug build: **PASS**, `:app:assembleDebug`, 353 tasks (105 executed, 248 up-to-date). The ignored artifact is `android/app/build/outputs/apk/debug/app-debug.apk`. APK inspection confirmed `com.smaran.ai`, version 1.0.1/code 2, min SDK 24/target 36, microphone permission, and linked Audio/Battery modules. No `CALL_PHONE`, camera, broad external-storage or foreground-microphone permission. The debug variant includes development overlay permission; the audio library contributes media-playback foreground-service permissions, while app recording/playback disables background use. This debug APK is not a production-signed release artifact.
+
+The existing ignored Android folder was used for the local build; its old microphone-removal marker was corrected locally. Managed `app.json` is the tracked source of native configuration. Machine-specific `android/local.properties` was preserved and remains ignored/untracked. Generated native files, APKs, export output and test logs are excluded from the commit.
+
+## Remaining acceptance and external work
+
+1. Install a rebuilt native app and verify microphone denial/grant, record/stop/5-minute limit, playback/pause/stop, save failure/retry/discard, delete, relaunch, background interruption and patient switching. Unsaved cache recordings can be lost on process death; no recovery after process death is promised.
+2. Verify saved-contact confirmation/cancel and OS dialer handoff, real battery/unknown states, read-aloud/preview timing, routine refresh across midnight, supported voices and TalkBack on a physical Android device.
+3. Configure authorized production signing/EAS access and Maps billing/key/package/certificate restrictions; build and inspect a production APK/AAB. No production keystore was invented or inspected.
+4. Verify hosted Supabase migration/RLS/RPC/Realtime and Auth setup with isolated accounts. Configure Meta sender/template/server secrets/function/webhook only through the existing [delivery guide](deployment/SECURE_REPORT_DELIVERY.md), then perform separately authorized real acceptance.
+5. Obtain human language review and approved licensed heritage audio. Local peer synchronization needs a separately scoped authenticated transport and conflict/revocation design.
+6. Resolve or assess the 21 dependency advisories before production release, retaining Expo SDK compatibility and rerunning affected checks.
+
+Delivery is limited to `feature/prd-completion` on `public-sih`; no merge into `main`. Git commit/push identifiers are reported in the final task response. No Google Drive/private-remote access, screenshots or video were used.
+
+---
+
+# Historical remaining-work audit — 29 September 2026
 
 Baseline: clean `main` at `d99ec29d78cd333e1719fcba15ecda60a7b3cd95`. This sweep continues the current codebase. Historical human QA and evidence files are unchanged. No UI redesign, screenshots, video, Google Drive work, hosted mutation, provider send, deployment or signing operation was performed.
 

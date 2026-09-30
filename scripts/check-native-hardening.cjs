@@ -33,9 +33,9 @@ async function main() {
     '004_my_day.ts', '005_my_memories.ts', '006_cognitive_expansion.ts', '007_cognitive_ai_expansion.ts', '008_auth_sync.ts', '009_extra_cognitive_games.ts', '010_care_circle_reports.ts', '011_sync_consent.ts',    '012_three_cognitive_games.ts',
     '013_report_delivery.ts',
     '014_patient_location.ts',
-    '015_live_location.ts',
+    '015_live_location.ts', '016_voice_memories.ts',
     'index.ts',
-  ], 'Only authorized migrations 001–015; historical migrations stay intact');
+  ], 'Only authorized migrations 001–016; historical migrations stay intact');
   require('./check-mvp22-boundaries.cjs').checkMvp22Boundaries();
   for (const file of migrations.filter(file => /\/00[1-6]_/.test(file))) {
     assert.equal(read(file).replace(/\r\n/gu, '\n').trim(), git('show', '6b1c0f5:' + file), file + ' must preserve stable base');
@@ -62,7 +62,7 @@ async function main() {
   const plugins = new Map(config.plugins.map(plugin => Array.isArray(plugin) ? plugin : [plugin, {}]));
   for (const name of ['expo-router', 'expo-sqlite', 'expo-secure-store', 'expo-notifications', 'expo-image-picker', 'expo-splash-screen']) assert.ok(plugins.has(name));
   assert.equal(plugins.get('expo-image-picker').cameraPermission, false);
-  assert.equal(plugins.get('expo-image-picker').microphonePermission, false);
+  assert.equal(plugins.get('expo-image-picker').microphonePermission, 'Allow Smaran to record a voice memory on this device.');
   const foreignKeyFlag = '-DSQLITE_DEFAULT_FOREIGN_KEYS=1';
   assert.equal(plugins.get('expo-sqlite').android.customBuildFlags, foreignKeyFlag);
 
@@ -74,7 +74,9 @@ async function main() {
   const native = introspected._internal.modResults.android;
   assert.ok(native.gradleProperties.some(item => item.key === 'expo.sqlite.customBuildFlags' && item.value === foreignKeyFlag));
   const permissions = native.manifest.manifest['uses-permission'].map(item => item.$);
-  for (const name of ['CAMERA', 'RECORD_AUDIO', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE', 'USE_BIOMETRIC', 'USE_FINGERPRINT', 'SYSTEM_ALERT_WINDOW']) {
+  assert.ok(permissions.some(item => item['android:name'] === 'android.permission.RECORD_AUDIO' && item['tools:node'] !== 'remove'));
+  assert.ok(!permissions.some(item => /CALL_PHONE|FOREGROUND_SERVICE_MICROPHONE/.test(item['android:name']) && item['tools:node'] !== 'remove'));
+  for (const name of ['CAMERA', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE', 'USE_BIOMETRIC', 'USE_FINGERPRINT', 'SYSTEM_ALERT_WINDOW']) {
     assert.ok(permissions.some(item => item['android:name'] === 'android.permission.' + name && item['tools:node'] === 'remove'), name);
   }
   assert.ok(!permissions.some(item => /SCHEDULE_EXACT_ALARM|USE_EXACT_ALARM|READ_MEDIA_|CONTACTS|BACKGROUND_LOCATION|FOREGROUND_SERVICE_LOCATION/u.test(item['android:name']) && item['tools:node'] !== 'remove'));
@@ -137,7 +139,7 @@ async function main() {
   assert.equal(files('assets/my-home').length, 32);
   for (const asset of assets) assert.ok(fs.statSync(asset).size > 0);
   for (const file of files('src/games')) assert.ok(!/https?:\/\//u.test(read(file)), file);
-  assert.equal(files('src/db/migrations').filter(file => /\/\d{3}_/u.test(file)).length, 15);
+  assert.equal(files('src/db/migrations').filter(file => /\/\d{3}_/u.test(file)).length, 16);
   for (const route of ['index', '_layout', 'patient/home', 'patient/games/index', 'patient/games/memory-match', 'patient/games/pattern-recognition',
     'patient/games/routine-recall', 'patient/games/result', 'patient/games/why-level', 'patient/my-day', 'patient/my-day-reminder',
     'patient/my-memories', 'patient/my-memory', 'patient/my-memory-editor', 'patient/my-home', 'patient/my-home-memory', 'caregiver/home']) assert.ok(fs.existsSync(path.join(root, 'app', route + '.tsx')), route);
@@ -201,7 +203,7 @@ async function checkConnectionSafety() {
   try {
     const db = adapter(sql), runner = load('src/db/migrations/index.ts').runMigrations;
     await runner(db); await runner(db);
-    assert.equal(sql.prepare('SELECT count(*) AS n FROM schema_migrations').get().n, 15);
+    assert.equal(sql.prepare('SELECT count(*) AS n FROM schema_migrations').get().n, 16);
     for (const table of ['patient_profiles', 'cognitive_sessions', 'adaptive_model_state', 'personal_memories', 'reminders']) assert.equal(sql.prepare('SELECT count(*) AS n FROM ' + table).get().n, 0);
     const overrides = { '../client': { getDatabase: async () => db } };
     const memories = load('src/db/repositories/memories.repository.ts', overrides).memoriesRepository;

@@ -1,3 +1,4 @@
+import { prdStrings } from './prd-strings';
 import { locationStrings } from './location-strings';
 import { uxStrings } from './ux-strings';
 import { stabilizationStrings } from './stabilization-strings';
@@ -17,6 +18,7 @@ import type { Language, Region } from '@db/schema.types';
 import type { TranslationCatalog } from './strings';
 
 const bengali = {
+  ...prdStrings,
   ...accountStrings.bn,
   ...locationStrings.bn,
   ...syncStrings.bn,
@@ -177,6 +179,7 @@ const bengali = {
 } satisfies TranslationCatalog;
 
 const meitei = {
+  ...prdStrings,
   ...accountStrings.mni,
   ...locationStrings.mni,
   ...syncStrings.mni,
@@ -337,6 +340,7 @@ const meitei = {
 } satisfies TranslationCatalog;
 
 const khasi = {
+  ...prdStrings,
   ...accountStrings.kha,
   ...locationStrings.kha,
   ...syncStrings.kha,
@@ -497,6 +501,7 @@ const khasi = {
 } satisfies TranslationCatalog;
 
 const mizo = {
+  ...prdStrings,
   ...accountStrings.lus,
   ...locationStrings.lus,
   ...syncStrings.lus,

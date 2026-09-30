@@ -70,7 +70,7 @@ async function migrations() {
       await migration11.up(tx);
     }}}}).runMigrations;
     await runThrough11(r.db);
-    assert.equal(r.rows('schema_migrations').length, 15);
+    assert.equal(r.rows('schema_migrations').length, 16);
     for(const table of tables) assert.deepEqual(r.sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(),fks[table],table+' FKs');
     assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok');
     const after=snapshot();await r.run(r.db);assert.deepEqual(snapshot(),after);
@@ -79,7 +79,7 @@ async function migrations() {
     assert.equal(r.rows('sync_outbox').at(-1).sequence,before.sqlite_sequence.find(s=>s.name==='sync_outbox').seq+1);
   } finally {r.sqlite.close();}
   for(const fk of ['ON','OFF']) {
-    const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length, 15);
+    const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length, 16);
       assert.deepEqual(await r.repo.list('one'),[]);await assert.rejects(r.repo.save('missing',memberInput,()=>true),/Missing patient/);
     } finally{r.sqlite.close();}
   }

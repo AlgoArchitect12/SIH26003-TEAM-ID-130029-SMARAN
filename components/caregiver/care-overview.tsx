@@ -11,6 +11,7 @@ import type { Language } from '@/src/db/schema.types';
 import { loadActiveCare, type ActiveCare } from '@/src/services/care-circle.service';
 import { usePatientSessionStore } from '@/src/stores/patient-session.store';
 import { CareNavigation } from './care-workspace';
+import { EmergencyContact } from './emergency-contact';
 
 export function CareOverview({language}: {language:Language}) {
   const focused=useIsFocused(), revision=usePatientSessionStore(s=>s.revision), router=useRouter();
@@ -25,6 +26,7 @@ export function CareOverview({language}: {language:Language}) {
     {failed && <View style={PageLayout.group}><ThemedText accessibilityRole="alert">{t(language,'circleFailed')}</ThemedText>
       <SmaranButton label={t(language,'retry')} accessibilityLabel={t(language,'retry')} onPress={()=>setAttempt(n=>n+1)} /></View>}
     {visible && <SmaranCard style={PageLayout.group}>
+      <EmergencyContact key={visible.patient.id} patientId={visible.patient.id} language={language} />
       <ThemedText type="cardHeading">{t(language,'circleTitle')}</ThemedText>
       <ThemedText>{t(language,'circleCount',{count:String(visible.members.filter(m=>m.status==='local').length)})}</ThemedText>
       <ThemedText type="cardHeading">{t(language,'reportTitle')}</ThemedText>

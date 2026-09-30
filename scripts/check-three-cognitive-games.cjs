@@ -219,11 +219,13 @@ async function migrationChecks() {
     r.db.getAllAsync = original;
     await r.run(r.db);
     for (const table of tables) {
-      assert.deepEqual(table === 'schema_migrations' ? r.rows(table).slice(0,11) : r.rows(table),before[table],table+' all fields/IDs/rowids preserved');
+      const afterRows = table === 'schema_migrations' ? r.rows(table).slice(0,11) : table === 'personal_memories'
+        ? r.rows(table).map(({audio_path,...row}) => { assert.equal(audio_path,null); return row; }) : r.rows(table);
+      assert.deepEqual(afterRows,table === 'personal_memories' ? before[table].map(row=>({...row})) : before[table],table+' all historical fields/IDs/rowids preserved');
       assert.deepEqual(r.sqlite.prepare(`PRAGMA foreign_key_list(${table})`).all(),fks[table],table+' FKs');
     }
     for (const item of beforeSchema.filter(row=>row.type==='index'||row.type==='trigger')) assert.deepEqual(schema().find(row=>row.name===item.name),item);
-    const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(),after); assert.equal(r.rows('schema_migrations').length, 15);
+    const after = snapshot(); await r.run(r.db); assert.deepEqual(snapshot(),after); assert.equal(r.rows('schema_migrations').length, 16);
     assert.equal((await care.report('one',report.id)).snapshot,report.snapshot);
     assert.ok(r.module('src/caregiver/report-presentation.ts').reportSections(report,'en').length);
     for (const game of extra) for (let level=1;level<=5;level++) {
@@ -241,7 +243,7 @@ async function migrationChecks() {
     }
     assert.equal(r.sqlite.prepare('PRAGMA integrity_check').get().integrity_check,'ok'); assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
   } finally {r.sqlite.close();}
-  for (const fk of [0,1]) { const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length, 15);assert.equal(r.rows('cognitive_sessions').length,0);}finally{r.sqlite.close();} }
+  for (const fk of [0,1]) { const r=runtime();try {r.sqlite.exec('PRAGMA foreign_keys='+fk);await r.run(r.db);await r.run(r.db);assert.equal(r.rows('schema_migrations').length, 16);assert.equal(r.rows('cognitive_sessions').length,0);}finally{r.sqlite.close();} }
   console.log('PASS migration 012: production runner, populated 011 upgrade, all history/models/sync/consent/Care Circle/reports/rowids/indexes/triggers/FKs preserved; six rollback boundaries; exact new completion constraints; fresh install and idempotence.');
 }
 
@@ -413,7 +415,11 @@ function sourceChecks() {
     const before=JSON.parse(execFileSync('git',['show','a030ac8:'+file],{encoding:'utf8'}));
     const after=JSON.parse(fs.readFileSync(file,'utf8'));
     const dependencies=file==='package.json'?after.dependencies:after.packages[''].dependencies;
-    for(const [name,version] of Object.entries({'expo-network':'~8.0.8','expo-mail-composer':'~15.0.8','expo-location':'~19.0.8','react-native-maps':'1.20.1'})) {
+    if(file==='package-lock.json') {
+      assert.deepEqual(after.packages['node_modules/expo-asset'],before.packages['node_modules/expo/node_modules/expo-asset'],'SDK asset peer hoisted unchanged');
+      delete before.packages['node_modules/expo/node_modules/expo-asset'];
+    }
+    for(const [name,version] of Object.entries({'expo-network':'~8.0.8','expo-mail-composer':'~15.0.8','expo-location':'~19.0.8','react-native-maps':'1.20.1','expo-audio':'~1.1.1','expo-battery':'~10.0.8','expo-asset':'~12.0.13'})) {
       assert.equal(dependencies[name],version,name+' required'); delete dependencies[name];
       if(file==='package-lock.json') { assert.equal(after.packages['node_modules/'+name].version,version.replace(/^~/,'')); delete after.packages['node_modules/'+name]; }
     }
