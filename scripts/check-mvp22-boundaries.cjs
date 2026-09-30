@@ -40,11 +40,12 @@ function checkMvp22Boundaries() {
   // Report email and connectivity-driven sync are permanent, separately exercised product paths.
   const additions={'@supabase/supabase-js':'2.116.0','react-native-url-polyfill':'4.0.0','expo-crypto':'~15.0.9','expo-print':'~15.0.8','expo-sharing':'~14.0.8',
     'expo-mail-composer':'~15.0.8','expo-network':'~8.0.8','expo-location':'~19.0.8','react-native-maps':'1.20.1','expo-audio':'~1.1.1','expo-battery':'~10.0.8','expo-asset':'~12.0.13'};
-  const before=JSON.parse(baseline('package.json')),after=JSON.parse(fs.readFileSync('package.json','utf8'));
+  const { readBeforeSecurityUpdate } = require('./check-dependency-security.cjs');
+  const before=JSON.parse(baseline('package.json')),after=readBeforeSecurityUpdate('package.json');
   for(const [key,version] of Object.entries(additions)){assert.equal(after.dependencies[key],version);delete after.dependencies[key];}
   assert.equal(after.version,'1.0.1');before.version='1.0.1';
   assert.deepEqual(after,before,'only explicitly verified auth, report and sync dependencies change');
-  const oldLock=JSON.parse(baseline('package-lock.json')),lock=JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+  const oldLock=JSON.parse(baseline('package-lock.json')),lock=readBeforeSecurityUpdate('package-lock.json');
   for(const [key,value] of Object.entries(oldLock.packages)){
     if(key===''){
       const current=structuredClone(lock.packages['']);for(const key of Object.keys(additions))delete current.dependencies[key];

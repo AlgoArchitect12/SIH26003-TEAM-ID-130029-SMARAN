@@ -413,7 +413,7 @@ function sourceChecks() {
   // entries are gone; the remaining required Expo modules pull no extra entries.
   for(const file of ['package.json','package-lock.json']) {
     const before=JSON.parse(execFileSync('git',['show','a030ac8:'+file],{encoding:'utf8'}));
-    const after=JSON.parse(fs.readFileSync(file,'utf8'));
+    const after=require('./check-dependency-security.cjs').readBeforeSecurityUpdate(file);
     const dependencies=file==='package.json'?after.dependencies:after.packages[''].dependencies;
     if(file==='package-lock.json') {
       assert.deepEqual(after.packages['node_modules/expo-asset'],before.packages['node_modules/expo/node_modules/expo-asset'],'SDK asset peer hoisted unchanged');

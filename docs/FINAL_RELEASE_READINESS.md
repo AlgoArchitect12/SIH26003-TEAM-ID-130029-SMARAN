@@ -1,4 +1,84 @@
-# PRD completion update — 30 September 2026
+# Dependency/security remediation — 30 September 2026
+
+Baseline: clean `feature/prd-completion` at `23c0b529a370fc5e7d0437368c5b2c45c9d8d06b`. This section supersedes the historical dependency counts below. Expo SDK **54.0.37**, React Native **0.81.5**, React **19.1.0**, all direct dependency declarations and product behavior remain unchanged. The versioned [Expo SDK 54 compatibility contract](https://docs.expo.dev/versions/v54.0.0/) and installed callers were reviewed before choosing fixes.
+
+**Improved, not vulnerability-free; full production acceptance remains NO-GO.** `npm audit --json` changed from **21 affected package entries (4 high, 17 moderate)** to **17 (1 high, 16 moderate)**, with zero critical/low entries in either report. These counts include inherited findings, not 21 distinct vulnerabilities: **14 unique GHSA IDs before, 4 after**. Ten unique advisories were fixed: five high, four moderate and one low. The navigation-core update additionally removes one moderate inherited package finding for GHSA-vcc3-ghjq-m6fr; that advisory remains installed through Router. Other moderate fixes belonged to packages classified at their highest severity.
+
+## All 21 baseline package findings
+
+Versions are the installed baseline versions, including packages flagged only through a vulnerable descendant. Every package is used by the app or its build/lint tooling; an npm production dependency is not necessarily shipped JavaScript. The Android export source map includes `decode-uri-component` and `query-string`, and excludes `image-size`, `uuid`, `xcode`, `brace-expansion`, `postcss` and `undici`.
+
+| PACKAGE (BASELINE VERSION) | SEVERITY | DIRECT/TRANSITIVE | FIX AVAILABLE | PRODUCTION IMPACT | ACTION |
+|---|---|---|---|---|---|
+| `brace-expansion` 1.1.18 / 2.1.4 / 5.0.9 | High | Transitive | 1.1.21 / 2.1.7 / 5.0.12 cover all reported IDs | Minimatch/glob in Expo and ESLint; build/lint DoS, absent from Android bundle | **FIXED**, five copies updated within existing parent ranges |
+| `image-size` 1.2.1 | High | Transitive | 2.0.3; no fixed 1.x release found | Metro parses repository/dependency image assets during builds; absent from Android runtime | **NO SAFE FIX** verified for SDK 54; 2.0.3 broke real export and was reverted |
+| `postcss` 8.4.49 | High | Transitive | 8.5.23 covers all reported IDs | Expo CSS tooling: source-map disclosure/XSS; absent from Android bundle | **FIXED**, exact override scoped to `@expo/metro-config@54.0.17`; Expo's `~8.4.32` otherwise blocks the fix |
+| `undici` 6.28.0 | High | Transitive | 6.28.1 | Expo CLI HTTP/WebSocket tooling; absent from Android bundle | **FIXED**, smallest fixed patch within CLI's `^6.18.2` range |
+| `decode-uri-component` 0.2.2 | Moderate | Transitive | 0.5.0, ESM-only | Bundled query parser; malformed attacker-controlled URI data can block JS | **NO SAFE FIX** verified as a drop-in for the existing CommonJS caller; retained, not dismissed as tooling |
+| `query-string` 7.1.3 | Moderate | Transitive | Patched decoder only outside `^0.2.2`; no patched 7.x release found | Used by Router/navigation; inherits decoder risk | **NO SAFE FIX** verified without replacing the caller contract |
+| `@react-navigation/core` 7.21.13 | Moderate | Transitive | 7.22.1 removes its query-string dependency | Bundled navigation parser; malformed-query DoS path | **FIXED** this dependency path within native's `^7.21.13` range; Router's separate decoder path remains |
+| `uuid` 7.0.3 | Moderate | Transitive | 11.1.1; outside Xcode's `^7.0.3` | Xcode build tooling calls only `v4()` without output buffer; affected `v3/v5/v6` path not used; absent from Android bundle | **ACCEPTED RISK** for this checkpoint; no unnecessary four-major override |
+| `xcode` 3.0.1 | Moderate | Transitive | No newer release found; requires UUID parent fix | iOS project tooling, inherited UUID finding | **ACCEPTED RISK**, retain SDK-compatible tooling |
+| `@expo/config-plugins` 54.0.5 | Moderate | Transitive | No compatible UUID-chain fix verified | Native config tooling → Xcode → UUID | **ACCEPTED RISK**, inherited UUID finding |
+| `@expo/config` 12.0.14 | Moderate | Transitive | Same UUID-chain constraint | Build config → config-plugins | **ACCEPTED RISK**, inherited UUID finding |
+| `@expo/metro-config` 54.0.17 | Moderate | Transitive | PostCSS fixed; UUID-chain finding remains | Build tooling → config | **FIXED** PostCSS path; **ACCEPTED RISK** inherited UUID path |
+| `@expo/prebuild-config` 54.0.9 | Moderate | Transitive | Same UUID-chain constraint | Prebuild tooling → config/config-plugins | **ACCEPTED RISK**, inherited UUID finding |
+| `@expo/cli` 54.0.27 | Moderate | Transitive | Undici fixed; UUID-chain finding remains | CLI → config/prebuild/Metro | **FIXED** undici path; **ACCEPTED RISK** inherited UUID path |
+| `expo` 54.0.37 | Moderate | Direct | Audit proposes 57.0.26, outside SDK 54 | SDK used at runtime; reported issue originates in build-time UUID chain | **ACCEPTED RISK**, preserve SDK 54 |
+| `expo-asset` 12.0.13 | Moderate | Direct | Audit proposes 57.0.18, outside SDK 54 | Runtime assets; finding inherited through constants/config | **ACCEPTED RISK**, no vulnerable UUID API in Android path |
+| `expo-constants` 18.0.14 | Moderate | Direct | Audit proposes 57.0.20, outside SDK 54 | Runtime constants; finding inherited through build config | **ACCEPTED RISK**, preserve native compatibility |
+| `expo-linking` 8.0.12 | Moderate | Direct | Audit proposes 57.0.11, outside SDK 54 | Runtime links; this package's finding inherits constants/config UUID chain | **ACCEPTED RISK** for UUID path; decoder risk separately retained |
+| `expo-notifications` 0.32.17 | Moderate | Direct | Audit proposes 57.0.21, outside SDK 54 | Runtime notifications; finding inherited through constants/config | **ACCEPTED RISK**, preserve native compatibility |
+| `expo-router` 6.0.24 | Moderate | Direct | Audit proposes downgrade to 5.1.11; not a safe SDK-54 remedy | Router runtime plus inherited UUID and bundled decoder paths | **ACCEPTED RISK** for UUID; **NO SAFE FIX** verified for decoder; preserve Router 6 |
+| `expo-splash-screen` 31.0.13 | Moderate | Direct | Audit proposes 57.0.9, outside SDK 54 | Runtime splash; finding inherited through prebuild/config UUID chain | **ACCEPTED RISK**, preserve native compatibility |
+
+## Exact advisories fixed
+
+| Package | Severity | Advisory |
+|---|---|---|
+| brace-expansion | High | [GHSA-qhr7-859c-m2p7](https://github.com/advisories/GHSA-qhr7-859c-m2p7): nested-brace stack exhaustion |
+| brace-expansion | High | [GHSA-6j4f-fj2g-mc7p](https://github.com/advisories/GHSA-6j4f-fj2g-mc7p): comma-parser stack exhaustion |
+| brace-expansion | Moderate | [GHSA-q2hr-2g5m-vwhr](https://github.com/advisories/GHSA-q2hr-2g5m-vwhr): quadratic rewrite DoS |
+| postcss | High | [GHSA-6g55-p6wh-862q](https://github.com/advisories/GHSA-6g55-p6wh-862q): source-map arbitrary file disclosure |
+| postcss | High | [GHSA-r28c-9q8g-f849](https://github.com/advisories/GHSA-r28c-9q8g-f849): source-map path traversal |
+| postcss | Moderate | [GHSA-qx2v-qp2m-jg93](https://github.com/advisories/GHSA-qx2v-qp2m-jg93): CSS stringify XSS |
+| postcss | Moderate | [GHSA-fxqj-rqcc-2cmp](https://github.com/advisories/GHSA-fxqj-rqcc-2cmp): map disclosure when `from` is absent |
+| undici | High | [GHSA-rfgv-xxqx-mfg5](https://github.com/advisories/GHSA-rfgv-xxqx-mfg5): unrequested WebSocket subprotocol DoS |
+| undici | Moderate | [GHSA-3wwx-pv8p-q78v](https://github.com/advisories/GHSA-3wwx-pv8p-q78v): WebSocket decompression error DoS |
+| undici | Low | [GHSA-r53p-7pc4-xj5r](https://github.com/advisories/GHSA-r53p-7pc4-xj5r): retry-interceptor response splitting |
+
+Navigation core **7.21.13 to 7.22.1** also removes its dependency on the vulnerable parser ([upstream release](https://github.com/react-navigation/react-navigation/releases/tag/@react-navigation%2Fcore@7.22.1)). The source diff preserves existing navigation APIs, adds a compatible render API and replaces query parsing. Installed-library tests cover valid/duplicate/flag parameters, link round trips and a 60,000-character malformed query in a child process with a 10-second deadline. This fixes the core path of GHSA-vcc3-ghjq-m6fr; it does not remove the GHSA from the whole tree.
+
+## Retained advisories and exact reasons
+
+- **NO SAFE FIX — image-size:** [GHSA-5p2g-fcmc-qvqq](https://github.com/advisories/GHSA-5p2g-fcmc-qvqq) (JXL/HEIF loops) and [GHSA-w3rx-r6r6-pgpr](https://github.com/advisories/GHSA-w3rx-r6r6-pgpr) (ICNS loop), both high. Tested 2.0.3: Buffer sizing works, but Metro 0.83.3 `getAssetData()` also passes file-path strings. The fixed major removed synchronous file-path support. Two clean Android exports failed on Router's `unmatched.png` with a `TextDecoder.decode` argument error; reverting only this override restored export. Keep build inputs trusted/reviewed. This is a build-time risk, not parsing of patient photos by shipped Android JS. Revisit an upstream 1.x backport or separately validated Metro/SDK upgrade; no permanent local fork was introduced.
+- **NO SAFE FIX — decoder:** [GHSA-vcc3-ghjq-m6fr](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr), moderate, remains in `decode-uri-component`, `query-string` and Router; navigation core's path is fixed. Version 0.5.0 exports an ESM default; query-string 7.1.3 requires and invokes the module as a CommonJS function. An isolated check confirmed that direct invocation throws `TypeError`. New query-string majors also change module format. Navigation core is now fixed, but Router still declares query-string, so the vulnerable dependency remains installed. The source map confirms the decoder is bundled; actual exploitability of every app link path is not established. **Only the navigation-core parser path is fixed; no claim of complete runtime mitigation or production acceptance.** Revisit a compatible upstream decoder/query-string backport or a separately tested Router/navigation upgrade.
+- **ACCEPTED RISK — UUID:** [GHSA-w5hq-g745-h8pq](https://github.com/advisories/GHSA-w5hq-g745-h8pq), moderate. Xcode 3.0.1 is the only UUID parent and calls `uuid.v4()` with no caller buffer. The advisory concerns `v3/v5/v6` buffer bounds. UUID/Xcode are absent from the Android bundle. Fixed 11.1.1 is outside the declared 7.x contract; replacing four majors solely to clear inherited Expo findings is unnecessary for the observed path. Retained without an audit suppression; revisit when Xcode/Expo adopt a compatible fix. This scoped checkpoint assessment is not full production sign-off.
+
+## Validation and dependency integrity
+
+- `npm install`: PASS; final install preserves the reviewed lock. npm reports the existing `unrs-resolver` postinstall as unapproved; no script permission was broadened.
+- `npx expo install --check`: PASS, dependencies up to date; `npm ls --all --json`: PASS, no invalid dependency graph.
+- `npx tsc --noEmit`, `npm run lint`, `git diff --check`: PASS; no lint warnings/errors.
+- `node scripts/check-final-sih-hardening.cjs`: PASS. `node scripts/check-regressions.cjs`: **36/36 PASS** on the final dependency set, including the new dependency-security check and the existing helper-only entry point. Auth/live-database source secret scans, ignored-credential checks and disposable PostgreSQL regressions PASS; no private credentials detected in scanned source. Existing hosted/device acceptance limitations remain.
+- `node scripts/check-dependency-security.cjs`: PASS. Confirms exactly eight changed lock entries, unchanged remaining metadata/direct dependencies, correct registry URLs/integrities, PostCSS rejection of implicit/out-of-directory map reads, working legitimate maps/CSS, Metro's real file-path asset API and the patched navigation parser. Isolated old 8.4.49 reads the synthetic map; 8.5.23 rejects it.
+- Historical dependency guards now first assert the **entire current manifest/lock equals baseline plus the exact reviewed security delta**, then retain their previous milestone comparisons. No blanket dependency exemption or weaker security assertion was added.
+- `npx expo export --platform android --clear --output-dir .expo/security-remediation/android --source-maps`: PASS, **1,893 modules, 76 assets, 4.26 MB Hermes bundle**. Final sandbox attempt was denied permission to execute Hermes; the permitted rerun passed. Source map used only for dependency reachability; ignored local output, not a signed APK/device test.
+- Only five brace-expansion copies, PostCSS, undici and navigation core changed in the lock; no added/removed packages, package substitutions, install scripts or unrelated dependency churn. Each changed entry retains the official npm registry origin and reviewed integrity. No secrets or credentials were introduced in the changed files.
+- Audit JSON, source map and diagnostic logs are local ignored files under `.expo/security-remediation/`; regression logs are under `.expo/regressions/`. No artifacts or environment files are committed.
+
+## Scope and delivery boundaries
+
+- **FIXED:** the ten advisory IDs above plus the navigation-core path of the retained decoder advisory; SDK-54-compatible tooling and navigation updates.
+- **ACCEPTED RISK:** unused vulnerable UUID APIs and their inherited build-tool findings, scoped as above.
+- **NO SAFE FIX:** the image-size and decoder updates described above remain unresolved; no advisory is hidden or suppressed.
+- **EXTERNAL:** signing/Maps/hosted Supabase/provider configuration, language review and physical-device acceptance remain pending as documented below. This pass performs no hosted mutation, deployment or provider send.
+- **NOT IMPLEMENTED:** LAN/mDNS/Bluetooth peer synchronization and heritage soundscapes remain absent. No assets or transport were fabricated; UI and PRD product scope are unchanged.
+- Delivery remains limited to the authorized commit `chore: remediate release dependency security findings` and `public-sih feature/prd-completion`. `main` remains at `e783167ac8178d451df5fb886dc95e617fb6d2f0`. No Google Drive or old private-repository access. Final commit/push outcome is reported in the task response.
+
+---
+
+# Historical PRD completion update — 30 September 2026
 
 Baseline `e783167ac8178d451df5fb886dc95e617fb6d2f0`; branch `feature/prd-completion`. This update supersedes the older microphone, migration-count and native-debug-build statements below. The 29 September audit is retained as dated history.
 

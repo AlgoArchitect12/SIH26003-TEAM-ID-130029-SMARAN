@@ -61,5 +61,10 @@
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"
   },
+  "overrides": {
+    "@expo/metro-config@54.0.17": {
+      "postcss": "8.5.23"
+    }
+  },
   "private": true
 }

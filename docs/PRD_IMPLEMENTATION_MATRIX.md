@@ -52,6 +52,16 @@ Recovery for a rollout problem: retain the additive nullable column and roll bac
 
 ## Verification and delivery
 
+Dependency/security follow-up at baseline `23c0b529a370fc5e7d0437368c5b2c45c9d8d06b`: npm audit decreased from **21 affected package entries (4 high, 17 moderate)** to **17 (1 high, 16 moderate)**. All direct dependency declarations, Expo SDK 54 and React Native 0.81.5 are unchanged. No capability status or UI was changed by this follow-up. See the [full 21-package assessment and exact advisory IDs](FINAL_RELEASE_READINESS.md#dependencysecurity-remediation--30-september-2026).
+
+| Classification | Current dependency/security result |
+|---|---|
+| FIXED | Brace-expansion 1.1.21/2.1.7/5.0.12, PostCSS 8.5.23 and undici 6.28.1; ten unique advisory IDs removed (five high, four moderate, one low); navigation core 7.22.1 additionally removes its vulnerable query-parser dependency |
+| ACCEPTED RISK | UUID/Xcode inherited Expo findings: only buffer-free UUID v4 is used in build tooling; affected APIs are absent from shipped Android JS; not production sign-off |
+| NO SAFE FIX | image-size 2.0.3 breaks Metro's file-path API (reproduced clean-export failure, reverted); fixed decoder 0.5.0 is ESM-only and incompatible with query-string 7's CommonJS function call. Decoder remains bundled and unresolved |
+| EXTERNAL | Existing native-device, signing, Maps, hosted-account/provider and human-language acceptance remains pending |
+| NOT IMPLEMENTED | LAN/mDNS/Bluetooth peer sync and heritage soundscapes remain explicitly absent |
+
 Final command results, Android build outcome and Git delivery are recorded in [FINAL_RELEASE_READINESS.md](FINAL_RELEASE_READINESS.md). No screenshot, video or other new evidence capture was requested or produced. Google Drive and the private remote were not used. No WhatsApp send, hosted migration, deployment or merge was performed.
 
 References used for native contracts: [Expo SDK 54](https://docs.expo.dev/versions/v54.0.0/), [Audio](https://docs.expo.dev/versions/v54.0.0/sdk/audio/), [Battery](https://docs.expo.dev/versions/v54.0.0/sdk/battery/), [Linking](https://docs.expo.dev/versions/v54.0.0/sdk/linking/) and the installed SDK TypeScript/native implementation.
