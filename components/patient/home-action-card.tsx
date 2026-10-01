@@ -60,7 +60,7 @@ export function HomeActionCard({
           {imageSource && (
             <View style={StyleSheet.absoluteFillObject}>
               <Image source={imageSource} accessible={false} aria-hidden contentFit="cover" style={StyleSheet.absoluteFillObject} />
-              <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(10, 40, 20, 0.5)' }]} />
+              <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.actionSecondary, opacity: 0.5 }]} />
             </View>
           )}
           <View style={{ position: 'absolute', top: Spacing.sm, left: Spacing.sm, backgroundColor: colors.surfaceRaised, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4 }}>

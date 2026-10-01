@@ -19,9 +19,10 @@
 * **Implementation Change:** 
   * "Mind Vitality This Week" Chart: Omitted (no underlying vitality metric data exists).
   * "Family Faces & Voices": Implemented side-by-side rich layout.
-  * "Morning Memory Garden" Card: Added dark green overlay `rgba(10, 40, 20, 0.5)` to `HomeActionCard` to approximate the Stitch gradient without adding new dependencies.
+  * "Morning Memory Garden" Card: Added `backgroundColor: colors.actionSecondary, opacity: 0.5` overlay to `HomeActionCard` to approximate the Stitch gradient without adding new dependencies and strictly following semantic color checks.
   * Audio Summary Banner: Created large prominent banner variant in `ReadScreenButton` and used it in the Home page.
   * Offline Indicator: Upgraded to a full-width bottom banner.
+  * (Cleanup Note: An unintended inline timeline implementation for `dayToday` that introduced hardcoded colors was reverted during Pass 3A cleanup.)
 * **Priority:** COMPLETED (Pass 3A)
 
 ## 2. Train My Mind (Hub)

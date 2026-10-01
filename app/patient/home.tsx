@@ -93,43 +93,9 @@ export default function PatientHomeScreen() {
       imageSource={regional?.imageAsset}
       accessibilityHint={t(language, 'activitiesOpen')} icon="psychology" highContrast={preferences.highContrast}
       reducedMotion={preferences.reducedMotion} textSize={textSize} onPress={() => router.navigate('/patient/games')} />
-    <SmaranCard style={styles.group} padding={Spacing.md}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
-          <MaterialIcons name="schedule" size={24} color={colors.primary} />
-          <ThemedText type="cardHeading">{t(language, 'dayToday')}</ThemedText>
-        </View>
-        <View style={{ backgroundColor: colors.surfaceSelected, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
-          <ThemedText style={{ fontSize: 12, color: colors.textSecondary, fontWeight: 'bold' }}>
-            {reminders.filter(r => r.completed).length} / {reminders.length || 1} Done
-          </ThemedText>
-        </View>
-      </View>
-      
-      <View style={{ gap: Spacing.sm }}>
-        {reminders.length === 0 ? (
-           <ThemedText type="body">{t(language, 'careNoRoutine')}</ThemedText>
-        ) : (
-          reminders.slice(0, 3).map((item, idx) => {
-            const isNext = !item.completed && idx === reminders.findIndex(r => !r.completed);
-            return (
-              <View key={item.id} style={{ padding: Spacing.sm, borderRadius: Radius.button, backgroundColor: item.completed ? colors.surfaceMuted : isNext ? '#FFDBCA' : colors.surfaceRaised, flexDirection: 'row', gap: Spacing.sm, alignItems: 'flex-start' }}>
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: item.completed ? colors.successSurface : isNext ? colors.secondary : colors.divider, alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
-                  <MaterialIcons name={item.completed ? 'check-circle' : isNext ? 'directions-run' : 'schedule'} size={20} color={item.completed ? colors.success : isNext ? colors.onActionSecondary : colors.textSecondary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <ThemedText style={{ fontSize: 12, fontWeight: 'bold', color: item.completed ? colors.success : isNext ? colors.secondary : colors.textSecondary }}>
-                      {timeLabel(language, item.timeOfDay)} • {item.completed ? 'Completed' : isNext ? 'Up Next' : 'Later'}
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={{ fontSize: 16, fontWeight: 'bold', color: colors.textPrimary, marginTop: 2 }}>{item.title}</ThemedText>
-                </View>
-              </View>
-            );
-          })
-        )}
-      </View>
+    <SmaranCard style={[styles.group, { borderLeftWidth: 5, borderLeftColor: colors.primary }]}>
+      <ThemedText type="cardHeading">{t(language, 'dayToday')}</ThemedText>
+      <ThemedText type={reminder ? 'action' : 'body'}>{todayText}</ThemedText>
       {button(t(language, 'homeDayTitle'), () => router.navigate('/patient/my-day'))}
     </SmaranCard>
     <View style={styles.group}>

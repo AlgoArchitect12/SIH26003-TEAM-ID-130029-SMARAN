@@ -67,3 +67,6 @@ app-example
 *.aab
 /credentials.json
 *.keystore
+
+# Local MCP configuration
+.vscode/mcp.json
