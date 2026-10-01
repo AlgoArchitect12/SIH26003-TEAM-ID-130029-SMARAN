@@ -2,6 +2,7 @@ import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
@@ -10,12 +11,13 @@ import { SmaranLoading } from '@components/ui/smaran-loading';
 import { PageIntro } from '@components/ui/page-intro';
 import { useTextSize } from '@/hooks/use-text-size';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
-import { PageLayout } from '@constants/layout';
+import { PageLayout, Radius, Spacing } from '@constants/layout';
 import { CognitiveActivityTypes, type CognitiveActivityType } from '@db/schema.types';
 import { t, type TranslationKey } from '@i18n/index';
 import { resolveActivePatient } from '@services/active-patient.service';
 import { useOnboardingStore } from '@/src/stores/onboarding.store';
 import { activityTitleKeys } from '@/src/games/presentation';
+import { useThemeColors } from '@/hooks/use-theme-color';
 
 const activities = {
   memory_match: { subtitle: 'memorySubtitle', route: '/patient/games/memory-match', icon: 'grid-view' },
@@ -33,6 +35,7 @@ const activities = {
 
 export default function ActivitiesScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const textSize = useTextSize();
   const accessibility = useOnboardingStore(state => state.accessibility);
   const language = useOnboardingStore(state => state.language) ?? 'en';
@@ -56,10 +59,27 @@ export default function ActivitiesScreen() {
   }, [attempt, router]);
   return <ScreenWrapper scroll><View style={styles.content}>
     <SmaranButton label={t(language, 'backHome')} accessibilityLabel={t(language, 'backHome')} variant="outline" onPress={() => router.dismissTo('/patient/home')} />
-    <PageIntro title={t(language, 'homeTrainTitle')} description={t(language, 'activitiesChoose')} icon="psychology">
+    
+    <View style={{ backgroundColor: colors.surfaceRaised, borderRadius: Radius.card, padding: Spacing.md, gap: Spacing.sm }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <View style={{ flex: 1 }}>
+          <View style={{ backgroundColor: colors.actionPrimary, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+            <MaterialIcons name="psychology" size={16} color={colors.surfaceRaised} />
+            <ThemedText style={{ color: colors.surfaceRaised, fontSize: 12, fontWeight: 'bold' }}>Cognitive Fitness</ThemedText>
+          </View>
+          <ThemedText style={{ fontSize: 26, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 4 }}>{t(language, 'homeTrainTitle')}</ThemedText>
+          <ThemedText style={{ color: colors.textSecondary, fontSize: 16 }}>Gentle exercises created to nurture recall, focus, and language.</ThemedText>
+        </View>
+        <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surfaceSelected, alignItems: 'center', justifyContent: 'center' }}>
+          <MaterialIcons name="spa" size={28} color={colors.primary} />
+        </View>
+      </View>
       {voice && <ReadScreenButton language={language} text={[t(language, 'activitiesChoose'),
         ...CognitiveActivityTypes.map(game => t(language, activityTitleKeys[game]) + '. ' + t(language, activities[game].subtitle))].join(' ')} />}
-    </PageIntro>
+    </View>
+
+
+
     {status === 'loading' && <SmaranLoading label={t(language, 'gameLoading')} />}
     {status === 'failed' && <>
       <ThemedText accessibilityRole="alert">{t(language, 'activityPrepareFailed')}</ThemedText>

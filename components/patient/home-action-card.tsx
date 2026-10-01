@@ -1,10 +1,11 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { Image, StyleSheet, View, type ImageSourcePropType } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Image, type ImageSource } from 'expo-image';
 
 import { ThemedText } from '@components/themed-text';
 import { SmaranCard } from '@components/ui/smaran-card';
-import { Radius, Spacing } from '@constants/layout';
+import { Layout, Radius, Spacing } from '@constants/layout';
 import type { TextSizePreference } from '@constants/typography';
 import { useAppearance, useThemeColors } from '@/hooks/use-theme-color';
 
@@ -14,7 +15,7 @@ type HomeActionCardProps = {
   featured?: boolean;
   highContrast: boolean;
   icon: ComponentProps<typeof MaterialIcons>['name'];
-  imageSource?: ImageSourcePropType;
+  imageSource?: number | string | ImageSource;
   onPress: () => void;
   reducedMotion: boolean;
   textSize: TextSizePreference;
@@ -50,13 +51,28 @@ export function HomeActionCard({
         {
           backgroundColor: featured ? colors.actionPrimary : colors.surfaceRaised,
           borderColor: contrast ? foreground : featured ? colors.actionPrimary : colors.border,
-          borderWidth: contrast ? 3 : 2,
+          borderWidth: contrast ? 3 : 1.5,
+          overflow: 'hidden',
         },
       ]}>
-      {imageSource && <Image source={imageSource} accessible={false} aria-hidden resizeMode="cover"
-        style={{ width: '100%', height: 180, borderTopLeftRadius: Radius.card - 2, borderTopRightRadius: Radius.card - 2 }} />}
-      <View style={[styles.row, { padding: featured ? Spacing.lg : Spacing.md }]}>
-      <View
+      {featured ? (
+        <View style={{ width: '100%', height: 176, position: 'relative' }}>
+          {imageSource && (
+            <View style={StyleSheet.absoluteFillObject}>
+              <Image source={imageSource} accessible={false} aria-hidden contentFit="cover" style={StyleSheet.absoluteFillObject} />
+              <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(10, 40, 20, 0.5)' }]} />
+            </View>
+          )}
+          <View style={{ position: 'absolute', top: Spacing.sm, left: Spacing.sm, backgroundColor: colors.surfaceRaised, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+             <MaterialIcons name="psychology" size={16} color={colors.primary} />
+             <ThemedText style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold' }}>Train My Mind</ThemedText>
+          </View>
+        </View>
+      ) : (
+        imageSource && <Image source={imageSource} accessible={false} aria-hidden contentFit="cover" style={{ width: '100%', height: 180, borderTopLeftRadius: Radius.card - 2, borderTopRightRadius: Radius.card - 2 }} />
+      )}
+      <View style={[featured ? styles.featuredContent : styles.row, { padding: featured ? Spacing.md : Spacing.md }]}>
+      {!featured && <View
         style={[
           styles.icon,
           { backgroundColor: featured ? colors.surface : colors.surfaceSelected },
@@ -67,16 +83,23 @@ export function HomeActionCard({
           name={icon}
           size={featured ? 36 : 28}
         />
-      </View>
+      </View>}
       <View style={styles.copy}>
+        {featured && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+          <MaterialIcons name="verified" size={16} color={colors.surfaceMuted} />
+          <ThemedText style={{ color: colors.surfaceMuted, fontSize: 12, fontWeight: 'bold' }}>Recommended by your adaptive guide</ThemedText>
+        </View>}
         <ThemedText style={{ color: foreground }} textSize={textSize} type={featured ? 'cardHeading' : 'action'}>
           {title}
         </ThemedText>
-        <ThemedText style={{ color: featured ? foreground : colors.textSecondary }} textSize={textSize} type="secondary">
+        <ThemedText style={{ color: featured ? colors.surfaceMuted : colors.textSecondary }} textSize={textSize} type="secondary">
           {description}
         </ThemedText>
       </View>
-      <MaterialIcons name="arrow-forward" size={24} color={foreground} accessible={false} aria-hidden />
+      {featured ? <View style={[styles.featuredAction, { backgroundColor: colors.actionSecondary }]}>
+        <MaterialIcons name="play-circle-outline" size={26} color={colors.onActionSecondary} accessible={false} aria-hidden />
+        <ThemedText type="action" textSize={textSize} style={{ color: colors.onActionSecondary }}>{accessibilityHint}</ThemedText>
+      </View> : <MaterialIcons name="arrow-forward" size={24} color={foreground} accessible={false} aria-hidden />}
       </View>
     </SmaranCard>
   );
@@ -94,6 +117,8 @@ const styles = StyleSheet.create({
   featured: {
     minHeight: 156,
   },
+  featuredContent: { gap: Spacing.md },
+  featuredAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, minHeight: Layout.minTouchTarget, padding: Spacing.sm, borderRadius: Radius.button },
   icon: {
     alignItems: 'center',
     borderRadius: Radius.button,

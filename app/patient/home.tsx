@@ -76,25 +76,84 @@ export default function PatientHomeScreen() {
   const speech = [greeting, date, t(language, 'dayToday'), todayText, t(language, 'homeTrainTitle'),
     t(language, 'homeTrainDescription'), t(language, 'familiarMemory'), memory ? `${memory.name}. ${memory.relationship}` : t(language, 'memoryEmpty')].join('. ');
   return <ScreenWrapper scroll><View style={styles.content}>
-    <PageIntro title={greeting} description={`${getRegionName(language, settings.region)} · ${date}`} icon={now.getHours() < 17 ? 'wb-sunny' : 'nights-stay'}>
-      {preferences.voiceGuidance && <ReadScreenButton language={language} text={speech} />}
+    <PageIntro title={greeting} description={getRegionName(language, settings.region)} icon={now.getHours() < 17 ? 'wb-sunny' : 'nights-stay'}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.md, borderRadius: Radius.button, backgroundColor: colors.surfaceMuted, marginBottom: Spacing.sm }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+          <MaterialIcons name="calendar-today" size={24} color={colors.primary} accessible={false} aria-hidden />
+          <ThemedText style={{ color: colors.textPrimary, fontWeight: 'bold' }}>{date}</ThemedText>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <MaterialIcons name="thermostat" size={18} color={colors.textSecondary} accessible={false} aria-hidden />
+          <ThemedText style={{ color: colors.textSecondary, fontSize: 14 }}>24°C</ThemedText>
+        </View>
+      </View>
     </PageIntro>
+    {preferences.voiceGuidance && <ReadScreenButton language={language} text={speech} banner />}
     <HomeActionCard featured title={t(language, 'homeTrainTitle')} description={t(language, 'homeTrainDescription')}
       imageSource={regional?.imageAsset}
       accessibilityHint={t(language, 'activitiesOpen')} icon="psychology" highContrast={preferences.highContrast}
       reducedMotion={preferences.reducedMotion} textSize={textSize} onPress={() => router.navigate('/patient/games')} />
-    <SmaranCard style={[styles.group, { borderLeftWidth: 5, borderLeftColor: colors.primary }]}>
-      <ThemedText type="cardHeading">{t(language, 'dayToday')}</ThemedText>
-      <ThemedText type={reminder ? 'action' : 'body'}>{todayText}</ThemedText>
+    <SmaranCard style={styles.group} padding={Spacing.md}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+          <MaterialIcons name="schedule" size={24} color={colors.primary} />
+          <ThemedText type="cardHeading">{t(language, 'dayToday')}</ThemedText>
+        </View>
+        <View style={{ backgroundColor: colors.surfaceSelected, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+          <ThemedText style={{ fontSize: 12, color: colors.textSecondary, fontWeight: 'bold' }}>
+            {reminders.filter(r => r.completed).length} / {reminders.length || 1} Done
+          </ThemedText>
+        </View>
+      </View>
+      
+      <View style={{ gap: Spacing.sm }}>
+        {reminders.length === 0 ? (
+           <ThemedText type="body">{t(language, 'careNoRoutine')}</ThemedText>
+        ) : (
+          reminders.slice(0, 3).map((item, idx) => {
+            const isNext = !item.completed && idx === reminders.findIndex(r => !r.completed);
+            return (
+              <View key={item.id} style={{ padding: Spacing.sm, borderRadius: Radius.button, backgroundColor: item.completed ? colors.surfaceMuted : isNext ? '#FFDBCA' : colors.surfaceRaised, flexDirection: 'row', gap: Spacing.sm, alignItems: 'flex-start' }}>
+                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: item.completed ? colors.successSurface : isNext ? colors.secondary : colors.divider, alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
+                  <MaterialIcons name={item.completed ? 'check-circle' : isNext ? 'directions-run' : 'schedule'} size={20} color={item.completed ? colors.success : isNext ? colors.onActionSecondary : colors.textSecondary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <ThemedText style={{ fontSize: 12, fontWeight: 'bold', color: item.completed ? colors.success : isNext ? colors.secondary : colors.textSecondary }}>
+                      {timeLabel(language, item.timeOfDay)} • {item.completed ? 'Completed' : isNext ? 'Up Next' : 'Later'}
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={{ fontSize: 16, fontWeight: 'bold', color: colors.textPrimary, marginTop: 2 }}>{item.title}</ThemedText>
+                </View>
+              </View>
+            );
+          })
+        )}
+      </View>
       {button(t(language, 'homeDayTitle'), () => router.navigate('/patient/my-day'))}
     </SmaranCard>
     <View style={styles.group}>
       <ThemedText type="cardHeading">{t(language, 'familiarMemory')}</ThemedText>
-      {memory ? <SmaranCard style={styles.group}>
-        {memory.photoPath && <MemoryPhoto patientId={memory.patientId} path={memory.photoPath} name={memory.name} language={language} />}
-        <ThemedText type="action">{memory.name}</ThemedText>
-        {!!memory.relationship && <ThemedText>{memory.relationship}</ThemedText>}
-        {button(t(language, 'memoryOpen'), () => router.navigate({ pathname: '/patient/my-memory', params: { id: memory.id } }))}
+      {memory ? <SmaranCard accessibilityLabel={memory.name} padding={0} onPress={() => router.navigate({ pathname: '/patient/my-memory', params: { id: memory.id } })} style={{ overflow: 'hidden' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'stretch' }}>
+          <View style={{ width: 120, minHeight: 120 }}>
+            {memory.photoPath ? (
+              <MemoryPhoto patientId={memory.patientId} path={memory.photoPath} name={memory.name} language={language} />
+            ) : (
+              <View style={{ flex: 1, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="image" size={32} color={colors.textSecondary} />
+              </View>
+            )}
+          </View>
+          <View style={{ flex: 1, padding: Spacing.md, justifyContent: 'center', gap: Spacing.xs }}>
+             <ThemedText type="action">{memory.name}</ThemedText>
+             {!!memory.relationship && <ThemedText type="secondary">{memory.relationship}</ThemedText>}
+             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                <MaterialIcons name="call" size={16} color={colors.primary} />
+                <ThemedText style={{ color: colors.primary, fontSize: 14, fontWeight: 'bold' }}>TAP TO CALL</ThemedText>
+             </View>
+          </View>
+        </View>
       </SmaranCard> : <>
         <ThemedText>{t(language, 'memoryEmpty')}</ThemedText>
         {button(t(language, 'memoryAdd'), () => router.navigate('/patient/my-memory-editor'))}
@@ -117,9 +176,12 @@ export default function PatientHomeScreen() {
       {location.patientId===patientId&&location.point&&<ThemedText>{t(language,freshness(location.point))}</ThemedText>}
       {button(t(language, 'gpsPatientTitle'), () => router.navigate('/patient/location'))}
     </SmaranCard>
-    <View style={styles.brand}>
-      <MaterialIcons name="offline-pin" size={24} color={colors.success} accessible={false} aria-hidden />
-      <ThemedText type="secondary">{t(language, 'readyOffline')}</ThemedText>
+    <View style={{ backgroundColor: colors.surfaceRaised, padding: Spacing.md, borderRadius: Radius.card, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.sm }}>
+      <MaterialIcons name="offline-pin" size={28} color={colors.success} accessible={false} aria-hidden />
+      <View style={{ flex: 1 }}>
+        <ThemedText style={{ fontWeight: 'bold', color: colors.textPrimary, fontSize: 16 }}>{t(language, 'readyOffline')}</ThemedText>
+        <ThemedText style={{ fontSize: 14, color: colors.textSecondary }}>Your app works perfectly without internet connection.</ThemedText>
+      </View>
     </View>
   </View></ScreenWrapper>;
 }

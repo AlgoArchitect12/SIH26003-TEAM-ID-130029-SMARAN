@@ -3,7 +3,7 @@ import { capturePatientRequest } from '@/src/stores/patient-session.store';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet, View, Pressable, ActivityIndicator } from 'react-native';
 
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
@@ -22,6 +22,7 @@ type ReadScreenButtonProps = {
   speechLanguage?: Language;
   text: string;
   labelKey?: TranslationKey;
+  banner?: boolean;
 };
 
 const START_TIMEOUT_MS = 5000;
@@ -31,6 +32,7 @@ export function ReadScreenButton({
   speechLanguage = language,
   text,
   labelKey = 'readScreen',
+  banner = false,
 }: ReadScreenButtonProps) {
   const colors = useThemeColors();
   const voiceGuidance = useOnboardingStore(
@@ -209,6 +211,37 @@ export function ReadScreenButton({
     language,
     active ? 'stopReading' : labelKey,
   );
+
+  if (banner) {
+    return (
+      <View style={styles.container}>
+        <Pressable
+          onPress={() => void handlePress()}
+          accessibilityLabel={label}
+          accessibilityRole="button"
+          disabled={isStarting}
+          style={({ pressed }) => [
+            { backgroundColor: colors.actionSecondary, padding: Spacing.md, borderRadius: 16 },
+            pressed && { opacity: 0.9, transform: [{ translateY: 2 }] }
+          ]}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md }}>
+             <MaterialIcons name={isSpeaking ? 'volume-off' : 'volume-up'} size={32} color={colors.onActionSecondary} />
+             <View style={{ flex: 1 }}>
+               <ThemedText type="cardHeading" style={{ color: colors.onActionSecondary }}>{label}</ThemedText>
+               <ThemedText style={{ color: colors.onActionSecondary, fontSize: 14 }}>{t(language, 'readScreen')}</ThemedText>
+             </View>
+             {isStarting && <ActivityIndicator color={colors.onActionSecondary} />}
+          </View>
+        </Pressable>
+        {(outcome === 'unavailable' || outcome === 'failed') && (
+          <ThemedText accessibilityLiveRegion="polite" style={styles.status} type="secondary">
+            {t(language, outcome === 'unavailable' ? 'speechUnavailable' : 'speechFailed')}
+          </ThemedText>
+        )}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
