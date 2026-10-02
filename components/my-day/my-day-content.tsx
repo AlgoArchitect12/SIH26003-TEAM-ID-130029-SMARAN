@@ -21,7 +21,7 @@ import { withTimeout } from '@/src/utils/with-timeout';
 export function MyDayContent({ caregiver = false }: { caregiver?: boolean } = {}) {
   const router = useRouter();
   const colors = useThemeColors();
-  const { patientId, language, failed: patientFailed, retry } = useMyDayPatient();
+  const { patientId, patientName, language, failed: patientFailed, retry } = useMyDayPatient();
   const [today, setToday] = useState<TodayReminder[]>([]);
   const [all, setAll] = useState<Reminder[]>([]);
   const [events, setEvents] = useState<ReminderEvent[]>([]);
@@ -79,20 +79,44 @@ export function MyDayContent({ caregiver = false }: { caregiver?: boolean } = {}
   };
   const managing = caregiver && manage;
   const content = (managing ? all : today);
+  const firstPending = content.find(r => !completedState(r));
   const speech = [t(language, 'homeDayTitle'), t(language, 'dayIntro'), ...content.map(r =>
     `${t(language, category[r.type].key)}. ${r.title}. ${timeLabel(language, r.timeOfDay)}. ${r.note}. ${
       !r.isEnabled ? t(language, 'dayDisabled') : completedState(r) ? completionLabel(r) : t(language, 'dayPending')}`),
     !content.length ? t(language, managing ? 'dayEmpty' : 'careNoRoutine') : ''].join(' ');
   return <ScreenWrapper scroll><View style={styles.content}>
     {button('backHome', () => router.dismissTo(caregiver ? '/caregiver/home' : '/patient/home'))}
-    <PageIntro title={t(language, 'homeDayTitle')} description={t(language, 'dayIntro')} icon="event-note">
-      <ThemedText type="action">{new Intl.DateTimeFormat(language, { dateStyle: 'full' }).format(new Date(`${displayDay}T12:00:00`))}</ThemedText>
-      {loaded && <>
-        <ProgressIndicator current={today.filter(item => item.completed).length} total={today.length}
-          label={t(language, 'careDoneCount', { done: String(today.filter(item => item.completed).length), total: String(today.length) })} />
-        <ReadScreenButton language={language} text={speech} />
-      </>}
-    </PageIntro>
+    
+    <View style={{ gap: 12, paddingBottom: 16 }}>
+      <View style={{ backgroundColor: colors.surfaceMuted, borderRadius: 16, padding: 16, gap: 16, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <MaterialIcons name="wb-sunny" size={28} color={colors.primary} />
+            <View>
+              <ThemedText type="defaultSemiBold" style={{ color: colors.primary, textTransform: 'uppercase', fontSize: 14 }}>
+                {patientName ? `${t(language, 'homeDayTitle')}, ${patientName}` : t(language, 'homeDayTitle')}
+              </ThemedText>
+              <ThemedText type="screenTitle" style={{ fontSize: 20 }}>
+                {new Intl.DateTimeFormat(language, { dateStyle: 'full' }).format(new Date(`${displayDay}T12:00:00`))}
+              </ThemedText>
+            </View>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8, paddingTop: 4 }}>
+          <View style={{ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, backgroundColor: colors.primary, flex: 1, alignItems: 'center' }}>
+            <ThemedText style={{ fontSize: 12, color: colors.onActionPrimary, textTransform: 'uppercase', fontWeight: 'bold' }}>Today</ThemedText>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.surface, marginTop: 4 }} />
+          </View>
+          <View style={{ flex: 3 }} />
+        </View>
+        {loaded && <>
+          <ProgressIndicator current={today.filter(item => item.completed).length} total={today.length}
+            label={t(language, 'careDoneCount', { done: String(today.filter(item => item.completed).length), total: String(today.length) })} />
+          <ReadScreenButton language={language} text={speech} />
+        </>}
+      </View>
+    </View>
+
     {(error || patientFailed) && <View accessibilityRole="alert" style={styles.group}>
       <ThemedText>{t(language, 'dayFailed')}</ThemedText>
       {button('retry', () => { if (patientFailed) retry(); else void act(refresh); })}
@@ -101,27 +125,58 @@ export function MyDayContent({ caregiver = false }: { caregiver?: boolean } = {}
     {caregiver && patientId && button('dayAdd', () => router.push('/caregiver/reminder'), true)}
     {loaded && <>
       {caregiver && button(managing ? 'dayToday' : 'dayManage', () => { setManage(!manage); setRemoving(null); })}
-      <ThemedText type="cardHeading" accessibilityRole="header">{t(language, managing ? 'dayManage' : 'dayToday')}</ThemedText>
+      
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginTop: 12, marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <MaterialIcons name="schedule" size={24} color={colors.primary} />
+          <ThemedText type="cardHeading">{t(language, managing ? 'dayManage' : 'dayToday')}</ThemedText>
+        </View>
+      </View>
+
       {!content.length && <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}><ThemedText>{t(language, managing ? 'dayEmpty' : 'careNoRoutine')}</ThemedText></View>}
+      
       {content.map(reminder => {
         const completed = completedState(reminder);
         const state = !reminder.isEnabled ? t(language, 'dayDisabled') : completed ? completionLabel(reminder) : t(language, 'dayPending');
         const doneKey = reminder.type === 'hydration' ? 'dayDrankWater' : 'dayDone';
         const summary = `${t(language, category[reminder.type].key)}. ${reminder.title}. ${timeLabel(language, reminder.timeOfDay)}. ${reminder.note}. ${reminder.repeatRule === 'daily' ? t(language, 'dayDaily') : reminder.scheduledDate}. ${state}`;
-        return <View key={reminder.id} style={[styles.card, { borderLeftWidth: 5, backgroundColor: completed ? colors.successSurface : colors.surface, borderColor: completed ? colors.success : colors.border }]}>
-          <View accessible accessibilityLabel={summary} style={styles.group}>
-            <View style={styles.category}>
-              <MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" name={category[reminder.type].icon} color={colors.primary} size={32} />
-              <ThemedText type="action" style={[styles.copy, { color: colors.primary }]}>{timeLabel(language, reminder.timeOfDay)}</ThemedText>
+        const isUpNext = !managing && !completed && firstPending?.id === reminder.id;
+
+        return <View key={reminder.id} style={[styles.card, { 
+          borderWidth: 0,
+          backgroundColor: colors.surface, 
+          elevation: isUpNext ? 4 : 1,
+          shadowColor: colors.text, shadowOpacity: isUpNext ? 0.1 : 0.05, shadowRadius: isUpNext ? 12 : 8,
+          opacity: completed ? 0.8 : 1,
+        }]}>
+          {isUpNext && (
+            <View style={{ position: 'absolute', top: -12, right: 16, backgroundColor: colors.error, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 16, elevation: 2 }}>
+               <ThemedText style={{ color: colors.surface, fontSize: 12, fontWeight: 'bold' }}>Up Next</ThemedText>
             </View>
-            <ThemedText type="cardHeading">{reminder.title}</ThemedText>
-            <ThemedText type="secondary">{t(language, category[reminder.type].key)}</ThemedText>
-            <ThemedText type="secondary">{reminder.repeatRule === 'daily' ? t(language, 'dayDaily') : reminder.scheduledDate}</ThemedText>
-            {!!reminder.note && <ThemedText>{reminder.note}</ThemedText>}
-            {reminder.type === 'hydration' && <ThemedText type="secondary">{t(language, 'dayWaterTapOnly')}</ThemedText>}
-            <View style={styles.category}>
-              <MaterialIcons accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" name={completed ? 'check-circle' : 'schedule'} color={completed ? colors.success : colors.textSecondary} size={28} />
-              <ThemedText accessibilityLiveRegion="polite" type="defaultSemiBold" style={styles.copy}>{state}</ThemedText>
+          )}
+
+          <View accessible accessibilityLabel={summary} style={styles.group}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ backgroundColor: colors.surfaceMuted, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 }}>
+                  <ThemedText type="defaultSemiBold" style={{ fontSize: 16 }}>{timeLabel(language, reminder.timeOfDay)}</ThemedText>
+                </View>
+                {completed && (
+                  <View style={{ backgroundColor: colors.success, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <MaterialIcons name="check-circle" color={colors.surface} size={16} />
+                    <ThemedText style={{ color: colors.surface, fontSize: 12, fontWeight: 'bold' }}>Done</ThemedText>
+                  </View>
+                )}
+              </View>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+                 <MaterialIcons accessible={false} aria-hidden name={category[reminder.type].icon} color={colors.primary} size={20} />
+              </View>
+            </View>
+            <View style={{ paddingLeft: 4 }}>
+              <ThemedText type="cardHeading">{reminder.title}</ThemedText>
+              <ThemedText type="secondary" style={{ marginTop: 4 }}>{t(language, category[reminder.type].key)} • {reminder.repeatRule === 'daily' ? t(language, 'dayDaily') : reminder.scheduledDate}</ThemedText>
+              {!!reminder.note && <ThemedText style={{ marginTop: 4 }}>{reminder.note}</ThemedText>}
+              {reminder.type === 'hydration' && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}><MaterialIcons name="water-drop" size={18} color={colors.primary} /><ThemedText type="secondary" style={{ fontSize: 12 }}>{t(language, 'dayWaterTapOnly')}</ThemedText></View>}
             </View>
           </View>
           {!managing && !completed && button(doneKey, () => void act(async () => {
