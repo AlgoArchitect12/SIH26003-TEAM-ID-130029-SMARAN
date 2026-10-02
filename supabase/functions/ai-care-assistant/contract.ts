@@ -8,6 +8,8 @@ export const suggestionKeys = ['aiHello','aiEncourage','aiGentle','aiMemoryIdea'
 export type SuggestionKey = typeof suggestionKeys[number];
 export type AssistantRequest = { version:1; intent:AssistantIntent; language:typeof assistantLanguages[number];
   patient_id:string; day:string; timezone:string; question?:string };
+export type TtsRequest = { version:1; action:'tts'; text:string; language:typeof assistantLanguages[number]; gender?:'male'|'female' };
+export type GeminiRequest = { version:1; action:'gemini'; text:string; language:typeof assistantLanguages[number] };
 export type Fact = { id:string; kind:'session'|'pending'|'completed'|'memory'; text:string; at:string };
 export type AssistantAnswer = { intent:AssistantIntent; facts:Fact[]; suggestion:SuggestionKey };
 export type AuthorizedContext = { ok:true; role:'owner'|'family'|'caregiver'|'healthcare_worker'; scopes:string[];
@@ -18,7 +20,8 @@ export function refusesMedical(text:string) {
 }
 export function validAssistantRequest(value:unknown):value is AssistantRequest {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  const r = value as AssistantRequest;
+  const r = value as AssistantRequest & {action?:string};
+  if (r.action) return false;
   if (Object.keys(r).some(k => !['version','intent','language','patient_id','day','timezone','question'].includes(k))) return false;
   if (r.version !== 1 || !assistantIntents.includes(r.intent) || !assistantLanguages.includes(r.language) ||
     typeof r.patient_id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(r.patient_id) ||
@@ -27,6 +30,19 @@ export function validAssistantRequest(value:unknown):value is AssistantRequest {
     (r.question !== undefined && (typeof r.question !== 'string' || r.question.length > 500))) return false;
   try { new Intl.DateTimeFormat('en',{timeZone:r.timezone}).format(); return new Date(r.day).toISOString().slice(0,10) === r.day; }
   catch { return false; }
+}
+export function validTtsRequest(value:unknown):value is TtsRequest {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const r = value as TtsRequest;
+  if (r.version !== 1 || r.action !== 'tts' || typeof r.text !== 'string' || r.text.length > 1000 || !assistantLanguages.includes(r.language)) return false;
+  if (r.gender && !['male','female'].includes(r.gender)) return false;
+  return true;
+}
+export function validGeminiRequest(value:unknown):value is GeminiRequest {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const r = value as GeminiRequest;
+  if (r.version !== 1 || r.action !== 'gemini' || typeof r.text !== 'string' || r.text.length > 1000 || !assistantLanguages.includes(r.language)) return false;
+  return true;
 }
 export function contextFacts(context:AuthorizedContext, request:AssistantRequest):Fact[] {
   const dayAt = (at:string) => new Intl.DateTimeFormat('en-CA',{timeZone:request.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(at));
@@ -57,6 +73,8 @@ export function contextFacts(context:AuthorizedContext, request:AssistantRequest
 }
 export type ProviderEnv = {provider:string;apiUrl:string;apiKey:string;model:string};
 export type ProviderResult = {ok:true;text:string}|{ok:false;error:'not-configured'|'unavailable'};
+export type ProviderTtsResult = { ok: true; audioBase64: string } | { ok: false; error: 'not-configured'|'unavailable'|'unsupported-language'|'rate-limited' };
+export type ProviderGeminiResult = { ok: true; text: string } | { ok: false; error: 'not-configured'|'unavailable'|'rate-limited' };
 export async function callAssistantProvider(env:ProviderEnv,system:string,user:string,fetchImpl:typeof fetch=fetch):Promise<ProviderResult> {
   if (env.provider !== 'openai-compatible' || !env.apiKey || !env.model || !/^https:\/\//.test(env.apiUrl)) return {ok:false,error:'not-configured'};
   const controller = new AbortController(), timer = setTimeout(() => controller.abort(),15000);
@@ -70,6 +88,47 @@ export async function callAssistantProvider(env:ProviderEnv,system:string,user:s
     const value = payload?.choices?.[0]?.message?.content;
     return typeof value === 'string' && value.length <= 4096 ? {ok:true,text:value} : {ok:false,error:'unavailable'};
   } catch { return {ok:false,error:'unavailable'}; }
+  finally { clearTimeout(timer); }
+}
+export async function callBhashiniTts(env: ProviderEnv, text: string, language: string, gender: string = 'female', fetchImpl: typeof fetch = fetch): Promise<ProviderTtsResult> {
+  if (env.provider !== 'bhashini' || !env.apiKey || !env.apiUrl) return { ok: false, error: 'not-configured' };
+  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const payload = {
+      pipelineTasks: [{ taskType: "tts", config: { language: { sourceLanguage: language } } }],
+      inputData: { input: [{ source: text }] }
+    };
+    const response = await fetchImpl(env.apiUrl, {
+      method: 'POST', signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', 'Authorization': env.apiKey },
+      body: JSON.stringify(payload)
+    });
+    if (response.status === 429) return { ok: false, error: 'rate-limited' };
+    if (!response.ok) return { ok: false, error: 'unavailable' };
+    const data = await response.json();
+    const audio = data?.pipelineResponse?.[0]?.audio?.[0]?.audioContent;
+    if (typeof audio === 'string' && audio.length > 0) return { ok: true, audioBase64: audio };
+    return { ok: false, error: 'unavailable' };
+  } catch { return { ok: false, error: 'unavailable' }; }
+  finally { clearTimeout(timer); }
+}
+export async function callGemini(env: ProviderEnv, text: string, fetchImpl: typeof fetch = fetch): Promise<ProviderGeminiResult> {
+  if (env.provider !== 'gemini' || !env.apiKey || !env.apiUrl || !env.model) return { ok: false, error: 'not-configured' };
+  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const url = `${env.apiUrl.replace(/\/$/, '')}/v1beta/models/${env.model}:generateContent?key=${env.apiKey}`;
+    const response = await fetchImpl(url, {
+      method: 'POST', signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text }] }] })
+    });
+    if (response.status === 429) return { ok: false, error: 'rate-limited' };
+    if (!response.ok) return { ok: false, error: 'unavailable' };
+    const data = await response.json();
+    const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (typeof resultText === 'string') return { ok: true, text: resultText };
+    return { ok: false, error: 'unavailable' };
+  } catch { return { ok: false, error: 'unavailable' }; }
   finally { clearTimeout(timer); }
 }
 // ponytail: per-worker burst limit; use a shared quota when deploying multiple busy workers.
@@ -88,6 +147,8 @@ export async function handleAssistant(request:Request,deps:{
   authenticated:(token:string)=>Promise<'ok'|'denied'|'limited'>;
   context:(token:string,request:AssistantRequest)=>Promise<AuthorizedContext|null>;
   provider:(system:string,user:string)=>Promise<ProviderResult>;
+  bhashiniTts?:(text:string,language:string,gender?:string)=>Promise<ProviderTtsResult>;
+  geminiCall?:(text:string,language:string)=>Promise<ProviderGeminiResult>;
 }) {
   const fail = (status:number,code:string) => Response.json({ok:false,error:{code}},{status,headers:{'Cache-Control':'no-store'}});
   if (request.method !== 'POST') return fail(405,'method');
@@ -112,6 +173,25 @@ export async function handleAssistant(request:Request,deps:{
     }
     parsed = JSON.parse(body+decoder.decode());
   } catch { return fail(400,'invalid'); }
+  
+  if (validTtsRequest(parsed)) {
+    if (!deps.bhashiniTts) return fail(501,'not-implemented');
+    try {
+      const result = await deps.bhashiniTts(parsed.text, parsed.language, parsed.gender);
+      if (!result.ok) return fail(503, result.error);
+      return Response.json({ok:true, audioBase64: result.audioBase64}, {headers:{'Cache-Control':'no-store'}});
+    } catch { return fail(503,'unavailable'); }
+  }
+  
+  if (validGeminiRequest(parsed)) {
+    if (!deps.geminiCall) return fail(501,'not-implemented');
+    try {
+      const result = await deps.geminiCall(parsed.text, parsed.language);
+      if (!result.ok) return fail(503, result.error);
+      return Response.json({ok:true, text: result.text}, {headers:{'Cache-Control':'no-store'}});
+    } catch { return fail(503,'unavailable'); }
+  }
+
   if (!validAssistantRequest(parsed)) return fail(400,'invalid');
   try {
     const context = await deps.context(token,parsed);
