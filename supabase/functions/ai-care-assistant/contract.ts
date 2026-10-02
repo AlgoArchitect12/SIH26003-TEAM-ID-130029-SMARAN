@@ -8,8 +8,8 @@ export const suggestionKeys = ['aiHello','aiEncourage','aiGentle','aiMemoryIdea'
 export type SuggestionKey = typeof suggestionKeys[number];
 export type AssistantRequest = { version:1; intent:AssistantIntent; language:typeof assistantLanguages[number];
   patient_id:string; day:string; timezone:string; question?:string };
-export type TtsRequest = { version:1; action:'tts'; text:string; language:typeof assistantLanguages[number]; gender?:'male'|'female' };
-export type GeminiRequest = { version:1; action:'gemini'; text:string; language:typeof assistantLanguages[number] };
+export type TtsRequest = { version:1; action:'tts'; text:string; language:typeof assistantLanguages[number]; gender?:'male'|'female'; patient_id:string; day:string; timezone:string };
+export type GeminiRequest = { version:1; action:'gemini'; text:string; language:typeof assistantLanguages[number]; patient_id:string; day:string; timezone:string };
 export type Fact = { id:string; kind:'session'|'pending'|'completed'|'memory'; text:string; at:string };
 export type AssistantAnswer = { intent:AssistantIntent; facts:Fact[]; suggestion:SuggestionKey };
 export type AuthorizedContext = { ok:true; role:'owner'|'family'|'caregiver'|'healthcare_worker'; scopes:string[];
@@ -36,13 +36,15 @@ export function validTtsRequest(value:unknown):value is TtsRequest {
   const r = value as TtsRequest;
   if (r.version !== 1 || r.action !== 'tts' || typeof r.text !== 'string' || r.text.length > 1000 || !assistantLanguages.includes(r.language)) return false;
   if (r.gender && !['male','female'].includes(r.gender)) return false;
-  return true;
+  if (typeof r.patient_id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(r.patient_id) || typeof r.day !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(r.day) || typeof r.timezone !== 'string' || r.timezone.length > 100) return false;
+  try { new Intl.DateTimeFormat('en',{timeZone:r.timezone}).format(); return new Date(r.day).toISOString().slice(0,10) === r.day; } catch { return false; }
 }
 export function validGeminiRequest(value:unknown):value is GeminiRequest {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const r = value as GeminiRequest;
   if (r.version !== 1 || r.action !== 'gemini' || typeof r.text !== 'string' || r.text.length > 1000 || !assistantLanguages.includes(r.language)) return false;
-  return true;
+  if (typeof r.patient_id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(r.patient_id) || typeof r.day !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(r.day) || typeof r.timezone !== 'string' || r.timezone.length > 100) return false;
+  try { new Intl.DateTimeFormat('en',{timeZone:r.timezone}).format(); return new Date(r.day).toISOString().slice(0,10) === r.day; } catch { return false; }
 }
 export function contextFacts(context:AuthorizedContext, request:AssistantRequest):Fact[] {
   const dayAt = (at:string) => new Intl.DateTimeFormat('en-CA',{timeZone:request.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(at));
@@ -145,7 +147,7 @@ export class AssistantRateLimiter {
 }
 export async function handleAssistant(request:Request,deps:{
   authenticated:(token:string)=>Promise<'ok'|'denied'|'limited'>;
-  context:(token:string,request:AssistantRequest)=>Promise<AuthorizedContext|null>;
+  context:(token:string,request:{patient_id:string; day:string; timezone:string})=>Promise<AuthorizedContext|null>;
   provider:(system:string,user:string)=>Promise<ProviderResult>;
   bhashiniTts?:(text:string,language:string,gender?:string)=>Promise<ProviderTtsResult>;
   geminiCall?:(text:string,language:string)=>Promise<ProviderGeminiResult>;
@@ -177,6 +179,8 @@ export async function handleAssistant(request:Request,deps:{
   if (validTtsRequest(parsed)) {
     if (!deps.bhashiniTts) return fail(501,'not-implemented');
     try {
+      const context = await deps.context(token, parsed);
+      if (!context) return fail(403,'forbidden');
       const result = await deps.bhashiniTts(parsed.text, parsed.language, parsed.gender);
       if (!result.ok) return fail(503, result.error);
       return Response.json({ok:true, audioBase64: result.audioBase64}, {headers:{'Cache-Control':'no-store'}});
@@ -186,6 +190,9 @@ export async function handleAssistant(request:Request,deps:{
   if (validGeminiRequest(parsed)) {
     if (!deps.geminiCall) return fail(501,'not-implemented');
     try {
+      const context = await deps.context(token, parsed);
+      if (!context) return fail(403,'forbidden');
+      if (refusesMedical(parsed.text)) return fail(400,'medical');
       const result = await deps.geminiCall(parsed.text, parsed.language);
       if (!result.ok) return fail(503, result.error);
       return Response.json({ok:true, text: result.text}, {headers:{'Cache-Control':'no-store'}});

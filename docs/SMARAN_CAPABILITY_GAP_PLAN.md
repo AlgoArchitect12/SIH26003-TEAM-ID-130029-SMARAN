@@ -158,3 +158,8 @@ Use Gemini for natural conversational interactions (Speech-to-Speech) where late
 - **Language Support Verified**: Bhashini gateway payload is structurally designed to support `hi`, `as`, `bn`, `mni`, `kha`, `lus` and `en` via the pipeline configuration endpoint.
 - **Gemini Live Streaming Gap**: The current implementation supports text-based generation via `generateContent`. True Gemini Live bidirectional audio streaming requires WebSocket or Server-Sent Events (SSE) support in the Edge Function, which necessitates further adapter work and client-side `expo-audio` streaming buffers not yet implemented.
 - **Validation**: TypeScript, lint, and core regression tests passed. No Git refs were overwritten. No provider secrets were exposed.
+
+### P0 Security Correction (October 2026)
+
+- **Authorization Fix**: Required `patient_id` on all `action: 'tts'` and `action: 'gemini'` proxy requests. Enforced the `deps.context(token, request)` boundary before provider invocation, blocking unauthorized users from using the Edge Function as an open generic proxy.
+- **Medical Guardrail Fix**: Routed Gemini payloads through the same `refusesMedical()` boundary used by legacy requests to prevent circumvention of safety tenets.
