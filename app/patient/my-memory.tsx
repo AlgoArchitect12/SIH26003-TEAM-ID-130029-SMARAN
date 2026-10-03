@@ -3,18 +3,93 @@ import { SmaranLoading } from '@components/ui/smaran-loading';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { AppState, View } from 'react-native';
 import { ReadScreenButton } from '@components/accessibility/read-screen-button';
 import { ScreenWrapper } from '@components/layout/screen-wrapper';
 import { MemoryPhoto, memoryStyles as styles } from '@components/memories/memory-photo';
-import { VoiceMemory } from '@components/memories/voice-memory';
 import { useMyDayPatient as usePatient } from '@components/my-day/shared';
 import { ThemedText } from '@components/themed-text';
 import { SmaranButton } from '@components/ui/smaran-button';
 import { memoriesRepository } from '@db/repositories/memories.repository';
 import { memoriesService } from '@services/memories.service';
-import { t } from '@i18n/index';
+import { t, type TranslationKey } from '@i18n/index';
 import { MemoryError, type PersonalMemory } from '@/src/memories/types';
+import { memoryMedia } from '@services/memory-media.service';
+import { stopSpeech } from '@services/speech.service';
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import type { Language } from '@db/schema.types';
+
+function MemoryAudioPlayer({ patientId, audioPath, language, onPlayingChange }: { patientId: string; audioPath: string; language: Language; onPlayingChange?: (playing: boolean) => void }) {
+  const focused = useIsFocused();
+  const [message, setMessage] = useState<TranslationKey | null>(null);
+
+  const uri = memoryMedia.resolve(patientId, audioPath);
+  const player = useAudioPlayer(null);
+  const playback = useAudioPlayerStatus(player);
+
+  const alive = useRef(true);
+  const foreground = useRef(AppState.currentState === 'active');
+  const lock = useRef(false);
+
+  useEffect(() => {
+    try { player.replace(uri); } catch { setMessage('voiceUnavailable'); }
+  }, [player, uri]);
+
+  useEffect(() => {
+    alive.current = true;
+    const app = AppState.addEventListener('change', next => {
+      foreground.current = next === 'active';
+      if (next !== 'active') { player.pause(); }
+    });
+    return () => {
+      alive.current = false;
+      app.remove();
+      player.pause();
+    };
+  }, [player]);
+
+  useEffect(() => {
+    if (!focused) player.pause();
+  }, [focused, player]);
+
+  useEffect(() => {
+    if (onPlayingChange) onPlayingChange(playback.playing);
+  }, [playback.playing, onPlayingChange]);
+
+  const play = async (reset = false) => {
+    if (lock.current || !alive.current || !focused || !foreground.current) return;
+    lock.current = true;
+    try {
+      if (playback.playing || reset) player.pause();
+      if (reset) { await player.seekTo(0); return; }
+      if (!playback.playing) {
+        await stopSpeech(true);
+        await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true, shouldPlayInBackground: false });
+        if (!alive.current || !foreground.current) return;
+        if (playback.didJustFinish || playback.currentTime >= playback.duration) await player.seekTo(0);
+        player.play();
+      }
+    } catch {
+      if (alive.current) setMessage('voiceUnavailable');
+    } finally {
+      lock.current = false;
+    }
+  };
+
+  const button = (key: TranslationKey, action: () => void) => <SmaranButton label={t(language, key)} accessibilityLabel={t(language, key)} variant="outline" onPress={action} />;
+
+  if (!uri) {
+    return <ThemedText>{t(language, 'voiceUnavailable')}</ThemedText>;
+  }
+
+  return (
+    <View style={{ gap: 12 }}>
+      {button(playback.playing ? 'voicePause' : 'voicePlay', () => void play())}
+      {button('voicePlaybackStop', () => void play(true))}
+      {message && <ThemedText accessibilityRole="alert">{t(language, message)}</ThemedText>}
+    </View>
+  );
+}
 
 export default function MemoryDetailScreen() {
   const router = useRouter();
@@ -64,7 +139,7 @@ export default function MemoryDetailScreen() {
       {!!memory.relationship && <ThemedText type="secondary">{memory.relationship}</ThemedText>}
       {!!memory.description && <ThemedText>{memory.description}</ThemedText>}
       {!audioBusy && <ReadScreenButton language={language} labelKey="memoryHear" text={[t(language, 'memorySpeakIntro', { name: memory.name }), memory.relationship, memory.description].filter(Boolean).join(' ')} />}
-      {focused && <VoiceMemory key={memory.patientId + memory.id} memory={memory} language={language} onBusy={setAudioBusy} />}
+      {focused && memory.audioPath && <MemoryAudioPlayer key={memory.patientId + memory.id} patientId={memory.patientId} audioPath={memory.audioPath} language={language} onPlayingChange={setAudioBusy} />}
       {cleanup === '1' && <ThemedText accessibilityRole="alert">{t(language, 'memorySavedCleanup')}</ThemedText>}
       <SmaranButton label={t(language, 'memoryEdit')} accessibilityLabel={t(language, 'memoryEdit')} variant="outline" disabled={busy || audioBusy}
         onPress={() => router.push({ pathname: '/patient/my-memory-editor', params: { id: memory.id } })} />
