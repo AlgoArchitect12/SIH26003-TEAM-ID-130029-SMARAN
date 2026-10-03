@@ -181,6 +181,7 @@ export async function handleAssistant(request:Request,deps:{
     try {
       const context = await deps.context(token, parsed);
       if (!context) return fail(403,'forbidden');
+      if (['kha', 'lus'].includes(parsed.language)) return fail(400,'unsupported-language');
       const result = await deps.bhashiniTts(parsed.text, parsed.language, parsed.gender);
       if (!result.ok) return fail(503, result.error);
       return Response.json({ok:true, audioBase64: result.audioBase64}, {headers:{'Cache-Control':'no-store'}});

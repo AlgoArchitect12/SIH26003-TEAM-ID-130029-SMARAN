@@ -27,6 +27,7 @@ type VoiceLookup = {
 let speechRequest = 0;
 let voiceCache: { value: VoiceLookup; expiresAt: number } | null = null;
 let activeAudioPlayer: AudioPlayer | null = null;
+let activeAudioFileUri: string | null = null;
 
 async function loadVoices(force = false): Promise<VoiceLookup> {
   const now = Date.now();
@@ -112,6 +113,10 @@ export async function speakScreenText(
       activeAudioPlayer.remove();
     } catch {}
     activeAudioPlayer = null;
+  }
+  if (activeAudioFileUri) {
+    FileSystem.deleteAsync(activeAudioFileUri, { idempotent: true }).catch(() => {});
+    activeAudioFileUri = null;
   }
 
   let voiceLookup = await loadVoices(true);
@@ -336,9 +341,14 @@ export async function speakScreenText(
 
       try {
         const fileUri = (FileSystem.cacheDirectory ?? '') + 'cloud_tts_' + Date.now() + '.wav';
+        activeAudioFileUri = fileUri;
         await FileSystem.writeAsStringAsync(fileUri, payload.audioBase64, { encoding: FileSystem.EncodingType.Base64 });
 
-        if (request !== speechRequest) return;
+        if (request !== speechRequest) {
+          FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(() => {});
+          activeAudioFileUri = null;
+          return;
+        }
 
         const player = createAudioPlayer(fileUri);
         activeAudioPlayer = player;
@@ -349,6 +359,10 @@ export async function speakScreenText(
           if (request !== speechRequest) {
             try { player.remove(); } catch {}
             if (activeAudioPlayer === player) activeAudioPlayer = null;
+            if (activeAudioFileUri === fileUri) {
+              FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(() => {});
+              activeAudioFileUri = null;
+            }
             return;
           }
           if (status.playing && !callbacksCalled.start) {
@@ -358,6 +372,10 @@ export async function speakScreenText(
           if (status.didJustFinish) {
             try { player.remove(); } catch {}
             if (activeAudioPlayer === player) activeAudioPlayer = null;
+            if (activeAudioFileUri === fileUri) {
+              FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(() => {});
+              activeAudioFileUri = null;
+            }
             if (!callbacksCalled.done) {
               callbacksCalled.done = true;
               callbacks.onDone?.();
@@ -371,6 +389,10 @@ export async function speakScreenText(
         if (activeAudioPlayer) {
           try { activeAudioPlayer.remove(); } catch {}
           activeAudioPlayer = null;
+        }
+        if (activeAudioFileUri) {
+          FileSystem.deleteAsync(activeAudioFileUri, { idempotent: true }).catch(() => {});
+          activeAudioFileUri = null;
         }
         speakWithExpoSpeech(!!voice);
       }
@@ -395,6 +417,10 @@ export async function stopSpeech(required = false) {
       activeAudioPlayer.remove();
     } catch {}
     activeAudioPlayer = null;
+  }
+  if (activeAudioFileUri) {
+    FileSystem.deleteAsync(activeAudioFileUri, { idempotent: true }).catch(() => {});
+    activeAudioFileUri = null;
   }
 
   try {
