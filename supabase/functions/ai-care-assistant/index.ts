@@ -40,7 +40,7 @@ Deno.serve(request => handleAssistant(request, {
     apiUrl: Deno.env.get('GEMINI_API_URL') ?? '',
     apiKey: Deno.env.get('GEMINI_API_KEY') ?? '',
     model: Deno.env.get('GEMINI_MODEL') ?? '',
-  }, text),
+  }, text, language),
   geminiTts: (text) => callGeminiTts({
     provider: Deno.env.get('GEMINI_PROVIDER') ?? 'none',
     apiUrl: Deno.env.get('GEMINI_API_URL') ?? '',

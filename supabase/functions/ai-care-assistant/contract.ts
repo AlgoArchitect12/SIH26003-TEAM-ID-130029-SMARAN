@@ -114,15 +114,18 @@ export async function callBhashiniTts(env: ProviderEnv, text: string, language: 
   } catch { return { ok: false, error: 'unavailable' }; }
   finally { clearTimeout(timer); }
 }
-export async function callGemini(env: ProviderEnv, text: string, fetchImpl: typeof fetch = fetch): Promise<ProviderGeminiResult> {
-  if (env.provider !== 'gemini' || !env.apiKey || !env.apiUrl || !env.model) return { ok: false, error: 'not-configured' };
+export async function callGemini(env: ProviderEnv, text: string, language: string, fetchImpl: typeof fetch = fetch): Promise<ProviderGeminiResult> {
+  if (!env.apiKey || !env.apiUrl || !env.model) return { ok: false, error: 'not-configured' };
   const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 15000);
   try {
-    const url = `${env.apiUrl.replace(/\/$/, '')}/v1beta/models/${env.model}:generateContent?key=${env.apiKey}`;
+    const url = `${env.apiUrl.replace(/\/$/, '')}/v1beta/models/${env.model}:generateContent`;
     const response = await fetchImpl(url, {
       method: 'POST', signal: controller.signal,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text }] }] })
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.apiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: `You are a helpful AI care assistant. Respond strictly in the ${language} language.` }] },
+        contents: [{ parts: [{ text }] }]
+      })
     });
     if (response.status === 429) return { ok: false, error: 'rate-limited' };
     if (!response.ok) return { ok: false, error: 'unavailable' };
@@ -228,6 +231,7 @@ export async function handleAssistant(request:Request,deps:{
       const context = await deps.context(token, parsed);
       if (!context) return fail(403,'forbidden');
       if (refusesMedical(parsed.text)) return fail(400,'medical');
+      if (parsed.language === 'kha') return fail(400,'unsupported-language');
       const result = await deps.geminiCall(parsed.text, parsed.language);
       if (!result.ok) return fail(503, result.error);
       return Response.json({ok:true, text: result.text}, {headers:{'Cache-Control':'no-store'}});
