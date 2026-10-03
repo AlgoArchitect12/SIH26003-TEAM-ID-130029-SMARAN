@@ -1,4 +1,11 @@
 import * as Speech from 'expo-speech';
+import * as FileSystem from 'expo-file-system/legacy';
+import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
+
+import { getCloudClient } from '../cloud/auth';
+import { cloudConfig } from '../cloud/config';
+import { usePatientSessionStore } from '../stores/patient-session.store';
+import { localDay } from '../my-day/types';
 
 import { Languages, type Language } from '../db/schema.types';
 import { fallbackLocale, resolveDeviceVoice, type DeviceVoice } from './speech-voices';
@@ -19,6 +26,7 @@ type VoiceLookup = {
 
 let speechRequest = 0;
 let voiceCache: { value: VoiceLookup; expiresAt: number } | null = null;
+let activeAudioPlayer: AudioPlayer | null = null;
 
 async function loadVoices(force = false): Promise<VoiceLookup> {
   const now = Date.now();
@@ -99,6 +107,13 @@ export async function speakScreenText(
   }
 
   const request = ++speechRequest;
+  if (activeAudioPlayer) {
+    try {
+      activeAudioPlayer.remove();
+    } catch {}
+    activeAudioPlayer = null;
+  }
+
   let voiceLookup = await loadVoices(true);
   let voice = findVoice(voiceLookup.voices, language);
 
@@ -115,7 +130,7 @@ export async function speakScreenText(
 
     let fallbackAttempted = false;
 
-    const speak = (useExplicitVoice: boolean) => {
+    const speakWithExpoSpeech = (useExplicitVoice: boolean) => {
       if (request !== speechRequest) {
         return;
       }
@@ -246,7 +261,7 @@ export async function speakScreenText(
                   voiceLookup = latest;
                   voice = findVoice(latest.voices, language);
 
-                  speak(false);
+                  speakWithExpoSpeech(false);
                 });
               })
               .catch(() => {
@@ -267,10 +282,101 @@ export async function speakScreenText(
       });
     };
 
-    // Prefer an exact/compatible device voice when one exists.
-    // Otherwise still attempt language-only synthesis instead of declaring
-    // the feature unavailable before the Android engine has a chance.
-    speak(!!voice);
+    const attemptCloudTts = async () => {
+      const isCloudSupported = ['hi', 'as', 'bn', 'mni', 'kha', 'lus'].includes(language);
+      if (!isCloudSupported || !cloudConfig) {
+        speakWithExpoSpeech(!!voice);
+        return;
+      }
+
+      const { data, error } = await getCloudClient().auth.getSession();
+      if (error || !data.session) {
+        speakWithExpoSpeech(!!voice);
+        return;
+      }
+
+      const patientId = usePatientSessionStore.getState().patientId;
+      if (!patientId) {
+        speakWithExpoSpeech(!!voice);
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2000);
+      let payload;
+      try {
+        const { data: responseData, error: invokeError } = await getCloudClient().functions.invoke('ai-care-assistant', {
+          method: 'POST',
+          signal: controller.signal,
+          body: {
+            version: 1,
+            action: 'tts',
+            text: spokenText,
+            language,
+            patient_id: patientId,
+            day: localDay(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          },
+        });
+
+        if (request !== speechRequest) return;
+        if (invokeError) throw invokeError;
+
+        payload = responseData;
+        if (request !== speechRequest) return;
+        if (!payload || !payload.ok || !payload.audioBase64) throw new Error('Invalid Cloud TTS payload');
+
+      } catch {
+        if (request !== speechRequest) return;
+        speakWithExpoSpeech(!!voice);
+        return;
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      try {
+        const fileUri = (FileSystem.cacheDirectory ?? '') + 'cloud_tts_' + Date.now() + '.wav';
+        await FileSystem.writeAsStringAsync(fileUri, payload.audioBase64, { encoding: FileSystem.EncodingType.Base64 });
+
+        if (request !== speechRequest) return;
+
+        const player = createAudioPlayer(fileUri);
+        activeAudioPlayer = player;
+
+        let callbacksCalled = { start: false, done: false };
+
+        player.addListener('playbackStatusUpdate', (status) => {
+          if (request !== speechRequest) {
+            try { player.remove(); } catch {}
+            if (activeAudioPlayer === player) activeAudioPlayer = null;
+            return;
+          }
+          if (status.playing && !callbacksCalled.start) {
+            callbacksCalled.start = true;
+            callbacks.onStart?.();
+          }
+          if (status.didJustFinish) {
+            try { player.remove(); } catch {}
+            if (activeAudioPlayer === player) activeAudioPlayer = null;
+            if (!callbacksCalled.done) {
+              callbacksCalled.done = true;
+              callbacks.onDone?.();
+            }
+          }
+        });
+
+        player.play();
+      } catch {
+        if (request !== speechRequest) return;
+        if (activeAudioPlayer) {
+          try { activeAudioPlayer.remove(); } catch {}
+          activeAudioPlayer = null;
+        }
+        speakWithExpoSpeech(!!voice);
+      }
+    };
+
+    attemptCloudTts();
 
     return 'started';
   } catch {
@@ -284,6 +390,12 @@ export async function speakScreenText(
 
 export async function stopSpeech(required = false) {
   speechRequest += 1;
+  if (activeAudioPlayer) {
+    try {
+      activeAudioPlayer.remove();
+    } catch {}
+    activeAudioPlayer = null;
+  }
 
   try {
     await Speech.stop();
@@ -296,6 +408,7 @@ export async function stopSpeech(required = false) {
 
 export async function isSpeaking() {
   try {
+    if (activeAudioPlayer && activeAudioPlayer.playing) return true;
     return await Speech.isSpeakingAsync();
   } catch {
     return false;
