@@ -133,6 +133,33 @@ export async function callGemini(env: ProviderEnv, text: string, fetchImpl: type
   } catch { return { ok: false, error: 'unavailable' }; }
   finally { clearTimeout(timer); }
 }
+export async function callGeminiTts(env: ProviderEnv, text: string, fetchImpl: typeof fetch = fetch): Promise<ProviderTtsResult> {
+  if (!env.apiKey || !env.apiUrl || !env.model) return { ok: false, error: 'not-configured' };
+  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const url = `${env.apiUrl.replace(/\/$/, '')}/v1beta/models/${env.model}:generateContent`;
+    const response = await fetchImpl(url, {
+      method: 'POST', signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.apiKey },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: { voiceConfig: { voice: 'Aoede' } }
+        }
+      })
+    });
+    if (response.status === 429) return { ok: false, error: 'rate-limited' };
+    if (!response.ok) return { ok: false, error: 'unavailable' };
+    const data = await response.json();
+    const inlineData = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+    if (inlineData?.mimeType?.startsWith('audio/') && typeof inlineData?.data === 'string') {
+      return { ok: true, audioBase64: inlineData.data };
+    }
+    return { ok: false, error: 'unavailable' };
+  } catch { return { ok: false, error: 'unavailable' }; }
+  finally { clearTimeout(timer); }
+}
 // ponytail: per-worker burst limit; use a shared quota when deploying multiple busy workers.
 export class AssistantRateLimiter {
   private readonly hits = new Map<string,{count:number;reset:number}>();
@@ -151,6 +178,7 @@ export async function handleAssistant(request:Request,deps:{
   provider:(system:string,user:string)=>Promise<ProviderResult>;
   bhashiniTts?:(text:string,language:string,gender?:string)=>Promise<ProviderTtsResult>;
   geminiCall?:(text:string,language:string)=>Promise<ProviderGeminiResult>;
+  geminiTts?:(text:string)=>Promise<ProviderTtsResult>;
 }) {
   const fail = (status:number,code:string) => Response.json({ok:false,error:{code}},{status,headers:{'Cache-Control':'no-store'}});
   if (request.method !== 'POST') return fail(405,'method');
@@ -181,8 +209,14 @@ export async function handleAssistant(request:Request,deps:{
     try {
       const context = await deps.context(token, parsed);
       if (!context) return fail(403,'forbidden');
-      if (['kha', 'lus'].includes(parsed.language)) return fail(400,'unsupported-language');
-      const result = await deps.bhashiniTts(parsed.text, parsed.language, parsed.gender);
+      if (parsed.language === 'kha') return fail(400,'unsupported-language');
+      let result: ProviderTtsResult;
+      if (parsed.language === 'lus') {
+        if (!deps.geminiTts) return fail(501,'not-implemented');
+        result = await deps.geminiTts(parsed.text);
+      } else {
+        result = await deps.bhashiniTts(parsed.text, parsed.language, parsed.gender);
+      }
       if (!result.ok) return fail(503, result.error);
       return Response.json({ok:true, audioBase64: result.audioBase64}, {headers:{'Cache-Control':'no-store'}});
     } catch { return fail(503,'unavailable'); }

@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
-import { AssistantRateLimiter, callAssistantProvider, callBhashiniTts, callGemini, handleAssistant } from './contract.ts';
+import { AssistantRateLimiter, callAssistantProvider, callBhashiniTts, callGemini, callGeminiTts, handleAssistant } from './contract.ts';
 
 const limiter = new AssistantRateLimiter();
 Deno.serve(request => handleAssistant(request, {
@@ -40,5 +40,11 @@ Deno.serve(request => handleAssistant(request, {
     apiUrl: Deno.env.get('GEMINI_API_URL') ?? '',
     apiKey: Deno.env.get('GEMINI_API_KEY') ?? '',
     model: Deno.env.get('GEMINI_MODEL') ?? '',
+  }, text),
+  geminiTts: (text) => callGeminiTts({
+    provider: Deno.env.get('GEMINI_PROVIDER') ?? 'none',
+    apiUrl: Deno.env.get('GEMINI_API_URL') ?? '',
+    apiKey: Deno.env.get('GEMINI_API_KEY') ?? '',
+    model: 'gemini-3.8-flash-tts',
   }, text),
 }));
