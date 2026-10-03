@@ -3,7 +3,7 @@ import { careCircleRepository as repo, checkCareRequest } from '../db/repositori
 import { myDayRepository } from '../db/repositories/my-day.repository';
 import { patientRepository } from '../db/repositories/patient.repository';
 import { loadAnalyticsSummary } from './analytics.service';
-import type { ReportFacts } from '../caregiver/reports';
+import type { ReportFacts, ReportTelemetry } from '../caregiver/reports';
 import { validateRecordId } from '../utils/validation';
 
 export async function loadReportFacts(patientId: string, days: 7 | 30, now = new Date()) {
@@ -38,4 +38,16 @@ export async function generateActivityReport(patientId: string, days: 7|30, curr
   checkCareRequest(current);
   return repo.saveReport(patientId, {period_start:value.start,period_end:value.end,generated_at:value.generatedAt,
     report_version:1,snapshot:JSON.stringify(value.facts)},current);
+}
+export async function loadReportTelemetry(patientId: string, days: 7 | 30, now: Date): Promise<ReportTelemetry> {
+  const summary = await loadAnalyticsSummary(validateRecordId(patientId), days, now);
+  return {
+    games: summary.games.map(({gameType,summary: row}) => ({
+      gameType,
+      responseTotalMs: row?.responseTotalMs ?? null,
+      responseAttempts: row?.responseAttempts ?? null,
+      elapsedTotalMs: row?.elapsedTotalMs ?? null,
+      elapsedSessions: row?.elapsedSessions ?? 0
+    }))
+  };
 }

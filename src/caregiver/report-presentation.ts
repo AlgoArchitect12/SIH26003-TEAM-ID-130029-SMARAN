@@ -2,14 +2,15 @@ import { t } from '../i18n/index';
 import type { Language } from '../db/schema.types';
 import { activityTitleKeys } from '../games/presentation';
 import { CareScopes, type CareScope } from './care-circle';
-import { parseReportFacts, reportAccess, reportTotals, type ActivityReport } from './reports';
+import { parseReportFacts, reportAccess, reportTotals, telemetryTotals, type ActivityReport, type ReportTelemetry } from './reports';
 
-export function reportSections(report: ActivityReport, language: Language, scopes: readonly CareScope[] = CareScopes) {
+export function reportSections(report: ActivityReport, language: Language, scopes: readonly CareScope[] = CareScopes, telemetry?: ReportTelemetry) {
   const facts = parseReportFacts(report.snapshot), access = reportAccess(scopes);
   const n = (value: number | null) => value === null ? t(language,'analyticsUnknown') : new Intl.NumberFormat(language,{maximumFractionDigits:1}).format(value);
   const percent = (value: number | null) => value === null ? t(language,'analyticsUnknown') : new Intl.NumberFormat(language,{style:'percent',maximumFractionDigits:1}).format(value);
   const date = (value: string) => new Intl.DateTimeFormat(language,{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:facts.timezone}).format(new Date(value));
   const totals = reportTotals(facts);
+  const tTotals = telemetry ? telemetryTotals(telemetry) : null;
   return [
     { title: `Smaran ${t(language,'reportSummary')}`, lines: [
       `${t(language,'reportPatient')}: ${facts.patientName}`,
@@ -21,12 +22,21 @@ export function reportSections(report: ActivityReport, language: Language, scope
       t(language,'analyticsAccuracy',{accuracy:percent(totals.accuracy),correct:n(totals.correct),attempts:n(totals.attempts)}),
       t(language,'analyticsHints',{hints:n(totals.hints),sessions:n(totals.sessions)}),
       t(language,'analyticsErrors',{count:n(totals.repeatedErrors)}),
+      ...(tTotals?.responseAttempts && tTotals.responseTotalMs !== null ? [t(language,'analyticsResponse',{ms:n(tTotals.responseTotalMs/tTotals.responseAttempts),attempts:n(tTotals.responseAttempts)})] : []),
+      ...(tTotals?.elapsedSessions && tTotals.elapsedTotalMs !== null ? [t(language,'analyticsElapsed',{seconds:n(tTotals.elapsedTotalMs/(1000*tTotals.elapsedSessions)),sessions:n(tTotals.elapsedSessions)})] : []),
       t(language,'analyticsCoverage'),
-      ...facts.games.flatMap(game => [t(language,activityTitleKeys[game.gameType]),
-        t(language,game.gameType === 'memory_match' ? 'analyticsMemoryAttempts' : 'analyticsSelectionAttempts'),
-        t(language,'analyticsCompleted',{count:n(game.sessions)}),
-        t(language,'analyticsAccuracy',{accuracy:percent(game.attempts && game.correct !== null ? game.correct/game.attempts : null),correct:n(game.correct),attempts:n(game.attempts)}),
-        t(language,'analyticsHints',{hints:n(game.hints),sessions:n(game.sessions)}),t(language,'analyticsErrors',{count:n(game.repeatedErrors)})]),
+      ...facts.games.flatMap(game => {
+        const tGame = telemetry?.games.find(g => g.gameType === game.gameType);
+        return [t(language,activityTitleKeys[game.gameType]),
+          t(language,game.gameType === 'memory_match' ? 'analyticsMemoryAttempts' : 'analyticsSelectionAttempts'),
+          t(language,'analyticsCompleted',{count:n(game.sessions)}),
+          t(language,'analyticsAccuracy',{accuracy:percent(game.attempts && game.correct !== null ? game.correct/game.attempts : null),correct:n(game.correct),attempts:n(game.attempts)}),
+          t(language,'analyticsHints',{hints:n(game.hints),sessions:n(game.sessions)}),
+          t(language,'analyticsErrors',{count:n(game.repeatedErrors)}),
+          ...(tGame?.responseAttempts && tGame.responseTotalMs !== null ? [t(language,'analyticsResponse',{ms:n(tGame.responseTotalMs/tGame.responseAttempts),attempts:n(tGame.responseAttempts)})] : []),
+          ...(tGame?.elapsedSessions && tGame.elapsedTotalMs !== null ? [t(language,'analyticsElapsed',{seconds:n(tGame.elapsedTotalMs/(1000*tGame.elapsedSessions)),sessions:n(tGame.elapsedSessions)})] : [])
+        ];
+      }),
     ] }] : []),
     ...(access.routine ? [{title:t(language,'reportRoutine'),lines:[
       t(language,'reportCompleted',{count:n(facts.routine.completed)}),t(language,'reportHydration',{count:n(facts.routine.hydration)}),
@@ -39,8 +49,8 @@ export function reportSections(report: ActivityReport, language: Language, scope
   ];
 }
 const escape = (value: string) => value.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!));
-export function reportHtml(report: ActivityReport, language: Language, scopes: readonly CareScope[] = CareScopes) {
-  const sections = reportSections(report,language,scopes);
+export function reportHtml(report: ActivityReport, language: Language, scopes: readonly CareScope[] = CareScopes, telemetry?: ReportTelemetry) {
+  const sections = reportSections(report,language,scopes,telemetry);
   return `<!DOCTYPE html><html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
     <title>${escape(t(language,'reportSummary'))}</title><style>

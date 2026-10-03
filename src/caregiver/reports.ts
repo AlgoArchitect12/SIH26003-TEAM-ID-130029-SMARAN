@@ -7,6 +7,9 @@ export type ReportFacts = {
   routine: { completed: number; hydration: number; activity: number; appointment: number; unknownCategory: number; scheduledToday: number; completedToday: number };
   memories: { stored: number; added: number };
 };
+export type ReportTelemetry = {
+  games: { gameType: CognitiveActivityType; responseTotalMs: number | null; responseAttempts: number | null; elapsedTotalMs: number | null; elapsedSessions: number }[];
+};
 export type ActivityReport = {
   id: string; patient_id: string; period_start: string; period_end: string; generated_at: string;
   report_version: 1; snapshot: string; delivery_state: 'generated' | 'share_requested'; updated_at: string;
@@ -52,6 +55,14 @@ export function reportTotals(facts: ReportFacts) {
   const attempts = sum('attempts'), correct = sum('correct');
   return { sessions: facts.games.reduce((n,g) => n + g.sessions, 0), attempts, correct, hints: sum('hints'), repeatedErrors: sum('repeatedErrors'),
     accuracy: attempts !== null && attempts > 0 && correct !== null ? correct / attempts : null };
+}
+export function telemetryTotals(telemetry: ReportTelemetry) {
+  const sum = (key: 'responseTotalMs' | 'responseAttempts' | 'elapsedTotalMs') => telemetry.games.some(g => g.elapsedSessions > 0 && g[key] === null)
+    ? null : telemetry.games.reduce((n,g) => n + (g[key] ?? 0), 0);
+  return {
+    responseTotalMs: sum('responseTotalMs'), responseAttempts: sum('responseAttempts'),
+    elapsedTotalMs: sum('elapsedTotalMs'), elapsedSessions: telemetry.games.reduce((n,g) => n + g.elapsedSessions, 0)
+  };
 }
 // Filtering happens before rendering/export. A reports scope alone reveals no activity or memories.
 export function reportAccess(scopes: readonly CareScope[]) {

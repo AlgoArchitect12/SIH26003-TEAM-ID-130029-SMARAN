@@ -7,6 +7,8 @@ import { validateRecordId } from '../utils/validation';
 import { careCircleRepository as repo, checkCareRequest } from '../db/repositories/care-circle.repository';
 import { CareScopes, effectiveScopes } from '../caregiver/care-circle';
 import { reportHtml } from '../caregiver/report-presentation';
+import { loadReportTelemetry } from './reports.service';
+import type { ReportTelemetry } from '../caregiver/reports';
 import type { Language } from '../db/schema.types';
 
 export class ReportPdfUnavailable extends Error {}
@@ -44,7 +46,12 @@ export async function prepareReportPdf(patientId: string, reportId: string, lang
     if (email && !await MailComposer.isAvailableAsync()) throw new ReportEmailUnavailable();
     if (share && !await Sharing.isAvailableAsync()) throw new ReportPdfUnavailable();
     checkCareRequest(current); cleanupReportPdfs();
-    const result = await Print.printToFileAsync({html:reportHtml(report,language,scopes),width:595,height:842});
+    let telemetry: ReportTelemetry | undefined;
+    try {
+      const days = JSON.parse(report.snapshot).days;
+      if (days === 7 || days === 30) telemetry = await loadReportTelemetry(patientId, days, new Date(report.period_end));
+    } catch {}
+    const result = await Print.printToFileAsync({html:reportHtml(report,language,scopes,telemetry),width:595,height:842});
     printFile = new File(result.uri);
     if (!printFile.uri.startsWith(Paths.cache.uri.replace(/\/$/,'') + '/')) throw new Error('Unexpected print artifact.');
     checkCareRequest(current);
